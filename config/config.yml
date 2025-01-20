@@ -1,4 +1,4 @@
-base_dir: "/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/mesothelioma/"
+base_dir: "/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/"
 data_dir: "data/"
 scratch_dir: "scratch/"
 scripts_dir: "scripts/"
@@ -10,28 +10,5 @@ markers_dir: "data/markers/"
 xenium_raw_data_dir: "data/xenium/raw/"
 xenium_processed_data_dir: "data/xenium/processed/segmentation/"
 scrnaseq_processed_data_dir: "data/scRNAseq/processed/"
-scrnaseq_references_data_dir: "data/scRNAseq/processed/references/"
-
-scrnaseq_raw_flex_full_zurich_data_dir: "data/scRNAseq/raw/FLEX_full/FLEX_Zurich_plus_results/"
-scrnaseq_processed_flex_full_zurich_rds: "data/scRNAseq/processed/FLEX_full/FLEX_Zurich_plus_results.rds"
-scrnaseq_processed_flex_full_zurich_h5ad: "data/scRNAseq/processed/FLEX_full/FLEX_Zurich_plus_results.h5ad"
-scrnaseq_processed_flex_full_zurich_bpcells: "data/scRNAseq/processed/FLEX_full/FLEX_Zurich_plus_results.bpcells"
-
-scrnaseq_processed_flex_full_zurich_unfiltered_h5ad: "data/scRNAseq/processed/FLEX_full/FLEX_Zurich_plus_results_unfiltered.h5ad"
-scrnaseq_processed_flex_full_zurich_unfiltered_bpcells: "data/scRNAseq/processed/FLEX_full/FLEX_Zurich_plus_results_unfiltered.bpcells"
-
-scrnaseq_reference_cellxgene_h5ad: "data/scRNAseq/processed/references/cellxgene/NSCLC_atlas_extended.h5ad"
-scrnaseq_reference_cellxgene_rds: "data/scRNAseq/processed/references/cellxgene/NSCLC_atlas_extended.rds"
-
-scrnaseq_reference_mesothelioma_h5ad: "data/scRNAseq/processed/references/mesothelioma/GSE190597_srt_tumor.h5ad"
-scrnaseq_reference_mesothelioma_rds: "data/scRNAseq/processed/references/mesothelioma/GSE190597_srt_tumor.rds"
-scrnaseq_reference_mesothelioma_healthy_h5ad: "data/scRNAseq/processed/references/mesothelioma_healthy/GSE243446_all_cells.h5ad"
-scrnaseq_reference_mesothelioma_healthy_rds: "data/scRNAseq/processed/references/mesothelioma_healthy/GSE243446_all_cells.rds"
-
-scrnaseq_reference_combined_h5ad: "data/scRNAseq/processed/references/combined/meso_combined_reference.h5ad"
-scrnaseq_reference_combined_rds: "data/scRNAseq/processed/references/combined/meso_combined_reference.rds"
-scrnaseq_reference_combined_and_flex_h5ad: "data/scRNAseq/processed/references/combined/meso_combined_reference_and_flex.h5ad"
-scrnaseq_reference_combined_and_flex_subsample_h5ad: "data/scRNAseq/processed/references/combined/meso_combined_reference_and_flex_subsample.h5ad"
-scrnaseq_reference_combined_and_flex_rds: "data/scRNAseq/processed/references/combined/meso_combined_reference_and_flex.rds"
-scrnaseq_reference_combined_and_flex_subsample_rds: "data/scRNAseq/processed/references/combined/meso_combined_reference_and_flex_subsample.rds"
-
+visium_raw_data_dir: "data/visium/raw/"
+visium_processed_data_dir: "data/visium/processed/"

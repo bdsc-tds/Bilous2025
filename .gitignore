@@ -33,6 +33,8 @@ xenium_analysis_pipeline/
 *.zarr
 *.rds
 *.rdata
+*.Rdata
+*.RData
 *.h5
 *.h5ad
 *.lndb

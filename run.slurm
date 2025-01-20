@@ -6,6 +6,6 @@
 
 # rm -rf .snakemake/slurm_logs
 mamba activate sm
-snakemake --sdm=conda --executor slurm --jobs 50 \
+snakemake --sdm=conda --executor slurm --jobs 100 \
           --rerun-incomplete --rerun-triggers mtime --keep-going \
           --workflow-profile profiles/slurm/
