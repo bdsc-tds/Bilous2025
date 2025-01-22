@@ -12,6 +12,7 @@ transcripts_to_count_matrix <- function(transcripts) {
   return(cm)
 }
 
+
 #' @export
 run_pagoda_de <- function(cm, groups) {
   p2 <- pagoda2::Pagoda2$new(cm, n.cores=1, min.cells.per.gene=0, verbose=FALSE)

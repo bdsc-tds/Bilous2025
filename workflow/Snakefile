@@ -1,7 +1,10 @@
 configfile: "config/config.yml"
 
 include: "rules/0-coexpression.smk"
+include: "rules/0-ovrlpy.smk"
+
 
 rule all:
     input:
-        rules.coexpression_samples.input
+        rules.coexpression_samples.input,
+        rules.ovrlpy_samples.input

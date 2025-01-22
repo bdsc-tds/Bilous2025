@@ -7,7 +7,7 @@ results_dir = Path(config['results_dir'])
 
 # Params
 methods = ['conditional','jaccard','pearson','spearman']
-target_counts = [30,50]
+target_counts = [30,50,200]
 out_files = []
 
 for segmentation in (segmentations := xenium_dir.iterdir()):
@@ -24,6 +24,9 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
 
                         for method in methods:
                             for target_count in target_counts:
+                                if target_count > 50 and panel.stem != '5k':
+                                    continue
+
                                 out_file_coexpr = results_dir / f'coexpression/{name}/coexpression_{method}_{target_count}.parquet' 
                                 out_file_pos_rate = results_dir / f'coexpression/{name}/positivity_rate_{method}_{target_count}.parquet'
 
@@ -41,8 +44,8 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                         target_count=target_count,
                                     threads: 1
                                     resources:
-                                        mem='20GB',
-                                        runtime='10m'
+                                        mem='40GB' if panel.stem == '5k' else '20GB',
+                                        runtime='20m' if panel.stem == '5k' else '10m',
                                     conda:
                                         "spatial"
                                     shell:

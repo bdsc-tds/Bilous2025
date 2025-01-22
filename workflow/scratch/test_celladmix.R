@@ -17,6 +17,7 @@ load(paste0(script_dir,'/giotto_dat/SMI_Giotto_Object.RData'))
 tx_dat$cell <- paste0('c_1_',tx_dat$fov,'_',tx_dat$cell_ID)
 cell_meta <- prepare_nsclc_metadata(gem)
 df <- prepare_nscls_transcript_data(tx_dat, cell_meta)
+
 # add annotation for regions we'll compare. It will be needed later for DE
 cell_meta$regions_compare <- sapply(cell_meta$niche, switch, "tumor interior"="tumor", "stroma"="stroma", NA)
 

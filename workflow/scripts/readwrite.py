@@ -83,7 +83,7 @@ def xenium_specs(path):
 
 
 ######### Xenium readers
-def xenium_samples_files(dir_segmentation_cohort, segmentation=None,samples=None):
+def xenium_samples_files(dir_segmentation_cohort, segmentation=None, samples=None):
     """
     Get a dictionary of files for each sample in a Xenium segmentation run.
 
@@ -104,10 +104,10 @@ def xenium_samples_files(dir_segmentation_cohort, segmentation=None,samples=None
 
             if samples is not None and sample_name not in samples:
                 continue
-            elif 'corrupted' in sample_name:
+            elif "corrupted" in sample_name:
                 continue
             else:
-                if segmentation != 'default':
+                if segmentation != "default":
                     files[sample_name] = replicate_path / "normalised_results/outs"
                 else:
                     files[sample_name] = replicate_path
@@ -232,7 +232,10 @@ def read_xenium_samples(
         A dictionary of sample names mapped to AnnData objects or spatialdata objects.
     """
     if isinstance(data_dirs, list):
-        sample_names = [pathlib.Path(path).stem  if sample_name_as_key else path]
+        sample_names = [
+            pathlib.Path(path).stem if sample_name_as_key else path
+            for path in data_dirs
+        ]
         data_dirs = {
             sample_name: path for sample_name, path in zip(sample_names, data_dirs)
         }
@@ -282,18 +285,24 @@ def read_json_msgspec(file_path):
         return msgspec.json.decode(file.read())
 
 
-def _rds2py_dict_to_df(r_obj_df,mode='results_df'):
-    
-    if mode == 'results_df':
-        r_obj_df_columns = r_obj_df['attributes']['names']['data']
-        r_obj_df_index = r_obj_df['attributes']['row.names']['data']
-        pandas_df = pd.DataFrame([r_obj_df['data'][i]['data'] for i in range(len(r_obj_df['data']))],
-                                            index=r_obj_df_columns,columns=r_obj_df_index).T
-    elif mode == 'weights':
-        r_obj_df_columns = r_obj_df['attributes']['dimnames']['data'][1]['data']
-        r_obj_df_index = r_obj_df['attributes']['dimnames']['data'][0]['data']
-        r_obj_df['data'] = r_obj_df['data'].reshape(r_obj_df['attributes']['dim']['data'],order='F')
-        pandas_df = pd.DataFrame(r_obj_df['data'],index=r_obj_df_index,columns=r_obj_df_columns)
+def _rds2py_dict_to_df(r_obj_df, mode="results_df"):
+    if mode == "results_df":
+        r_obj_df_columns = r_obj_df["attributes"]["names"]["data"]
+        r_obj_df_index = r_obj_df["attributes"]["row.names"]["data"]
+        pandas_df = pd.DataFrame(
+            [r_obj_df["data"][i]["data"] for i in range(len(r_obj_df["data"]))],
+            index=r_obj_df_columns,
+            columns=r_obj_df_index,
+        ).T
+    elif mode == "weights":
+        r_obj_df_columns = r_obj_df["attributes"]["dimnames"]["data"][1]["data"]
+        r_obj_df_index = r_obj_df["attributes"]["dimnames"]["data"][0]["data"]
+        r_obj_df["data"] = r_obj_df["data"].reshape(
+            r_obj_df["attributes"]["dim"]["data"], order="F"
+        )
+        pandas_df = pd.DataFrame(
+            r_obj_df["data"], index=r_obj_df_index, columns=r_obj_df_columns
+        )
 
     return pandas_df
 
@@ -323,20 +332,20 @@ def read_rctd_sample(sample_name, rctd_results_path):
 
     r_obj = read_rds(rctd_results_path)
 
-    results = r_obj['attributes']['results']
-    results_keys = results['attributes']['names']['data']
+    results = r_obj["attributes"]["results"]
+    results_keys = results["attributes"]["names"]["data"]
     results_keys_idx = {k: results_keys.index(k) for k in results_keys}
 
     pandas_results = {}
-    for k in ['results_df','weights']:
-        pandas_results[k] = _rds2py_dict_to_df(results['data'][results_keys_idx[k]],mode=k)
+    for k in ["results_df", "weights"]:
+        pandas_results[k] = _rds2py_dict_to_df(
+            results["data"][results_keys_idx[k]], mode=k
+        )
 
     return sample_name, pandas_results
 
 
-
-def read_rctd_samples(
-    ads, rctd_results_paths,  prefix=""):
+def read_rctd_samples(ads, rctd_results_paths, prefix=""):
     """
     Read RCTD results into anndata objects in parallel using ProcessPoolExecutor.
 
@@ -371,7 +380,7 @@ def read_rctd_samples(
                 sample_name, results = future.result()
                 if results:
                     ad = ads[sample_name]
-                    ad.obs = ad.obs.join( results["results_df"].add_prefix(prefix) )
+                    ad.obs = ad.obs.join(results["results_df"].add_prefix(prefix))
                     ad.uns[f"{prefix}_weights"] = results["weights"]
 
             except Exception as e:

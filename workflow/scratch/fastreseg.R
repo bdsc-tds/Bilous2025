@@ -29,89 +29,131 @@ transDF_fileInfo <- data.frame(file_path = fs::path(dataDir,
 idx = 1
 rawDF <- read.csv(transDF_fileInfo[idx, 'file_path'])
 
-transcript_df_all <- prepare_perFOV_transDF(each_transDF = rawDF, 
-                                            fov_centerLocs = unlist(transDF_fileInfo[idx, c('stage_X', 'stage_Y')]),
-                                            prefix_vals = unlist(transDF_fileInfo[idx, c('slide', 'fov')]), 
-                                            pixel_size = 0.12, # micron per pixel 
-                                            zstep_size = 0.8, # micron per z step 
-                                            transID_coln = NULL, # use row index 
-                                            transGene_coln = 'target', # gene name
-                                            cellID_coln = 'CellId', # cell label unique at FOV level 
-                                            spatLocs_colns = c('x', 'y', 'z'), # column names for spatial coordinates in pixel for each FOV
-                                            extracellular_cellID = 0, # set this to the cell ID for extracellular transcript, use NULL if your data only contains intracellular transcripts 
-                                            drop_original = TRUE) # set to FALSE if want to have columns for original cell ID and spatial coordinates returned in the data.frame
-transcript_df <- transcript_df_all[["intraC"]]
-
-flagAll_res <- fastReseg_flag_all_errors(
-  counts = counts,
-  clust = clust,
+prep_res <- runPreprocess(
+  counts = counts, 
+  
+  ## when certain cell typing has been done on the dataset with initial cell segmentation,  
+  # set `refProfiles` to NULL, but use the cell typing assignment in `clust`
+  clust = clust, 
   refProfiles = NULL,
   
-  # Similar to `runPreprocess()`, one can use `clust = NULL` if providing `refProfiles`
+  ## if celll typing has NOT been done on the dataset with initial cell segmentation, 
+  # set `clust` to NULL, but use cluster-specific profiles in `refProfiles` instead
   
-  transcript_df = NULL,
-  transDF_fileInfo = transDF_fileInfo,
-  filepath_coln = 'file_path',
-  prefix_colns = c('slide','fov'),
-  fovOffset_colns = c('stage_Y','stage_X'), # match XY axes between stage and each FOV
-  pixel_size = 0.18, 
-  zstep_size = 0.8,
-  transID_coln = NULL, # row index as transcript_id
-  transGene_coln = "target",
-  cellID_coln = "CellId",
-  spatLocs_colns = c("x","y","z"),
-  extracellular_cellID = c(0), 
-  
-  flagCell_lrtest_cutoff = 5, # cutoff for flagging wrongly segmented cells
-  svmClass_score_cutoff = -2, # cutoff for low vs. high transcript score
-  path_to_output = "res1f_multiFiles", # path to output folder
-  return_trimmed_perCell = TRUE, # flag to return per cell expression matrix after trimming all flagged transcripts 
-  ctrl_genes = NULL # name for control probes in transcript data.frame, e.g. negative control probes
-  )
-
-
-refineAll_res <- fastReseg_full_pipeline(
-  counts = counts,
-  clust = clust,
-  refProfiles = NULL,
-  
-  # Similar to `runPreprocess()`, one can use `clust = NULL` if providing `refProfiles`
-  
-  transcript_df = NULL,
-  transDF_fileInfo = transDF_fileInfo,
-  filepath_coln = 'file_path',
-  prefix_colns = c('slide','fov'),
-  fovOffset_colns = c('stage_Y','stage_X'),
-  pixel_size = 0.18,
-  zstep_size = 0.8,
-  transID_coln = NULL,
-  transGene_coln = "target",
-  cellID_coln = "CellId",
-  spatLocs_colns = c("x","y","z"),
-  extracellular_cellID = c(0),
-  
-  # Similar to `runPreprocess()`, one can set various cutoffs to NULL for automatic calculation from input data
-  
-  # distance cutoff for neighborhood searching at molecular and cellular levels, respectively
-  molecular_distance_cutoff = 2.7, 
-  cellular_distance_cutoff = NULL, 
+  ## of note, when `refProfiles is not NULL, genes unique to `counts` but missing in `refProfiles` would be omitted from downstream analysis.  
   
   # cutoffs for transcript scores and number for cells under each cell type
-  score_baseline = NULL,
-  lowerCutoff_transNum = NULL,
-  higherCutoff_transNum= NULL,
-  imputeFlag_missingCTs = TRUE,
+  # if NULL, calculate those cutoffs from `counts`, `clust` and/or `refProfiles` across the entire dataset
+  score_baseline = NULL, 
+  lowerCutoff_transNum = NULL, 
+  higherCutoff_transNum= NULL, 
+  imputeFlag_missingCTs = FALSE, # flag to impute transcript score and number cutoffs for cell types in `refProfiles` but missing in `clust`
   
-  # Settings for error detection and correction, refer to `runSegRefinement()` for more details
-  flagCell_lrtest_cutoff = 5, # cutoff to flag for cells with strong spatial dependcy in transcript score profiles
-  svmClass_score_cutoff = -2,   # cutoff of transcript score to separate between high and low score classes
-  groupTranscripts_method = "dbscan",
-  spatialMergeCheck_method = "leidenCut", 
-  cutoff_spatialMerge = 0.5, # spatial constraint cutoff for a valid merge event
+  # genes in `counts` but not in `refProfiles` and expect no cell type dependency, e.g. negative control probes
+  ctrl_genes = NULL,
+  # cutoff of transcript score to separate between high and low score transcript classes, used as the score values for `ctrl_genes` 
+  svmClass_score_cutoff = -2,
   
-  path_to_output = "res2_multiFiles",
-  save_intermediates = TRUE, # flag to return and write intermediate results to disk
-  return_perCellData = TRUE, # flag to return per cell level outputs from updated segmentation 
-  combine_extra = FALSE # flag to include trimmed and extracellular transcripts in the exported `updated_transDF.csv` files 
+  # distance cutoff for neighborhood searching at molecular and cellular levels, respectively
+  # if NULL, calculate those distance cutoffs from the first transcript data.frame provided (slow process)
+  # if values provided in input, no distance calculation would be done 
+  molecular_distance_cutoff = 2.7,
+  cellular_distance_cutoff = 20,
+  
+  transcript_df = NULL, # take a transcript data.frame as input directly when `transDF_fileInfo = NULL`
+  transDF_fileInfo = transDF_fileInfo, # data.frame info for multiple perFOV transcript data.frame files
+  filepath_coln = 'file_path', 
+  prefix_colns = c('slide','fov'), 
+  fovOffset_colns = c('stage_X','stage_Y'), 
+  
+  pixel_size = 0.18, # in micron per pixel
+  zstep_size = 0.8, # in micron per z step
+  transID_coln = NULL,
+  transGene_coln = "target",
+  
+  # cell ID column in the provided transcript data.frame, which is the 1st file in `transDF_fileInfo` in this example
+  cellID_coln = 'CellId', 
+  spatLocs_colns = c('x','y','z'), 
+  extracellular_cellID = 0 # cell ID for extracellular transcript 
 )
+
+
+## variables passing to the downstream pipeline
+# gene x cell type matrix of transcript score 
+score_GeneMatrix <- prep_res[['score_GeneMatrix']]
+
+# per cell transcript score baseline for each cell type
+score_baseline <- prep_res[['cutoffs_list']][['score_baseline']]
+
+# upper and lower limit of per cell transcript number for each cell type
+lowerCutoff_transNum <- prep_res[['cutoffs_list']][['lowerCutoff_transNum']]
+higherCutoff_transNum <- prep_res[['cutoffs_list']][['higherCutoff_transNum']]
+
+# distance cutoffs for neighborhood at cellular and molecular levels
+cellular_distance_cutoff <- prep_res[['cutoffs_list']][['cellular_distance_cutoff']]
+molecular_distance_cutoff <- prep_res[['cutoffs_list']][['molecular_distance_cutoff']]
+
+
+
+data(mini_transcriptDF)
+transcript_df <- mini_transcriptDF
+
+
+## get distance cutoffs
+distCutoffs <- choose_distance_cutoff(
+  # allow to choose any transcript data.frame that is representative to entire dataset
+  # while `runPreprocess()` uses the first provided transcript data.frame in the file list
+  transcript_df, 
   
+  # allow to use 2D spatial coordinates here since transcript is more dense in 2D, 
+  # 2D calculation of distance cutoff would be faster than 3D calculation used in `runPreprocess()` 
+  spatLocs_colns = c('x','y'), 
+  
+  transID_coln = 'UMI_transID',
+  cellID_coln = 'UMI_cellID', 
+  extracellular_cellID = NULL, 
+  
+  # flag to calculate `molecular_distance_cutoff` from input data, slower process
+  run_molecularDist = TRUE,
+  # configs on random sampling of cells
+  sampleSize_nROI = 10, 
+  sampleSize_cellNum = 2500, 
+  seed = 123 )
+#> Use 2 times of average 2D cell diameter as cellular_distance_cutoff = 24.2375 for searching of neighbor cells.
+#> Identified 2D coordinates with variance.
+#> Warning: data contain duplicated points
+#> Distribution of minimal molecular distance between 1375 cells: 0, 0.04, 0.07, 0.09, 0.12, 0.15, 0.19, 0.23, 0.28, 0.35, 3.49, at quantile = 0%, 10%, 20%, 30%, 40%, 50%, 60%, 70%, 80%, 90%, 100%.
+#> Use 5 times of 90% quantile of minimal 2D molecular distance between picked cells as `molecular_distance_cutoff` = 1.7655 for defining direct neighbor cells.
+
+molecular_distance_cutoff <- distCutoffs[['molecular_distance_cutoff']]
+cellular_distance_cutoff <- distCutoffs[['cellular_distance_cutoff']]
+extracellular_cellID <- mini_transcriptDF[which(mini_transcriptDF$CellId ==0), 'cell_ID']
+
+finalRes_perFOV <- fastReseg_perFOV_full_process(
+  score_GeneMatrix = score_GeneMatrix, 
+  transcript_df = mini_transcriptDF, 
+  transID_coln = 'UMI_transID',
+  transGene_coln = "target",
+  cellID_coln = 'UMI_cellID', 
+  spatLocs_colns = c('x','y','z'), 
+  extracellular_cellID = extracellular_cellID, 
+  flagModel_TransNum_cutoff = 50, 
+  flagCell_lrtest_cutoff = flagCell_lrtest_cutoff,
+  svmClass_score_cutoff = svmClass_score_cutoff, 
+  molecular_distance_cutoff = molecular_distance_cutoff,
+  cellular_distance_cutoff = cellular_distance_cutoff,
+  score_baseline = score_baseline, 
+  lowerCutoff_transNum = lowerCutoff_transNum, 
+  higherCutoff_transNum = higherCutoff_transNum,
+  
+  # default to "dbscan" for spatial grouping of transcripts, alternative to use "delaunay"
+  groupTranscripts_method = "dbscan",
+  
+  # default to "leidenCut" for decision based on Leiden clustering of transcript coordinates, alternative to use "geometryDiff" for geometric analysis
+  spatialMergeCheck_method = "leidenCut", 
+  
+  cutoff_spatialMerge = 0.5,
+  return_intermediates = TRUE,
+  return_perCellData = TRUE, 
+  includeAllRefGenes = TRUE
+  )

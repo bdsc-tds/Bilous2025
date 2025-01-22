@@ -27,6 +27,8 @@ xenium_analysis_pipeline/
 *.json
 *.xml
 *.yaml
+*.parquet
+*.pq
 *.pickle
 *.pkl
 *.pt

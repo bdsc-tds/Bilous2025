@@ -50,3 +50,24 @@ prepare_nscls_transcript_data <- function(tx_dat, cell_meta) {
 
     return(df)
 }
+
+prepare_transcript_data_xenium <- function(transcripts, cell_meta) {
+    # subsetting data to same cells we have annotations for
+    transcripts <- transcripts[transcripts$cell_id %in% rownames(cell_meta),]
+    
+    # append cell type annotations to molecule-level data
+    match_ndx <- match(transcripts$cell_id,rownames(cell_meta))
+    transcripts$celltype <- cell_meta$first_type[match_ndx]
+
+    transcripts <- transcripts %>% dplyr::rename(
+        gene = feature_name,
+        cell = cell_id,
+        mol_id = transcript_id,
+        x = x_location,
+        y = y_location,
+        z = z_location,
+        fov = fov_name
+        )
+
+    return(transcripts)
+}
