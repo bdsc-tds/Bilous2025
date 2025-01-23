@@ -38,8 +38,8 @@ for cohort in (cohorts := segmentation.iterdir()):
                             out_file_doublet_df=out_file_doublet_df,
                         threads: 1
                         resources:
-                            mem='200GB' if panel.stem == '5k' else '150GB',
-                            runtime='10h' if panel.stem == '5k' else '4h',
+                            mem='300GB' if panel.stem == '5k' else '200GB',
+                            runtime='3h' if panel.stem == '5k' else '1h',
                         conda:
                             "spatial"
                         shell:

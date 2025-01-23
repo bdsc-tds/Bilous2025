@@ -1,31 +1,51 @@
 import numpy as np
 import pandas as pd
 import scipy
-import tqdm
 
 
-def counts_to_positivity(X, cutoff):  # , min_pos_rate):
+def counts_to_positivity(X, cutoff):
+    """
+    Convert counts to a binary positivity matrix based on a cutoff value.
+
+    Parameters:
+    X (scipy.sparse matrix): Input matrix with counts.
+    cutoff (float): Cutoff value to determine positivity.
+
+    Returns:
+    tuple: A tuple containing the binary positivity matrix and positivity rate.
+    """
     positivity = (X >= cutoff).astype(float)
     positivity_rate = positivity.mean(axis=0).A1
     # positivity_rate = np.clip(positivity.mean(axis=0).A1, min_pos_rate, None)
     return positivity, positivity_rate
 
 
-def conditional_coexpression(positivity):#, min_cond_coex=0.0):
+def conditional_coexpression(positivity):
+    """
+    Compute conditional co-expression from a positivity matrix.
+
+    Parameters:
+    positivity (numpy.ndarray): Binary positivity matrix.
+
+    Returns:
+    numpy.ndarray: Conditional co-expression matrix.
+    """
     coex = positivity.T @ positivity
     cond_coex = coex / positivity.sum(axis=0)
-    cond_coex = cond_coex.toarray()
-
-    # if min_cond_coex > 0.0:
-    #     cond_coex = np.nan_to_num(cond_coex)
-    #     cond_coex = np.clip(cond_coex, min_cond_coex, None)
-    return cond_coex
+    return cond_coex.toarray()
 
 
-def jaccard_coexpression(X):#, min_jaccard=0.0):
-    """Computes the Jaccard index between the rows of `X`."""
+def jaccard_coexpression(X):
+    """
+    Compute the Jaccard index between the rows of X.
+    Parameters:
+    X (scipy.sparse matrix): Input binary matrix.
+
+    Returns:
+    numpy.ndarray: Jaccard index matrix.
+    """
+
     X = X.astype(bool).astype(int)
-
     intrsct = X.dot(X.T)
     row_sums = intrsct.diagonal()
     unions = row_sums[:, None] + row_sums - intrsct
@@ -36,10 +56,30 @@ def jaccard_coexpression(X):#, min_jaccard=0.0):
     #     min_jaccard = np.clip(jaccard_index, min_jaccard, None)
     return jaccard_index
 
+
 def pearson_coexpression(X):
+    """
+    Compute the Pearson correlation coefficient matrix.
+
+    Parameters:
+    X (scipy.sparse matrix): Input matrix.
+
+    Returns:
+    numpy.ndarray: Pearson correlation coefficient matrix.
+    """
     return np.corrcoef(X.toarray().T)
 
+
 def spearman_coexpression(X):
+    """
+    Compute the Spearman rank correlation coefficient matrix.
+
+    Parameters:
+    X (scipy.sparse matrix): Input matrix.
+
+    Returns:
+    numpy.ndarray: Spearman correlation coefficient matrix.
+    """
     return scipy.stats.spearmanr(X.toarray()).statistic
 
 
@@ -162,36 +202,69 @@ def spearman_coexpression(X):
 #         rows.append(scipy.sparse.csr_matrix(counts))
 #     return scipy.sparse.vstack(rows)
 
+
 def thin_counts(X, target_count, gen=None):
+    """
+    Downsample counts to a target count per row.
+
+    Parameters:
+    X (scipy.sparse matrix): Input count matrix.
+    target_count (int): Target count for each row.
+    gen (numpy.random.Generator, optional): Random generator instance.
+
+    Returns:
+    scipy.sparse.csr_matrix: Downsampled count matrix.
+    """
     if gen is None:
         gen = np.random.default_rng()
-    
+
     n_counts = X.sum(axis=1)
     probabilities = (X / n_counts).toarray()
-    X_thin = np.random.default_rng().multinomial(50,probabilities)
-    X_thin_sparse = scipy.sparse.csr_matrix(X_thin)
-    return X_thin_sparse
+    X_thin = np.random.default_rng().multinomial(target_count, probabilities)
+    return scipy.sparse.csr_matrix(X_thin)
 
 
 def sparsify(X):
+    """
+    Convert a dense matrix to a sparse matrix if not already sparse.
+
+    Parameters:
+    X (numpy.ndarray or scipy.sparse matrix): Input matrix.
+
+    Returns:
+    scipy.sparse.csr_matrix: Sparse matrix.
+    """
     if not scipy.sparse.issparse(X):
-        X = scipy.sparse.csr_matrix(X.astype(float))
-    else:
-        X = X.astype(float)
-    return X
+        return scipy.sparse.csr_matrix(X.astype(float))
+    return X.astype(float)
 
 
 def coexpression(
     adata,
-    positivity_cutoff: float = 1,
-    # min_positivity_rate: float = 0.01,
-    #=0.0,
-    min_samples: int = 0,
-    target_count: int = 50,
+    positivity_cutoff=1,
+    min_samples=0,
+    target_count=50,
     method="conditional",
     seed=0,
+    # min_positivity_rate: float = 0.01,
+    # min_cond_coex: float =0.0,
 ):
-    gen = np.random.default_rng(0)
+    """
+    Calculate co-expression matrix using different methods.
+
+    Parameters:
+    adata (anndata.AnnData): AnnData object containing gene expression data.
+    positivity_cutoff (float): Cutoff for determining positivity.
+    min_samples (int): Minimum number of samples required.
+    target_count (int): Target count for downsampling.
+    method (str): Method for co-expression calculation.
+    seed (int): Seed for random number generation.
+
+    Returns:
+    tuple: A tuple containing co-expression matrix, downsampled matrix, positivity matrix, positivity rate, and mask.
+    """
+    gen = np.random.default_rng(seed)
+
     X = sparsify(adata.X)
 
     # Apply mask based on target count threshold
@@ -232,12 +305,13 @@ def coexpression(
         CC = conditional_coexpression(pos)
     elif method == "jaccard":
         CC = jaccard_coexpression(pos.T).toarray()
-    elif method == 'pearson':
+    elif method == "pearson":
         CC = pearson_coexpression(X_downsample)
-    elif method =='spearman':
+    elif method == "spearman":
         CC = spearman_coexpression(X_downsample)
+
     CC = pd.DataFrame(CC, index=adata.var_names, columns=adata.var_names)
-    pos_rate = pd.Series(pos_rate,index=adata.var_names)
+    pos_rate = pd.Series(pos_rate, index=adata.var_names)
 
     return CC, X_downsample, pos, pos_rate, mask
 
@@ -248,8 +322,22 @@ def censored_ratio(
     pos_rate_ref_seg=None,
     pos_rate_other_seg=None,
     min_positivity_rate=0.0,
-    log2=True
+    log2=True,
 ):
+    """
+    Compute the ratio of co-expression matrices with optional censoring and log transformation.
+
+    Parameters:
+    CC_ref_seg (pd.DataFrame): Reference co-expression matrix.
+    CC_other_seg (pd.DataFrame): Other co-expression matrix for comparison.
+    pos_rate_ref_seg (pd.Series, optional): Positivity rate for reference segmentation.
+    pos_rate_other_seg (pd.Series, optional): Positivity rate for other segmentation.
+    min_positivity_rate (float): Minimum positivity rate for filtering.
+    log2 (bool): Whether to apply log2 transformation.
+
+    Returns:
+    pd.DataFrame: Censored and transformed ratio matrix.
+    """
     CCdiff = CC_other_seg / CC_ref_seg
     if log2:
         CCdiff = np.log2(CCdiff)
@@ -273,20 +361,36 @@ def compare_segmentations(
     min_positivity_rate=0.01,
     cc_cutoff=2.0,
     method=None,
-    log2=True
+    log2=True,
 ):
+    """
+    Compare two co-expression segmentations and identify spurious gene pairs.
+    Parameters:
+    CC_ref_seg (pd.DataFrame): Reference co-expression matrix.
+    CC_other_seg (pd.DataFrame): Other co-expression matrix for comparison.
+    pos_rate_ref_seg (pd.Series): Positivity rate for reference segmentation.
+    pos_rate_other_seg (pd.Series): Positivity rate for other segmentation.
+    min_positivity_rate (float): Minimum positivity rate for filtering.
+    cc_cutoff (float): Cutoff for spurious gene pair identification.
+    method (str, optional): Method for co-expression calculation.
+    log2 (bool): Whether to apply log2 transformation.
+
+    Returns:
+    tuple: A tuple containing the difference matrix and spurious gene pairs.
+    """
+
     CCdiff = censored_ratio(
         CC_ref_seg,
         CC_other_seg,
         pos_rate_ref_seg=pos_rate_ref_seg,
         pos_rate_other_seg=pos_rate_other_seg,
         min_positivity_rate=min_positivity_rate,
-        log2=log2
+        log2=log2,
     )
 
     if log2:
         cc_cutoff = np.log2(cc_cutoff)
-        
+
     if method == "conditional":
         spurious_gene_pairs = np.where(CCdiff >= cc_cutoff)
     else:
@@ -303,6 +407,17 @@ def compare_segmentations(
 
 
 def coexpression_by_cell_type(CC, genes_markers, df_markers_panel):
+    """
+    Calculate co-expression by cell type based on marker genes.
+
+    Parameters:
+    CC (pd.DataFrame): Co-expression matrix.
+    genes_markers (list): List of marker genes.
+    df_markers_panel (pd.DataFrame): DataFrame of markers and corresponding cell types.
+
+    Returns:
+    tuple: DataFrames of co-expression by cell type and melted co-expression.
+    """
     df_cc_melt = (
         CC.loc[genes_markers, genes_markers].melt(ignore_index=False).reset_index()
     )
@@ -326,6 +441,15 @@ def coexpression_by_cell_type(CC, genes_markers, df_markers_panel):
 
 
 def coexpression_cells(pos_nuc):
+    """
+    Calculate co-expression for each cell from a positivity matrix.
+
+    Parameters:
+    pos_nuc (numpy.ndarray): Positivity matrix for nuclei.
+
+    Returns:
+    list: List of co-expression matrices for each cell.
+    """
     CC_cells = []
     for i in range(pos_nuc.shape[0]):
         CC_cells.append(pos_nuc[i].T @ pos_nuc[i])
@@ -333,13 +457,34 @@ def coexpression_cells(pos_nuc):
 
 
 def coexpression_cells_score(CC_cells, marker_genes_idx):
+    """
+    Calculate co-expression scores for each cell based on marker genes.
+
+    Parameters:
+    CC_cells (list): List of co-expression matrices for each cell.
+    marker_genes_idx (list): List of indices for marker genes.
+
+    Returns:
+    numpy.ndarray: Array of co-expression scores for each cell.
+    """
     CC_cells_score = []
     for i in range(len(CC_cells)):
         CC_cells_score.append(CC_cells[i][marker_genes_idx][:, marker_genes_idx].sum())
+
     return np.array(CC_cells_score)
 
 
 def coexpression_cells_score_gene_pairs(CC_cells, gene_pairs_idx):
+    """
+    Calculate co-expression scores for each cell based on gene pairs.
+
+    Parameters:
+    CC_cells (list): List of co-expression matrices for each cell.
+    gene_pairs_idx (numpy.ndarray): Array of indices for gene pairs.
+
+    Returns:
+    numpy.ndarray: Array of co-expression scores for each cell.
+    """
     CC_cells_score = []
     for i in range(len(CC_cells)):
         CC_cells_score.append(
@@ -405,8 +550,3 @@ def find_markers(adata, ct_key, threshold_fraction=0.05, threshold_diff=0.25):
     ]
 
     return df_fraction, df_difference_thresholded, df_max_difference_thresholded
-
-
-
-
-
