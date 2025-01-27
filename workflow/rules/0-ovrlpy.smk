@@ -2,7 +2,6 @@ from pathlib import Path
 
 # cfg paths
 xenium_dir = Path(config['xenium_processed_data_dir'])
-xenium_raw_data_dir = Path(config['xenium_raw_data_dir'])
 results_dir = Path(config['results_dir'])
 
 # Params
@@ -38,8 +37,8 @@ for cohort in (cohorts := segmentation.iterdir()):
                             out_file_doublet_df=out_file_doublet_df,
                         threads: 1
                         resources:
-                            mem='300GB' if panel.stem == '5k' else '200GB',
-                            runtime='3h' if panel.stem == '5k' else '1h',
+                            mem='400GB' if panel.stem == '5k' else '200GB',
+                            runtime='10h' if panel.stem == '5k' else '1h',
                         conda:
                             "spatial"
                         shell:

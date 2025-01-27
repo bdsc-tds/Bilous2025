@@ -21,6 +21,7 @@ coordinate_df = (
     )
     .query("is_gene & (qv >= 20)")
 )  # remove dummy & low qv molecules
+coordinate_df["gene"] = coordinate_df["gene"].astype("category")
 
 # run ovrlpy
 signal_integrity, signal_strength, visualizer = ovrlpy.run(

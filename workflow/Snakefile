@@ -2,9 +2,13 @@ configfile: "config/config.yml"
 
 include: "rules/0-coexpression.smk"
 include: "rules/0-ovrlpy.smk"
+include: "rules/0-silhouette.smk"
+include: "rules/0-embedding.smk"
 
 
 rule all:
     input:
         rules.coexpression_samples.input,
-        rules.ovrlpy_samples.input
+        # rules.ovrlpy_samples.input
+        rules.silhouette_samples.input,
+        rules.embed_panel_samples.input

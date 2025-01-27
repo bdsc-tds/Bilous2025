@@ -2,7 +2,6 @@ from pathlib import Path
 
 # cfg paths
 xenium_dir = Path(config['xenium_processed_data_dir'])
-xenium_raw_data_dir = Path(config['xenium_raw_data_dir'])
 results_dir = Path(config['results_dir'])
 
 # Params
