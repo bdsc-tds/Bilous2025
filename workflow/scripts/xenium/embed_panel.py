@@ -1,4 +1,5 @@
 from pathlib import Path
+import argparse
 import sys
 import pandas as pd
 import scanpy as sc
@@ -7,19 +8,33 @@ sys.path.append("workflow/scripts/")
 import readwrite
 import integration
 
-panel_path = Path(sys.argv[1])
-out_file = sys.argv[2]
-n_comps = sys.argv[3]
-n_neighbors = sys.argv[4]
-metric = sys.argv[5]
-min_dist = sys.argv[6]
+# Set up argument parser
+parser = argparse.ArgumentParser(description="Embed panel of Xenium samples.")
+parser.add_argument("--panel", type=Path, help="Path to the panel file.")
+parser.add_argument("--out_file", type=str, help="Path to the output file.")
+parser.add_argument("--n_comps", type=int, help="Number of components.")
+parser.add_argument("--n_neighbors", type=int, help="Number of neighbors.")
+parser.add_argument("--metric", type=str, help="Distance metric to use.")
+parser.add_argument("--min_dist", type=float, help="Minimum distance parameter.")
 
+args = parser.parse_args()
+
+# Access the arguments
+panel = args.panel
+out_file = args.out_file
+n_comps = args.n_comps
+n_neighbors = args.n_neighbors
+metric = args.metric
+min_dist = args.min_dist
+
+segmentation = panel.parents[1].stem
+cohort = panel.parents[0].stem
 
 # read xenium samples
 xenium_paths = {}
-for sample in (samples := panel_path.iterdir()):
+for sample in (samples := panel.iterdir()):
     for replicate in (replicates := sample.iterdir()):
-        k = (sample.stem, replicate.stem)
+        k = (segmentation, cohort, panel.stem, sample.stem, replicate.stem)
         replicate_path = replicate / "normalised_results/outs"
         name = "/".join(k)
 
@@ -29,8 +44,14 @@ ads = readwrite.read_xenium_samples(
     xenium_paths, anndata_only=True, transcripts=False, sample_name_as_key=False
 )
 
+# concatenate
+xenium_levels = ["segmentation", "cohort", "panel", "sample", "replicate"]
+for k in ads.keys():
+    for i, l in enumerate(xenium_levels):
+        ads[k].obs[l] = k[i]
+ad_merge = sc.concat(ads)
 
-ad_merge = sc.concat(ads, label="dataset_merge_id")
+# preprocess
 integration.preprocess(
     ad_merge,
     normalize=True,
@@ -46,8 +67,10 @@ integration.preprocess(
     filter_empty=True,
 )
 
+# save
 df_umap = pd.DataFrame(
     ad_merge.obsm["X_umap"], index=ad_merge.obs_names, columns=["UMAP1", "UMAP2"]
 )
-df_umap["dataset_merge_id"] = ad_merge.obs["dataset_merge_id"]
+df_umap[xenium_levels] = ad_merge.obs[xenium_levels]
+
 df_umap.to_parquet(out_file)

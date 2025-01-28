@@ -1,63 +1,138 @@
-from pathlib import Path
-import sys
+import argparse
+import numpy as np
 import pandas as pd
 import scanpy as sc
+import seaborn as sns
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+from pathlib import Path
 
-sys.path.append("workflow/scripts/")
-import readwrite
+# Set up argument parser
+parser = argparse.ArgumentParser(description="Plot panel of Xenium samples.")
+parser.add_argument("--panel", type=Path, help="Path to the panel file.")
+parser.add_argument("--embed_file", type=str, help="Path to the embedding file.")
+parser.add_argument("--reference", type=str, help="annotation reference")
+parser.add_argument("--method", type=str, help="annotation method")
+parser.add_argument("--level", type=str, help="annotation level")
+parser.add_argument("--out_file", type=str, help="Path to the output file.")
+args = parser.parse_args()
 
-panel_path = Path(sys.argv[1])
-embed_file = sys.argv[2]
-out_file = sys.argv[3]
+# Access the arguments
+panel = args.panel
+embed_file = args.embed_file
+reference = args.reference
+method = args.method
+level = args.level
+out_file = args.out_file
 
-# read xenium samples
-xenium_paths = {}
-for sample in (samples := panel_path.iterdir()):
-    for replicate in (replicates := sample.iterdir()):
-        k = (sample.stem, replicate.stem)
-        replicate_path = replicate / "normalised_results/outs"
-        name = "/".join(k)
+# vars
+xenium_levels = ["segmentation", "cohort", "panel", "sample", "replicate", "cell_id"]
+segmentation = panel.parents[1]
+cohort = panel.parents[0]
 
-        xenium_paths[k] = replicate_path
-
-# Read RCTD
-rctd = {}
-for k, path in xenium_paths.items():
-    if (
-        references := path.parents[1] / "cell_type_annotation/reference_based"
-    ).exists():
-        rctd[k] = {}
-
-        for reference in (
-            references := path.parents[1] / "cell_type_annotation/reference_based"
-        ).iterdir():
-            if reference.stem != "matched_reference":
-                continue
-            for method in (methods := reference.iterdir()):
-                if method.stem != "rctd":
-                    continue
-                for level in (levels := method.iterdir()):
-                    if level.stem != "Level2":
-                        continue
-                    cell_type_annotation_file = level / "single_cell/labels.csv"
-                    if cell_type_annotation_file.exists():
-                        rctd[k][reference.stem, method.stem, level.stem] = pd.read_csv(
-                            cell_type_annotation_file, index_col=0
-                        ).iloc[:, 0]
+# load umap
+obs = pd.read_parquet(embed_file)
+obs["cell_id"] = obs.index
 
 
-df = {}
-for k in rctd:
-    if len(rctd[k]):
-        rctd_df = pd.DataFrame(rctd[k])
-        rctd_df.columns = [col for col in rctd_df.columns]
-        df[k] = rctd_df
-df = pd.concat(df)  # .reset_index().dropna()
-# df.columns = (*xenium_levels,'cell_id', *df.columns[6:])
+if level == "replicate":
+    # plot replicate as color, no need to load annotations
+    df = obs
+    params = level
+    title = (
+        f"Segmentation: {segmentation.stem}, Cohort: {cohort.stem}, Panel: {panel.stem}"
+    )
 
-obs = pd.read_parquet()
+else:
+    # read cell type annotation
+    annot = {}
+    for sample in (samples := panel.iterdir()):
+        for replicate in (replicates := sample.iterdir()):
+            k = (
+                segmentation.stem,
+                cohort.stem,
+                panel.stem,
+                sample.stem,
+                replicate.stem,
+            )
+            name = "/".join(k)
 
-obs.index = pd.MultiIndex.from_tuples(
-    obs["dataset_merge_id"].astype(object) + obs["cell_id"].map(lambda s: (s,))
+            annot[k] = {}
+            annot_file = (
+                replicate
+                / f"cell_type_annotation/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet"
+            )
+            if annot_file.exists():
+                annot[k][reference, method, level] = pd.read_parquet(annot_file).iloc[
+                    :, 0
+                ]
+
+            annot_file = (
+                replicate
+                / f"cell_type_annotation/reference_based/{reference}/{method}/{level}/single_cell/labels.csv"
+            )
+            if annot_file.exists():
+                annot[k][reference, method, level] = pd.read_csv(
+                    annot_file, index_col=0
+                ).iloc[:, 0]
+
+    # merge annotations
+    df_annot = {}
+    for k in annot:
+        if len(annot[k]):
+            df_ = pd.DataFrame(annot[k])
+            df_.columns = [col for col in df_.columns]
+            df_annot[k] = df_
+    df_annot = pd.concat(df_annot)
+    df_annot.index.names = xenium_levels
+    df_annot = df_annot.reset_index()
+
+    # merge umap and cell type annotations
+    df = pd.merge(obs, df_annot, on=xenium_levels, how="inner")
+
+    params = (reference, method, level)
+    title = f"Segmentation: {segmentation.stem}, Cohort: {cohort.stem}, Panel: {panel.stem}\n Method: {method}, Reference: {reference}, Level: {level}"
+
+
+# plotting params, palette
+unique_labels = np.unique(df[params].dropna())
+palette = dict(zip(unique_labels, sc.pl.palettes.default_28))
+legend_handles = [
+    mpatches.Patch(color=color, label=label) for label, color in palette.items()
+]
+
+print(
+    f"Segmentation: {segmentation.stem}, Cohort: {cohort.stem}, Panel: {panel.stem}, Method: {method}, Reference: {reference}, Level: {level}"
 )
-obs.join(df)
+
+
+# plot
+f = plt.figure(figsize=(12, 10))
+ax = plt.subplot()
+
+sns.scatterplot(
+    data=df,
+    x="UMAP1",
+    y="UMAP2",
+    s=0.1,
+    alpha=0.5,
+    hue=params,
+    ax=ax,
+    palette=palette,
+    legend=False,
+)
+ax.xaxis.set_ticks([])
+ax.yaxis.set_ticks([])
+sns.despine()
+
+plt.title(title)
+f.legend(
+    handles=legend_handles,
+    loc="center left",
+    bbox_to_anchor=(1, 0.5),
+    title=params if isinstance(params, str) else ", ".join(params),
+    frameon=False,
+)
+plt.tight_layout(rect=[0, 0, 0.85, 0.95])
+plt.savefig(out_file, dpi=300, bbox_inches="tight")
+plt.close()

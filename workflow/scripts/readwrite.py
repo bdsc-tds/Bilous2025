@@ -3,8 +3,7 @@ import pandas as pd
 import os
 import pathlib
 import json
-from rds2py import read_rds
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 
 try:
     import msgspec
@@ -329,6 +328,7 @@ def read_rctd_sample(sample_name, rctd_results_path):
     -------
     A tuple containing the sample name and the results dictionary
     """
+    from rds2py import read_rds
 
     r_obj = read_rds(rctd_results_path)
 
@@ -385,3 +385,89 @@ def read_rctd_samples(ads, rctd_results_paths, prefix=""):
 
             except Exception as e:
                 print(f"Error processing sample {futures[future]}: {e}")
+
+
+###### coexpression files readers
+def read_coexpression_file(k, method, target_count, results_dir):
+    """
+    Worker function to read the coexpression and positivity rate parquet for a single sample.
+
+    Parameters
+    ----------
+    k : tuple
+        The sample name tuple (segmentation, cohort, panel, sample, replicate).
+    method : str
+        The coexpression method.
+    target_count : int
+        The target count of the coexpression method.
+    results_dir : Path
+        The directory containing the coexpression results.
+
+    Returns
+    -------
+    method : str
+        The coexpression method.
+    target_count : int
+        The target count of the coexpression method.
+    cc : pd.DataFrame
+        The coexpression matrix.
+    pos_rate : pd.Series
+        The positivity rate.
+    """
+    out_file_coexpr = (
+        results_dir
+        / f"coexpression/{'/'.join(k)}/coexpression_{method}_{target_count}.parquet"
+    )
+    out_file_pos_rate = (
+        results_dir
+        / f"coexpression/{'/'.join(k)}/positivity_rate_{method}_{target_count}.parquet"
+    )
+
+    cc = pd.read_parquet(out_file_coexpr)
+    pos_rate = pd.read_parquet(out_file_pos_rate)[0]
+    return method, target_count, cc, pos_rate
+
+
+def read_coexpression_files(cc_paths, results_dir):
+    """
+    Reads coexpression parquet files for multiple methods and target counts in parallel using ThreadPoolExecutor.
+
+    Parameters
+    ----------
+    cc_paths : list of tuples
+        A list of tuples containing the key `k`, i.e., a sample name tuple (segmentation, cohort, panel, sample, replicate)
+        and the method and target count to read.
+    results_dir : str
+        The directory containing the coexpression results.
+
+    Returns
+    -------
+    CC : dict
+        A dictionary with the coexpression matrices for each method and target count.
+    pos_rate : dict
+        A dictionary with the positivity rates for each method and target count.
+    """
+    with ThreadPoolExecutor() as executor:
+        futures = [
+            executor.submit(
+                read_coexpression_file, k, method, target_count, results_dir
+            )
+            for k, method, target_count in cc_paths
+        ]
+
+        CC = {}
+        pos_rate = {}
+        for future in as_completed(futures):
+            method, target_count, cc, pr = future.result()
+            k = cc_paths[futures.index(future)][
+                0
+            ]  # Retrieve the `k` corresponding to this future
+
+            if k not in CC:
+                CC[k] = {}
+            if k not in pos_rate:
+                pos_rate[k] = {}
+
+            CC[k][method, target_count] = cc
+            pos_rate[k][method, target_count] = pr
+    return CC, pos_rate

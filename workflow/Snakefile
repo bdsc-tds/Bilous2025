@@ -4,11 +4,15 @@ include: "rules/0-coexpression.smk"
 include: "rules/0-ovrlpy.smk"
 include: "rules/0-silhouette.smk"
 include: "rules/0-embedding.smk"
+include: "rules/1-embedding_plot.smk"
 
 
 rule all:
     input:
-        rules.coexpression_samples.input,
+        rules.embed_cohort_samples_plot.input,
+        rules.embed_cohort_samples.input,
+        rules.embed_panel_samples_plot.input,
+        rules.embed_panel_samples.input,
+        # rules.coexpression_samples.input,
         # rules.ovrlpy_samples.input
-        rules.silhouette_samples.input,
-        rules.embed_panel_samples.input
+        # rules.silhouette_samples.input,

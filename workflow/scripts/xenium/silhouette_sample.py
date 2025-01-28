@@ -1,3 +1,4 @@
+from pathlib import Path
 import pandas as pd
 import numpy as np
 import scanpy as sc
@@ -5,26 +6,17 @@ import sklearn
 import spatialdata_io
 import sys
 
+sys.path.append("workflow/scripts/")
+import readwrite
+
 # parameters
-path = sys.argv[1]
+path = Path(sys.argv[1])
 out_file = sys.argv[2]
 max_sample_size = sys.argv[3]
 seed = 0
 
 # read counts
-adata = spatialdata_io.xenium(
-    path,
-    cells_as_circles=False,
-    cells_boundaries=False,
-    nucleus_boundaries=False,
-    cells_labels=False,
-    nucleus_labels=False,
-    transcripts=False,
-    morphology_mip=False,
-    morphology_focus=False,
-    aligned_images=False,
-)["table"]
-
+adata = readwrite.read_xenium_sample(path.stem, path, anndata_only=True)[1]
 
 # read annotations
 annotations = {}
@@ -33,9 +25,15 @@ for reference in (
 ).iterdir():
     for method in (methods := reference.iterdir()):
         for level in (levels := method.iterdir()):
-            annotations[reference.stem, method.stem, level.stem] = pd.read_csv(
-                level / "single_cell/labels.csv", index_col=0
-            ).iloc[:, 0]
+            if (level / "single_cell/labels.parquet").exists():
+                annotations[reference.stem, method.stem, level.stem] = pd.read_parquet(
+                    level / "single_cell/labels.parquet"
+                ).iloc[:, 0]
+
+            if (level / "single_cell/labels.csv").exists():
+                annotations[reference.stem, method.stem, level.stem] = pd.read_csv(
+                    level / "single_cell/labels.csv", index_col=0
+                ).iloc[:, 0]
 
 annotations = pd.DataFrame(annotations).dropna()
 annotations.columns = ["_".join(col) for col in annotations.columns]

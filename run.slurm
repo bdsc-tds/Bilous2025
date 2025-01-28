@@ -4,7 +4,8 @@
 #SBATCH --time=24:00:00
 #SBATCH --output=workflow/log/run.out
 
-# rm -rf .snakemake/slurm_logs
+rm -rf .snakemake/slurm_logs
+rm -rf .snakemake/tmp.*
 mamba activate sm
 snakemake --sdm=conda --executor slurm --jobs 100 \
           --rerun-incomplete --rerun-triggers mtime --keep-going \
