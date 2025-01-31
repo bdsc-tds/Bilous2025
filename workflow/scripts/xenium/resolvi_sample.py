@@ -10,7 +10,7 @@ sys.path.append("workflow/scripts/")
 import preprocessing
 
 # params
-parser = argparse.ArgumentParser(description="Embed panel of Xenium donors.")
+parser = argparse.ArgumentParser(description="Embed panel of Xenium samples.")
 parser.add_argument("--path", type=Path, help="Path to the xenium donor file.")
 parser.add_argument(
     "--out_file_resolvi_corrected",
@@ -85,34 +85,34 @@ scvi.external.RESOLVI.setup_anndata(
 resolvi = scvi.external.RESOLVI(adata, semisupervised=False)
 resolvi.train(max_epochs=50)
 
-donors_corr = resolvi.donor_posterior(
+samples_corr = resolvi.sample_posterior(
     model=resolvi.module.model_corrected,
     return_sites=["px_rate"],
     summary_fun={"post_donor_q50": np.median},
-    num_donors=3,
+    num_samples=3,
     summary_frequency=30,
 )
-donors_corr = pd.DataFrame(donors_corr).T
+samples_corr = pd.DataFrame(samples_corr).T
 
-donors = resolvi.donor_posterior(
+samples = resolvi.sample_posterior(
     model=resolvi.module.model_residuals,
     return_sites=["mixture_proportions"],
     summary_fun={"post_donor_means": np.mean},
-    num_donors=3,
+    num_samples=3,
     summary_frequency=100,
 )
-donors = pd.DataFrame(donors).T
+samples_proportions = pd.DataFrame(samples).T
 
-donors_corr = pd.DataFrame(
-    donors_corr.loc["post_donor_q50", "px_rate"],
+samples_corr = pd.DataFrame(
+    samples_corr.loc["post_donor_q50", "px_rate"],
     index=adata.obs_names,
     columns=adata.var_names,
 )
-donors_proportions = pd.DataFrame(
-    donors.loc["post_donor_means", "mixture_proportions"],
+samples_proportions = pd.DataFrame(
+    samples_proportions.loc["post_donor_means", "mixture_proportions"],
     index=adata.obs_names,
     columns=["true_proportion", "diffusion_proportion", "background_proportion"],
 )
 
-donors_corr.to_parquet(out_file_resolvi_corrected)
-donors_proportions.to_parquet(out_file_resolvi_proportions)
+samples_corr.to_parquet(out_file_resolvi_corrected)
+samples_proportions.to_parquet(out_file_resolvi_proportions)

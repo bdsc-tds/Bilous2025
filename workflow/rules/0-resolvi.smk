@@ -57,7 +57,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 """
                                 mkdir -p "$(dirname {output.out_file_resolvi_corrected})"
 
-                                python workflow/scripts/xenium/resolvi_donor.py \
+                                python workflow/scripts/xenium/resolvi_sample.py \
                                 --path {input.path} \
                                 --out_file_resolvi_corrected {output.out_file_resolvi_corrected} \
                                 --out_file_resolvi_proportions {output.out_file_resolvi_proportions} \
@@ -71,6 +71,6 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 """
 
 
-rule resolvi_donors:
+rule resolvi_all:
     input:
         out_files

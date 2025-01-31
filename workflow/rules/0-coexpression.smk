@@ -53,7 +53,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                         """
                                         mkdir -p "$(dirname {output.out_file_coexpr})"
 
-                                        python workflow/scripts/xenium/coexpression_donor.py \
+                                        python workflow/scripts/xenium/coexpression_sample.py \
                                         {input.sample_path} \
                                         {output.out_file_coexpr} \
                                         {output.out_file_pos_rate} \
@@ -64,6 +64,8 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                         """
 
 
-rule coexpression_donors:
+rule coexpression_all:
     input:
         out_files
+    output:
+        touch(results_dir / "coexpression.done")

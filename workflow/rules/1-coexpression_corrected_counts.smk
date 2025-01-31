@@ -64,6 +64,6 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                         """
 
 
-rule coexpression_donors_resolvi:
+rule coexpression_resolvi_all:
     input:
         out_files_resolvi

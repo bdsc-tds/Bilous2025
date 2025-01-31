@@ -61,6 +61,6 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 """
 
 
-rule silhouette_donors:
+rule silhouette_all:
     input:
         out_files

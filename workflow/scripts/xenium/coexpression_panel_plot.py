@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import warnings
 
 sys.path.append("workflow/scripts/")
 import readwrite
@@ -15,7 +16,10 @@ parser = argparse.ArgumentParser(
     description="Plot violins of Xenium coexpression QC for a given panel."
 )
 parser.add_argument("--panel", type=Path, help="Path to panel results to plot")
-parser.add_argument("--out_file", type=Path, help="Path to the output file")
+parser.add_argument("--out_file_plot", type=Path, help="Path to the output plot file")
+parser.add_argument(
+    "--out_file_gene_pairs", type=Path, help="Path to the output gene pairs file"
+)
 parser.add_argument("--method", type=Path, help="method annotation parameter")
 parser.add_argument("--target_count", type=Path, help="level annotation parameter")
 parser.add_argument("--min_positivity_rate", type=float, help="min_positivity_rate")
@@ -31,7 +35,8 @@ args = parser.parse_args()
 
 # Access the arguments
 panel = args.panel
-out_file = args.out_file
+out_file_plot = args.out_file_plot
+out_file_gene_pairs = args.out_file_gene_pairs
 method = args.method
 target_count = args.target_count
 min_positivity_rate = args.min_positivity_rate
@@ -108,7 +113,8 @@ for _, k in keys.iterrows():
 
     mat = CCdiff[*k][method, target_count].replace(1.0, np.nan)
     if log2:
-        mat = np.log2(mat)
+        with warnings.catch_warnings(action="ignore"):
+            mat = np.log2(mat)
 
     i = spurious_gene_pairs[k_ref_over][method, target_count][:, 0]
     j = spurious_gene_pairs[k_ref_over][method, target_count][:, 1]
@@ -132,10 +138,13 @@ g = sns.violinplot(
     inner="quart",
 )
 
-plt.title(f"{condition=} {panel=} {method=} {target_count=}")
+plt.title(f"{plot_condition=} {plot_panel=} {method=} {target_count=}")
 plt.axvline(0, c="k", linestyle="-", zorder=0, alpha=0.5)
 plt.legend(loc="center left", bbox_to_anchor=(1, 0.5), title=hue, frameon=False)
 sns.despine(offset=10, trim=True)
 plt.gca().xaxis.grid(True)
-plt.savefig(out_file, dpi=300, bbox_inches="tight")
+plt.savefig(out_file_plot, dpi=300, bbox_inches="tight")
 plt.close()
+
+
+df.to_parquet(out_file_gene_pairs)

@@ -129,10 +129,10 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                     echo "DONE"
                     """
 
-rule embed_panel_donors:
+rule embed_panel_all:
     input:
         out_files_panel
 
-rule embed_condition_donors:
+rule embed_condition_all:
     input:
         out_files_condition

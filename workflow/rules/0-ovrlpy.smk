@@ -45,7 +45,7 @@ for condition in (conditions := segmentation.iterdir()):
                             """
                             mkdir -p "$(dirname {output.out_file_signal_integrity})"
 
-                            python workflow/scripts/xenium/ovrlpy_donor.py \
+                            python workflow/scripts/xenium/ovrlpy_sample.py \
                             {input.sample_transcripts_path} \
                             {output.out_file_signal_integrity} \
                             {output.out_file_signal_strength} \
@@ -55,6 +55,6 @@ for condition in (conditions := segmentation.iterdir()):
                             """
 
 
-rule ovrlpy_donors:
+rule ovrlpy_all:
     input:
         out_files

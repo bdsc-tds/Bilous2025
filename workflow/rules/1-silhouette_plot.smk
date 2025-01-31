@@ -61,6 +61,6 @@ for segmentation in (segmentations := silhouette_dir.iterdir()):
                                 """
 
 
-rule silhouette_plot_donors:
+rule silhouette_plot_all:
     input:
         out_files

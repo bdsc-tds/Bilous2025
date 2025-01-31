@@ -150,10 +150,10 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
 
 
 
-rule embed_panel_donors_plot:
+rule embed_panel_plot_all:
     input:
         out_files_panel
 
-rule embed_condition_donors_plot:
+rule embed_condition_plot_all:
     input:
         out_files_condition
