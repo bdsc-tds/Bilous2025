@@ -1,8 +1,6 @@
 import scanpy as sc
 import scvi
-import scarches as sca
 import torch
-import ot
 import os
 import pathlib
 import pandas as pd
@@ -14,6 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import seaborn as sns
 import warnings
+# import scarches as sca
 
 
 if importlib.util.find_spec("rapids_singlecell") is not None:
@@ -154,6 +153,11 @@ def preprocess(
     save_raw=True,  # Whether to save raw data
     verbose=True,  # Optional verbose output
     filter_empty=True,  # Whether to filter empty batches
+    min_counts=None,
+    min_genes=None,
+    max_counts=None,
+    max_genes=None,
+    min_cells=None,
 ):
     """
     Preprocesses an AnnData object.
@@ -184,15 +188,23 @@ def preprocess(
             print("Saving raw counts in layers['counts']...")
         adata.layers["counts"] = adata.X
 
-    if filter_empty:
-        n_cells_raw = adata.shape[0]
-        n_genes_raw = adata.shape[1]
-        sc.pp.filter_cells(adata, min_genes=1)
-        sc.pp.filter_genes(adata, min_cells=1)
+    n_cells_raw = adata.shape[0]
+    n_genes_raw = adata.shape[1]
 
-        if verbose:
-            print("Removed", n_cells_raw - adata.shape[0], " cells with 0 counts...")
-            print("Removed", n_genes_raw - adata.shape[1], " genes with 0 cells...")
+    if min_cells is not None:
+        sc.pp.filter_genes(adata, min_cells=min_cells)
+    if min_genes is not None:
+        sc.pp.filter_cells(adata, min_genes=min_genes)
+    if min_counts is not None:
+        sc.pp.filter_cells(adata, min_counts=min_counts)
+    if max_counts is not None:
+        sc.pp.filter_cells(adata, max_counts=max_counts)
+    if max_genes is not None:
+        sc.pp.filter_cells(adata, max_genes=max_genes)
+
+    if verbose:
+        print("Removed", n_cells_raw - adata.shape[0], " cells...")
+        print("Removed", n_genes_raw - adata.shape[1], " genes...")
 
     ### optional switch to GPU backend ###
     if backend == "gpu":
@@ -396,7 +408,7 @@ def prepare_adatas_hvg(ads, path=None, label="dataset_merge_id"):
 
 def embed_adata_cellxgene_scvi(
     adata,
-    batch_key="sample_name",
+    batch_key="donor_name",
     cxg_scvi_retrain=False,
     n_latent=None,
     model_filename="/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/jbac/projects/data/cellxgene/models/2023-12-15-scvi-homo-sapiens/scvi.model",
@@ -447,6 +459,8 @@ def ot_mapping(xs, xt, mode="ot_bw"):
     Returns:
         xst: numpy array, optimal transport mapping from source to target distribution
     """
+    import ot
+
     if mode == "ot_bw":
         Ae, be = ot.gaussian.empirical_bures_wasserstein_mapping(xs, xt)
         xst = xs.dot(Ae) + be
@@ -489,6 +503,7 @@ def integrate(
             MDE_KEY = f"{LATENT_KEY}_MDE"
             UMAP_KEY = f"{LATENT_KEY}_UMAP"
     """
+    import scarches as sca
 
     if "counts" in adata.layers:
         adata.layers["X"] = adata.X
@@ -512,9 +527,9 @@ def integrate(
         ref_idx = adata.obs[integration_key] == ref
 
         adata.obsm[LATENT_KEY] = adata.obsm["X_pca"].copy()
-        for sample in adata.obs[integration_key].unique():
-            if sample != ref:
-                xs_idx = adata.obs[integration_key] == sample
+        for donor in adata.obs[integration_key].unique():
+            if donor != ref:
+                xs_idx = adata.obs[integration_key] == donor
                 adata.obsm[LATENT_KEY][xs_idx] = ot_mapping(
                     adata.obsm[LATENT_KEY][xs_idx],
                     adata.obsm["X_pca"][ref_idx],
@@ -689,6 +704,7 @@ def transfer_labels_scarches(
     Returns:
         tuple: A tuple containing the transferred labels and their uncertainties.
     """
+    import scarches as sca
     if knn_model is None:
         knn_model = sca.utils.weighted_knn_trainer(
             train_adata=ad_ref,
@@ -821,6 +837,8 @@ def plot_confusion_matrix(
     return_dfs=False,
     cbar=True,
 ):
+    import scarches as sca
+
     df_confusion_counts = sca.classifiers.scHPL.evaluate.confusion_matrix(ytrue, ypred)
     df_confusion = df_confusion_counts.div(df_confusion_counts.sum(axis=1), axis=0)
 
@@ -1089,9 +1107,9 @@ def pseudobulk(ad, key):
     return ad_states
 
 
-def subsample(adata, obs_key, n_obs, random_state=0, copy=True):
+def subdonor(adata, obs_key, n_obs, random_state=0, copy=True):
     """
-    Subsample each class to same cell numbers (N). Classes are given by obs_key pointing to categorical in adata.obs.
+    Subdonor each class to same cell numbers (N). Classes are given by obs_key pointing to categorical in adata.obs.
     """
     rs = np.random.RandomState(random_state)
     counts = adata.obs[obs_key].value_counts()

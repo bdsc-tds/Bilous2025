@@ -6,6 +6,7 @@ results_dir: "results/"
 figures_dir: "figures/"
 log_dir: "log/"
 markers_dir: "data/markers/"
+xenium_metadata_dir: "data/xenium/metadata/"
 
 xenium_raw_data_dir: "data/xenium/raw/"
 xenium_processed_data_dir: "data/xenium/processed/segmentation/"

@@ -128,10 +128,10 @@ get_knn_counts_xenium = function(df, k, include_i = FALSE, ncores = 1) {
 
 ##### Factorization #####
 
-run_weighted_nmf = function(X, k, n.downsample = 4000) {
+run_weighted_nmf = function(X, k, n.downdonor = 4000) {
     # downsampling X for for faster runtime for the demonstration
-    if (n.downsample > 0) {
-        rows_select <- sample(1:nrow(X), n.downsample, replace=FALSE)
+    if (n.downdonor > 0) {
+        rows_select <- donor(1:nrow(X), n.downdonor, replace=FALSE)
         X <- X[rows_select,]
     }
 

@@ -8,16 +8,16 @@ results_dir = Path(config['results_dir'])
 segmentation = xenium_dir / '10x_0um' # ovrlpy output does not depend on segmentation, just run for 10x_0um
 out_files = []
 
-for cohort in (cohorts := segmentation.iterdir()): 
-    for panel in (panels := cohort.iterdir()):
-        for sample in (samples := panel.iterdir()):
-            for replicate in (replicates := sample.iterdir()):
+for condition in (conditions := segmentation.iterdir()): 
+    for panel in (panels := condition.iterdir()):
+        for donor in (donors := panel.iterdir()):
+            for sample in (samples := donor.iterdir()):
 
-                k = (segmentation.stem,cohort.stem,panel.stem,sample.stem,replicate.stem)
-                replicate_transcripts_path = replicate / "normalised_results/outs/transcripts.parquet"
+                k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
+                sample_transcripts_path = sample / "normalised_results/outs/transcripts.parquet"
                 name = '/'.join(k)
 
-                if replicate_transcripts_path.exists():
+                if sample_transcripts_path.exists():
 
                     out_file_signal_integrity = results_dir / f'ovrlpy/{name}/signal_integrity.mm' 
                     out_file_signal_strength = results_dir / f'ovrlpy/{name}/signal_strength.mm'
@@ -30,7 +30,7 @@ for cohort in (cohorts := segmentation.iterdir()):
                     rule:
                         name: f'ovrlpy/{name}'
                         input:
-                            replicate_transcripts_path=replicate_transcripts_path,
+                            sample_transcripts_path=sample_transcripts_path,
                         output:
                             out_file_signal_integrity=out_file_signal_integrity,
                             out_file_signal_strength=out_file_signal_strength,
@@ -45,8 +45,8 @@ for cohort in (cohorts := segmentation.iterdir()):
                             """
                             mkdir -p "$(dirname {output.out_file_signal_integrity})"
 
-                            python workflow/scripts/xenium/ovrlpy_sample.py \
-                            {input.replicate_transcripts_path} \
+                            python workflow/scripts/xenium/ovrlpy_donor.py \
+                            {input.sample_transcripts_path} \
                             {output.out_file_signal_integrity} \
                             {output.out_file_signal_strength} \
                             {output.out_file_doublet_df} \
@@ -55,6 +55,6 @@ for cohort in (cohorts := segmentation.iterdir()):
                             """
 
 
-rule ovrlpy_samples:
+rule ovrlpy_donors:
     input:
         out_files

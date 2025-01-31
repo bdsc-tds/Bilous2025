@@ -47,7 +47,7 @@ df_tumor <- df_tumor[,c('cell','gene','niche','mol_id','x','y','z')]
 
 # compute the molecule NCV matrix
 X <- get_knn_counts(df_tumor, k=20, ncores = 20) %>% as.matrix()
-res <- run_weighted_nmf(X, k=5, n.downsample=100)
+res <- run_weighted_nmf(X, k=5, n.downdonor=100)
 expr <- res@fit@H %>% {. / rowSums(.)} %>% t() %>% magrittr::set_colnames(1:ncol(.))
 
 malignant_admix_factor <- 4

@@ -2,32 +2,45 @@
 xenium_dir = Path(config['xenium_processed_data_dir'])
 results_dir = Path(config['results_dir'])
 figures_dir = Path(config['figures_dir'])
+palette_dir = Path(config['xenium_metadata_dir'])
 
 # Params
 n_comps = 50
-n_neighbors = 150
+n_neighbors = 50
 min_dist = 0.3
 metric = 'cosine'
 
+cell_type_palette = palette_dir / 'col_palette_cell_types.csv'
+panel_palette = palette_dir / 'col_palette_panel.csv'
+sample_palette = palette_dir / 'col_palette_donor.csv'
+
 references = ['matched_reference','external_reference']
-methods = ['rctd']
-levels = ['Level2','cohort','replicate',] # cohort and replicate as color to plot added here in addition to levels
+methods = ['rctd_class_aware']
+levels = ['Level1','Level2','Level3','Level4','panel','sample',] # condition and sample as color to plot added here in addition to levels
 extension = 'png'
 
 out_files_panel = []
 
 for segmentation in (segmentations := xenium_dir.iterdir()):
-    for cohort in (cohorts := segmentation.iterdir()): 
-        for panel in (panels := cohort.iterdir()):
+    if segmentation.stem == 'proseg_v1':
+        continue
+    for condition in (conditions := segmentation.iterdir()): 
+        for panel in (panels := condition.iterdir()):
 
-            k = (segmentation.stem,cohort.stem,panel.stem)
+            k = (segmentation.stem,condition.stem,panel.stem)
             name = '/'.join(k)
             embed_file = results_dir / f'embed_panel/{name}/umap_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet'
 
             for reference in references:
                 for method in methods:
                     for level in levels:
-                        if level == 'cohort':
+
+                        # no need to plot panel for panel level UMAPs
+                        if level == 'panel':
+                            continue
+                        
+                        # no need to plot sample coloring for every param combination
+                        if level == 'sample' and reference != references[0] and method != methods[0]:
                             continue
 
                         out_file = figures_dir / f"embed_panel/{name}/umap_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}_{reference}_{method}_{level}.{extension}"
@@ -44,6 +57,9 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 reference=reference,
                                 method=method,
                                 level=level,
+                                cell_type_palette=cell_type_palette,
+                                panel_palette=panel_palette,
+                                sample_palette=sample_palette,
                             threads: 1
                             resources:
                                 mem='30GB',
@@ -61,32 +77,41 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 --method {params.method} \
                                 --level {params.level} \
                                 --out_file {output.out_file} \
+                                --cell_type_palette {params.cell_type_palette} \
+                                --panel_palette {params.panel_palette} \
+                                --sample_palette {params.sample_palette} \
 
                                 echo "DONE"
                                 """
 
 
 
-out_files_cohort = []
+out_files_condition = []
 for segmentation in (segmentations := xenium_dir.iterdir()):
-    for cohort in (cohorts := segmentation.iterdir()): 
-        for panel in (panels := cohort.iterdir()):
+    if segmentation.stem == 'proseg_v1':
+        continue
+    for condition in (conditions := segmentation.iterdir()): 
+        for panel in (panels := condition.iterdir()):
 
-            k = (segmentation.stem,cohort.stem)
+            k = (segmentation.stem,condition.stem)
             name = '/'.join(k)
-            embed_file = results_dir / f'embed_cohort/{name}/umap_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet'
+            embed_file = results_dir / f'embed_condition/{name}/umap_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet'
 
             for reference in references:
                 for method in methods:
                     for level in levels:
+                        
+                        # no need to plot sample coloring for every param combination
+                        if level == 'sample' and reference != references[0] and method != methods[0]:
+                            continue
 
-                        out_file = figures_dir / f"embed_cohort/{name}/umap_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}_{reference}_{method}_{level}.{extension}"
-                        out_files_cohort.append(out_file)
+                        out_file = figures_dir / f"embed_condition/{name}/umap_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}_{reference}_{method}_{level}.{extension}"
+                        out_files_condition.append(out_file)
 
                         rule:
-                            name: f'embed_cohort_plot/{name}/umap_{reference}_{method}_{level}'
+                            name: f'embed_condition_plot/{name}/umap_{reference}_{method}_{level}'
                             input:
-                                cohort=cohort,
+                                condition=condition,
                                 embed_file=embed_file,
                             output:
                                 out_file=out_file,
@@ -94,6 +119,9 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 reference=reference,
                                 method=method,
                                 level=level,
+                                cell_type_palette=cell_type_palette,
+                                panel_palette=panel_palette,
+                                sample_palette=sample_palette,
                             threads: 1
                             resources:
                                 mem='30GB',
@@ -104,13 +132,16 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 """
                                 mkdir -p "$(dirname {output.out_file})"
 
-                                python workflow/scripts/xenium/embed_cohort_plot.py \
-                                --cohort {input.cohort} \
+                                python workflow/scripts/xenium/embed_condition_plot.py \
+                                --condition {input.condition} \
                                 --embed_file {input.embed_file} \
                                 --reference {params.reference} \
                                 --method {params.method} \
                                 --level {params.level} \
                                 --out_file {output.out_file} \
+                                --cell_type_palette {params.cell_type_palette} \
+                                --panel_palette {params.panel_palette} \
+                                --sample_palette {params.sample_palette} \
 
                                 echo "DONE"
                                 """
@@ -119,10 +150,10 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
 
 
 
-rule embed_panel_samples_plot:
+rule embed_panel_donors_plot:
     input:
         out_files_panel
 
-rule embed_cohort_samples_plot:
+rule embed_condition_donors_plot:
     input:
-        out_files_cohort
+        out_files_condition

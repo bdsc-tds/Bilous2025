@@ -1,0 +1,76 @@
+from pathlib import Path
+
+# cfg paths
+xenium_dir = Path(config['xenium_processed_data_dir'])
+results_dir = Path(config['results_dir'])
+
+# params from pipeline config
+min_counts = 10
+min_features = 5
+max_counts = float("inf")
+max_features = float("inf")
+min_cells = 5
+
+# params
+
+out_files = []
+for segmentation in (segmentations := xenium_dir.iterdir()):
+    if segmentation.stem == 'proseg_v1':
+        continue
+    for condition in (conditions := segmentation.iterdir()): 
+        for panel in (panels := condition.iterdir()):
+            for donor in (donors := panel.iterdir()):
+                for sample in (samples := donor.iterdir()):
+
+                    k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
+                    path = sample / "normalised_results/outs"
+                    name = '/'.join(k)
+
+                    if path.exists():
+
+                        out_file_resolvi_corrected = results_dir / f'resolvi/{name}/resolvi_corrected.parquet'
+                        out_file_resolvi_proportions = results_dir/ f'resolvi/{name}/resolvi_proportions.parquet'
+                        out_files.extend([out_file_resolvi_corrected,out_file_resolvi_proportions])
+
+                        rule:
+                            name: f'resolvi/{name}'
+                            input:
+                                path=path,
+                            output:
+                                out_file_resolvi_corrected=out_file_resolvi_corrected,
+                                out_file_resolvi_proportions=out_file_resolvi_proportions,
+                            params:
+                                min_counts=min_counts,
+                                min_features=min_features,
+                                max_counts=max_counts,
+                                max_features=max_features,
+                                min_cells=min_cells,
+                            threads: 1
+                            resources:
+                                mem='30GB' if panel.stem == '5k' else '10GB',
+                                runtime='2h' if panel.stem == '5k' else '1h',
+                                slurm_partition = "gpu",
+                                slurm_extra = '--gres=gpu:1',
+                            conda:
+                                "spatial"
+                            shell:
+                                """
+                                mkdir -p "$(dirname {output.out_file_resolvi_corrected})"
+
+                                python workflow/scripts/xenium/resolvi_donor.py \
+                                --path {input.path} \
+                                --out_file_resolvi_corrected {output.out_file_resolvi_corrected} \
+                                --out_file_resolvi_proportions {output.out_file_resolvi_proportions} \
+                                --min_counts {params.min_counts} \
+                                --min_features {params.min_features} \
+                                --max_counts {params.max_counts} \
+                                --max_features {params.max_features} \
+                                --min_cells {params.min_cells} \
+
+                                echo "DONE"
+                                """
+
+
+rule resolvi_donors:
+    input:
+        out_files

@@ -3,14 +3,14 @@ import scipy
 import sys
 import pandas as pd
 
-replicate_transcripts_path = sys.argv[1]
+sample_transcripts_path = sys.argv[1]
 out_file_signal_integrity = sys.argv[2]
 out_file_signal_strength = sys.argv[3]
 out_file_doublet_df = sys.argv[4]
 
 # load data
 coordinate_df = (
-    pd.read_parquet(replicate_transcripts_path)
+    pd.read_parquet(sample_transcripts_path)
     .rename(
         columns={
             "x_location": "x",

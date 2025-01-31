@@ -4,7 +4,7 @@ prepare_nsclc_metadata <- function(gem) {
     cell_locs <- gem@spatial_locs$raw
     cell_meta <- cbind.data.frame(cell_locs[,c(1:2)],cell_meta)
     
-    # subset to a single donor/replicate
+    # subset to a single donor/sample
     cell_meta <- cell_meta[cell_meta$Run_Tissue_name=='Lung5_Rep1',]
     colnames(cell_meta)[3] <- 'cell'
     colnames(cell_meta)[34] <- 'celltype'

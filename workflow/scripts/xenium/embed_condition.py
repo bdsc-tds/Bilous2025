@@ -10,7 +10,7 @@ import preprocessing
 
 # Set up argument parser
 parser = argparse.ArgumentParser(description="Embed panel of Xenium donors.")
-parser.add_argument("--panel", type=Path, help="Path to the panel file.")
+parser.add_argument("--condition", type=Path, help="Path to the panel file.")
 parser.add_argument("--out_file", type=str, help="Path to the output file.")
 parser.add_argument("--n_comps", type=int, help="Number of components.")
 parser.add_argument("--n_neighbors", type=int, help="Number of neighbors.")
@@ -28,10 +28,11 @@ parser.add_argument(
 )
 parser.add_argument("--min_cells", type=int, help="QC parameter from pipeline config")
 
+
 args = parser.parse_args()
 
 # Access the arguments
-panel = args.panel
+condition = args.condition
 out_file = args.out_file
 n_comps = args.n_comps
 n_neighbors = args.n_neighbors
@@ -43,19 +44,18 @@ max_counts = args.max_counts
 max_features = args.max_features
 min_cells = args.min_cells
 
-
-segmentation = panel.parents[1].stem
-condition = panel.parents[0].stem
+segmentation = condition.parents[0].stem
 
 # read xenium donors
 xenium_paths = {}
-for donor in (donors := panel.iterdir()):
-    for sample in (samples := donor.iterdir()):
-        k = (segmentation, condition, panel.stem, donor.stem, sample.stem)
-        sample_path = sample / "normalised_results/outs"
-        name = "/".join(k)
+for panel in (panels := condition.iterdir()):
+    for donor in (donors := panel.iterdir()):
+        for sample in (samples := donor.iterdir()):
+            k = (segmentation, condition.stem, panel.stem, donor.stem, sample.stem)
+            sample_path = sample / "normalised_results/outs"
+            name = "/".join(k)
 
-        xenium_paths[k] = sample_path
+            xenium_paths[k] = sample_path
 
 ads = readwrite.read_xenium_donors(
     xenium_paths, anndata_only=True, transcripts=False, donor_name_as_key=False

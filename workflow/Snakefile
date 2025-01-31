@@ -1,18 +1,28 @@
 configfile: "config/config.yml"
 
 include: "rules/0-coexpression.smk"
-include: "rules/0-ovrlpy.smk"
+include: "rules/1-coexpression_plot.smk"
+include: "rules/1-coexpression_corrected_counts.smk"
+
 include: "rules/0-silhouette.smk"
+include: "rules/1-silhouette_plot.smk"
+
 include: "rules/0-embedding.smk"
 include: "rules/1-embedding_plot.smk"
+
+include: "rules/0-ovrlpy.smk"
+include: "rules/0-resolvi.smk"
 
 
 rule all:
     input:
-        rules.embed_cohort_samples_plot.input,
-        rules.embed_cohort_samples.input,
-        rules.embed_panel_samples_plot.input,
-        rules.embed_panel_samples.input,
-        # rules.coexpression_samples.input,
-        # rules.ovrlpy_samples.input
-        # rules.silhouette_samples.input,
+        # rules.silhouette_donors.input,
+        # rules.silhouette_plot_donors.input,
+        # rules.embed_condition_donors.input,
+        # rules.embed_condition_donors_plot.input,
+        # rules.embed_panel_donors_plot.input,
+        # rules.embed_panel_donors.input,
+        # rules.resolvi_donors.input,
+        # rules.coexpression_donors.input,
+        # rules.ovrlpy_donors.input
+        rules.coexpression_plot_panel.input,

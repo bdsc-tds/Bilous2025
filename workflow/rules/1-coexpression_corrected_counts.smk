@@ -7,7 +7,7 @@ results_dir = Path(config['results_dir'])
 # Params
 methods = ['conditional','jaccard','pearson','spearman']
 target_counts = [30,50,200]
-out_files = []
+out_files_resolvi = []
 
 for segmentation in (segmentations := xenium_dir.iterdir()):
     if segmentation.stem == 'proseg_v1':
@@ -18,8 +18,8 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                 for sample in (samples := donor.iterdir()):
 
                     k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
-                    sample_path = sample / "normalised_results/outs"
                     name = '/'.join(k)
+                    sample_path_resolvi = results_dir / f'resolvi/{name}/resolvi_corrected.parquet'
 
                     if sample_path.exists():
 
@@ -28,13 +28,13 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 if target_count > 50 and panel.stem != '5k':
                                     continue
 
-                                out_file_coexpr = results_dir / f'coexpression/{name}/coexpression_{method}_{target_count}.parquet' 
-                                out_file_pos_rate = results_dir / f'coexpression/{name}/positivity_rate_{method}_{target_count}.parquet'
+                                out_file_coexpr = results_dir / f'resolvi_coexpression/{name}/coexpression_{method}_{target_count}.parquet' 
+                                out_file_pos_rate = results_dir / f'resolvi_coexpression/{name}/positivity_rate_{method}_{target_count}.parquet'
 
-                                out_files.extend([out_file_coexpr,out_file_pos_rate])
+                                out_files_resolvi.extend([out_file_coexpr,out_file_pos_rate])
 
                                 rule:
-                                    name: f'coexpression/{name}/{method}_{target_count}'
+                                    name: f'resolvi_coexpression/{name}/{method}_{target_count}'
                                     input:
                                         sample_path=sample_path,
                                     output:
@@ -53,7 +53,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                         """
                                         mkdir -p "$(dirname {output.out_file_coexpr})"
 
-                                        python workflow/scripts/xenium/coexpression_donor.py \
+                                        python workflow/scripts/xenium/coexpression_donor_resolvi.py \
                                         {input.sample_path} \
                                         {output.out_file_coexpr} \
                                         {output.out_file_pos_rate} \
@@ -64,6 +64,6 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                         """
 
 
-rule coexpression_donors:
+rule coexpression_donors_resolvi:
     input:
-        out_files
+        out_files_resolvi

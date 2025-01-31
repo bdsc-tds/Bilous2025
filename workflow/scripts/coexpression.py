@@ -153,21 +153,21 @@ def spearman_coexpression(X):
 #     n_counts = X.sum(axis=1)
 #     probabilities = (X / n_counts).tocsr()
 
-#     X_downsampled = X.copy()
+#     X_downdonord = X.copy()
 #     for i in range(X.shape[0]):
 #         diff_size = n_counts[i] - target_size
 #         if diff_size > 0:
-#             X_downsampled[i] -= rs.multinomial(
+#             X_downdonord[i] -= rs.multinomial(
 #                 n=diff_size, pvals=probabilities[i].toarray().flat
 #             )
 
 #     # Ensure no negative values by recursion if needed
-#     if np.any(X_downsampled.data < 0):
+#     if np.any(X_downdonord.data < 0):
 #         print("clipping negative counts to 0...")
-#         X_downsampled.data = np.clip(X_downsampled.data, 0, None, out=X_downsampled)
-#         return thin_counts(X_downsampled, target_size=target_size)
+#         X_downdonord.data = np.clip(X_downdonord.data, 0, None, out=X_downdonord)
+#         return thin_counts(X_downdonord, target_size=target_size)
 
-#     return X_downsampled
+#     return X_downdonord
 
 
 # def thin_counts_v3(X, target_size, rs=None):
@@ -177,17 +177,17 @@ def spearman_coexpression(X):
 #     n_counts = X.sum(axis=1)
 #     probabilities = (X / n_counts).tocsr()
 
-#     X_downsampled = X.copy()
+#     X_downdonord = X.copy()
 #     for i in tqdm(range(X.shape[0])):
 #         diff_size = n_counts[i] - target_size
 #         pvals = probabilities[i].toarray().flat
 #         while diff_size > 0:
 #             thin = rs.multinomial(n=1, pvals=pvals)
-#             if X_downsampled[i, np.where(thin)[0]] > 0:
-#                 X_downsampled[i] -= thin
+#             if X_downdonord[i, np.where(thin)[0]] > 0:
+#                 X_downdonord[i] -= thin
 #                 diff_size -= 1
 
-#     return X_downsampled
+#     return X_downdonord
 
 
 # def thin_counts_old(X, target_count, rs=None):
@@ -205,7 +205,7 @@ def spearman_coexpression(X):
 
 def thin_counts(X, target_count, gen=None):
     """
-    Downsample counts to a target count per row.
+    Downdonor counts to a target count per row.
 
     Parameters:
     X (scipy.sparse matrix): Input count matrix.
@@ -213,7 +213,7 @@ def thin_counts(X, target_count, gen=None):
     gen (numpy.random.Generator, optional): Random generator instance.
 
     Returns:
-    scipy.sparse.csr_matrix: Downsampled count matrix.
+    scipy.sparse.csr_matrix: Downdonord count matrix.
     """
     if gen is None:
         gen = np.random.default_rng()
@@ -242,7 +242,7 @@ def sparsify(X):
 def coexpression(
     adata,
     positivity_cutoff=1,
-    min_samples=0,
+    min_donors=0,
     target_count=50,
     method="conditional",
     seed=0,
@@ -255,13 +255,13 @@ def coexpression(
     Parameters:
     adata (anndata.AnnData): AnnData object containing gene expression data.
     positivity_cutoff (float): Cutoff for determining positivity.
-    min_samples (int): Minimum number of samples required.
+    min_donors (int): Minimum number of donors required.
     target_count (int): Target count for downsampling.
     method (str): Method for co-expression calculation.
     seed (int): Seed for random number generation.
 
     Returns:
-    tuple: A tuple containing co-expression matrix, downsampled matrix, positivity matrix, positivity rate, and mask.
+    tuple: A tuple containing co-expression matrix, downdonord matrix, positivity matrix, positivity rate, and mask.
     """
     gen = np.random.default_rng(seed)
 
@@ -281,22 +281,22 @@ def coexpression(
             "% ) cells reaching the target count",
         )
 
-        # Modify mask based on min_samples threshold
-        if sum(mask) < min_samples:
+        # Modify mask based on min_donors threshold
+        if sum(mask) < min_donors:
             print(
-                f"Less than {min_samples=} reach the target count. Setting to {min_samples}"
+                f"Less than {min_donors=} reach the target count. Setting to {min_donors}"
             )
-            mask = np.argsort(n_counts)[::-1][:min_samples]
+            mask = np.argsort(n_counts)[::-1][:min_donors]
 
-        # Downsample counts
-        X_downsample = thin_counts(X[mask], target_count, gen=gen)
+        # Downdonor counts
+        X_downdonor = thin_counts(X[mask], target_count, gen=gen)
     else:
         mask = np.ones(X.shape[0], dtype=bool)
-        X_downsample = X
+        X_downdonor = X
 
     # Convert counts to binary positivity matrix based on threshold
     pos, pos_rate = counts_to_positivity(
-        X_downsample,
+        X_downdonor,
         positivity_cutoff,
     )  # min_positivity_rate)
 
@@ -306,14 +306,14 @@ def coexpression(
     elif method == "jaccard":
         CC = jaccard_coexpression(pos.T).toarray()
     elif method == "pearson":
-        CC = pearson_coexpression(X_downsample)
+        CC = pearson_coexpression(X_downdonor)
     elif method == "spearman":
-        CC = spearman_coexpression(X_downsample)
+        CC = spearman_coexpression(X_downdonor)
 
     CC = pd.DataFrame(CC, index=adata.var_names, columns=adata.var_names)
     pos_rate = pd.Series(pos_rate, index=adata.var_names)
 
-    return CC, X_downsample, pos, pos_rate, mask
+    return CC, X_downdonor, pos, pos_rate, mask
 
 
 def censored_ratio(

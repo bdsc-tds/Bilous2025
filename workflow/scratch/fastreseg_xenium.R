@@ -138,8 +138,8 @@ distCutoffs <- choose_distance_cutoff(
   # flag to calculate `molecular_distance_cutoff` from input data, slower process
   run_molecularDist = TRUE,
   # configs on random sampling of cells
-  sampleSize_nROI = 10, 
-  sampleSize_cellNum = 2500, 
+  donorsize_nROI = 10, 
+  donorsize_cellNum = 2500, 
   seed = 123 )
 #> Use 2 times of average 2D cell diameter as cellular_distance_cutoff = 24.2375 for searching of neighbor cells.
 #> Identified 2D coordinates with variance.

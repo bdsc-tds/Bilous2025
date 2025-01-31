@@ -1,0 +1,118 @@
+import spatialdata_io
+import numpy as np
+import pandas as pd
+import scvi
+import sys
+import argparse
+from pathlib import Path
+
+sys.path.append("workflow/scripts/")
+import preprocessing
+
+# params
+parser = argparse.ArgumentParser(description="Embed panel of Xenium donors.")
+parser.add_argument("--path", type=Path, help="Path to the xenium donor file.")
+parser.add_argument(
+    "--out_file_resolvi_corrected",
+    type=str,
+    help="Path to resolvi corrected counts parquet file.",
+)
+parser.add_argument(
+    "--out_file_resolvi_proportions",
+    type=str,
+    help="Path to resolvi proportions parquet file.",
+)
+parser.add_argument("--min_counts", type=int, help="QC parameter from pipeline config")
+parser.add_argument(
+    "--min_features", type=int, help="QC parameter from pipeline config"
+)
+parser.add_argument(
+    "--max_counts", type=float, help="QC parameter from pipeline config"
+)
+parser.add_argument(
+    "--max_features", type=float, help="QC parameter from pipeline config"
+)
+parser.add_argument("--min_cells", type=int, help="QC parameter from pipeline config")
+
+args = parser.parse_args()
+
+# Access the arguments
+path = args.path
+out_file_resolvi_corrected = args.out_file_resolvi_corrected
+out_file_resolvi_proportions = args.out_file_resolvi_proportions
+min_counts = args.min_counts
+min_features = args.min_features
+max_counts = args.max_counts
+max_features = args.max_features
+min_cells = args.min_cells
+
+# read counts
+adata = spatialdata_io.xenium(
+    path,
+    cells_as_circles=False,
+    cells_boundaries=False,
+    nucleus_boundaries=False,
+    cells_labels=False,
+    nucleus_labels=False,
+    transcripts=False,
+    morphology_mip=False,
+    morphology_focus=False,
+    aligned_images=False,
+)["table"]
+
+
+# preprocess (QC filters only)
+# resolvi requires at least 5 counts in each cell
+preprocessing.preprocess(
+    adata,
+    normalize=False,
+    log1p=False,
+    scale="none",
+    pca=False,
+    umap=False,
+    save_raw=False,
+    min_counts=min_counts,
+    min_genes=min_features,
+    max_counts=max_counts,
+    max_genes=max_features,
+    min_cells=min_cells,
+)
+
+
+scvi.external.RESOLVI.setup_anndata(
+    adata, labels_key=None, layer=None, prepare_data_kwargs={"spatial_rep": "spatial"}
+)
+resolvi = scvi.external.RESOLVI(adata, semisupervised=False)
+resolvi.train(max_epochs=50)
+
+donors_corr = resolvi.donor_posterior(
+    model=resolvi.module.model_corrected,
+    return_sites=["px_rate"],
+    summary_fun={"post_donor_q50": np.median},
+    num_donors=3,
+    summary_frequency=30,
+)
+donors_corr = pd.DataFrame(donors_corr).T
+
+donors = resolvi.donor_posterior(
+    model=resolvi.module.model_residuals,
+    return_sites=["mixture_proportions"],
+    summary_fun={"post_donor_means": np.mean},
+    num_donors=3,
+    summary_frequency=100,
+)
+donors = pd.DataFrame(donors).T
+
+donors_corr = pd.DataFrame(
+    donors_corr.loc["post_donor_q50", "px_rate"],
+    index=adata.obs_names,
+    columns=adata.var_names,
+)
+donors_proportions = pd.DataFrame(
+    donors.loc["post_donor_means", "mixture_proportions"],
+    index=adata.obs_names,
+    columns=["true_proportion", "diffusion_proportion", "background_proportion"],
+)
+
+donors_corr.to_parquet(out_file_resolvi_corrected)
+donors_proportions.to_parquet(out_file_resolvi_proportions)

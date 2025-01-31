@@ -1,80 +1,88 @@
 import argparse
 import numpy as np
 import pandas as pd
-import scanpy as sc
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from pathlib import Path
 
 # Set up argument parser
-parser = argparse.ArgumentParser(description="Plot cohort of Xenium samples.")
-parser.add_argument("--cohort", type=Path, help="Path to the cohort file.")
+parser = argparse.ArgumentParser(description="Plot condition of Xenium donors.")
+parser.add_argument("--condition", type=Path, help="Path to the condition file.")
 parser.add_argument("--embed_file", type=str, help="Path to the embedding file.")
 parser.add_argument("--reference", type=str, help="annotation reference")
 parser.add_argument("--method", type=str, help="annotation method")
 parser.add_argument("--level", type=str, help="annotation level")
 parser.add_argument("--out_file", type=str, help="Path to the output file.")
+parser.add_argument("--cell_type_palette", type=Path, help="Path to palette csv file")
+parser.add_argument("--panel_palette", type=Path, help="Path to palette csv file")
+parser.add_argument("--sample_palette", type=Path, help="Path to palette csv file")
 args = parser.parse_args()
 
 # Access the arguments
-cohort = args.cohort
+condition = args.condition
 embed_file = args.embed_file
 reference = args.reference
 method = args.method
 level = args.level
 out_file = args.out_file
+cell_type_palette = args.cell_type_palette
+panel_palette = args.panel_palette
+sample_palette = args.sample_palette
+
+if level == "sample":
+    palette = pd.read_csv(sample_palette, index_col=0).iloc[:, 0]
+elif level == "panel":
+    palette = pd.read_csv(panel_palette, index_col=0).iloc[:, 0]
+else:
+    palette = (
+        pd.read_csv(cell_type_palette)
+        .set_index(level)[f"cols_{level}"]
+        .drop_duplicates()
+    )
+
 
 # vars
-xenium_levels = ["segmentation", "cohort", "panel", "sample", "replicate", "cell_id"]
-segmentation = cohort.parents[0]
+xenium_levels = ["segmentation", "condition", "panel", "donor", "sample", "cell_id"]
+segmentation = condition.parents[0]
 
 # load umap
 obs = pd.read_parquet(embed_file)
 obs["cell_id"] = obs.index
 
 
-if level in ["panel", "replicate"]:
-    # plot replicate as color, no need to load annotations
+if level in ["panel", "sample"]:
+    # plot sample as color, no need to load annotations
     df = obs
     params = level
-    title = f"Segmentation: {segmentation.stem}, Cohort: {cohort.stem}"
+    title = f"Segmentation: {segmentation.stem}, condition: {condition.stem}"
 
 else:
     # read cell type annotation
     annot = {}
 
-    for panel in (panels := cohort.iterdir()):
-        for sample in (samples := panel.iterdir()):
-            for replicate in (replicates := sample.iterdir()):
+    for panel in (panels := condition.iterdir()):
+        for donor in (donors := panel.iterdir()):
+            for sample in (samples := donor.iterdir()):
                 k = (
                     segmentation.stem,
-                    cohort.stem,
+                    condition.stem,
                     panel.stem,
+                    donor.stem,
                     sample.stem,
-                    replicate.stem,
                 )
                 print(k)
                 annot[k] = {}
 
                 # read csv or parquet
                 annot_file = (
-                    replicate
+                    sample
                     / f"cell_type_annotation/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet"
                 )
                 if annot_file.exists():
-                    annot[k][reference, method, level] = pd.read_parquet(
-                        annot_file
-                    ).iloc[:, 0]
-
-                annot_file = (
-                    replicate
-                    / f"cell_type_annotation/reference_based/{reference}/{method}/{level}/single_cell/labels.csv"
-                )
-                if annot_file.exists():
-                    annot[k][reference, method, level] = pd.read_csv(
-                        annot_file, index_col=0
-                    ).iloc[:, 0]
+                    annot[k][reference, method, level] = (
+                        pd.read_parquet(annot_file).set_index("cell_id").iloc[:, 0]
+                    )
 
     # merge annotations
     df_annot = {}
@@ -91,18 +99,18 @@ else:
     df = pd.merge(obs, df_annot, on=xenium_levels, how="inner")
 
     params = (reference, method, level)
-    title = f"Segmentation: {segmentation.stem}, Cohort: {cohort.stem}\n Method: {method}, Reference: {reference}, Level: {level}"
+    title = f"Segmentation: {segmentation.stem}, condition: {condition.stem}\n Method: {method}, Reference: {reference}, Level: {level}"
 
 
 # plotting params, palette
 unique_labels = np.unique(df[params].dropna())
-palette = dict(zip(unique_labels, sc.pl.palettes.default_28))
+palette = {u: palette[u] for u in unique_labels}
 legend_handles = [
     mpatches.Patch(color=color, label=label) for label, color in palette.items()
 ]
 
 print(
-    f"Segmentation: {segmentation.stem}, Cohort: {cohort.stem}, Method: {method}, Reference: {reference}, Level: {level}"
+    f"Segmentation: {segmentation.stem}, condition: {condition.stem}, Method: {method}, Reference: {reference}, Level: {level}"
 )
 
 

@@ -42,7 +42,7 @@ match_idx <- match(transcripts_keep$cell,rownames(cell_meta))
 
 # compute the molecule NCV matrix
 X <- get_knn_counts(transcripts_keep, k=20, ncores = 20) %>% as.matrix()
-res <- run_weighted_nmf(X, k=5, n.downsample=100)
+res <- run_weighted_nmf(X, k=5, n.downdonor=100)
 expr <- res@fit@H %>% {. / rowSums(.)} %>% t() %>% magrittr::set_colnames(1:ncol(.))
 
 malignant_admix_factor <- 4
