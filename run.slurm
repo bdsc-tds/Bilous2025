@@ -8,5 +8,5 @@ rm -rf .snakemake/slurm_logs
 rm -rf .snakemake/tmp.*
 mamba activate sm
 snakemake --sdm=conda --executor slurm --jobs 100 \
-          --rerun-incomplete --rerun-triggers mtime --keep-going \
+          --rerun-incomplete --rerun-triggers mtime  \
           --workflow-profile profiles/slurm/ "$@"

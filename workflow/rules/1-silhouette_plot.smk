@@ -12,7 +12,7 @@ methods = ['rctd_class_aware']
 levels = ['Level2'] 
 extension = 'png'
 
-out_files = []
+out_files_panel = []
 for segmentation in (segmentations := silhouette_dir.iterdir()):
     if segmentation.stem == 'proseg_v1':
         continue
@@ -25,11 +25,11 @@ for segmentation in (segmentations := silhouette_dir.iterdir()):
                         k = (segmentation.stem,condition.stem,panel.stem)
                         name = '/'.join(k)
 
-                        out_file = figures_dir / f'silhouette_plot/{name}/silhouette_{reference}_{method}_{level}.{extension}'
-                        out_files.append(out_file)
+                        out_file = figures_dir / f'silhouette_plot_panel/{name}/silhouette_{reference}_{method}_{level}.{extension}'
+                        out_files_panel.append(out_file)
 
                         rule:
-                            name: f'silhouette_plot/{name}/silhouette_{reference}_{method}_{level}'
+                            name: f'silhouette_plot_panel/{name}/silhouette_{reference}_{method}_{level}'
                             input:
                                 panel=panel,
                             output:
@@ -61,6 +61,62 @@ for segmentation in (segmentations := silhouette_dir.iterdir()):
                                 """
 
 
-rule silhouette_plot_all:
+
+
+
+out_files_condition = []
+for segmentation in (segmentations := silhouette_dir.iterdir()):
+    if segmentation.stem == 'proseg_v1':
+        continue
+    for condition in (conditions := segmentation.iterdir()): 
+            for reference in references:
+                for method in methods:
+                    for level in levels:
+
+                        k = (segmentation.stem,condition.stem)
+                        name = '/'.join(k)
+
+                        out_file = figures_dir / f'silhouette_plot_condition/{name}/silhouette_{reference}_{method}_{level}.{extension}'
+                        out_files_condition.append(out_file)
+
+                        rule:
+                            name: f'silhouette_plot_condition/{name}/silhouette_{reference}_{method}_{level}'
+                            input:
+                                condition=condition,
+                            output:
+                                out_file=out_file,
+                            params:
+                                segmentation_palette=segmentation_palette,
+                                reference=reference,
+                                method=method,
+                                level=level,
+                            threads: 1
+                            resources:
+                                mem='5GB',
+                                runtime='5m',
+                            conda:
+                                "spatial"
+                            shell:
+                                """
+                                mkdir -p "$(dirname {output.out_file})"
+
+                                python workflow/scripts/xenium/silhouette_condition_plot.py \
+                                --condition {input.condition} \
+                                --out_file {output.out_file} \
+                                --segmentation_palette {params.segmentation_palette} \
+                                --reference {params.reference} \
+                                --method {params.method} \
+                                --level {params.level} \
+
+                                echo "DONE"
+                                """
+
+
+rule silhouette_plot_panel_all:
     input:
-        out_files
+        out_files_panel
+
+
+rule silhouette_plot_condition_all:
+    input:
+        out_files_condition

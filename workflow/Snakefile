@@ -16,13 +16,14 @@ include: "rules/0-resolvi.smk"
 
 rule all:
     input:
-        rules.silhouette_all.input,
-        rules.silhouette_plot_all.input,
-        rules.embed_condition_all.input,
-        rules.embed_condition_plot_all.input,
-        rules.embed_panel_plot_all.input,
+        # rules.coexpression_all.input,
+        # rules.coexpression_plot_all.input,
+        # rules.silhouette_all.input,
+        # rules.silhouette_plot_panel_all.input,
+        # rules.silhouette_plot_condition_all.input,
         rules.embed_panel_all.input,
-        rules.resolvi_all.input,
-        rules.coexpression_all.input,
-        rules.ovrlpy_all.input,
-        rules.coexpression_plot_all.input,
+        rules.embed_condition_all.input,
+        rules.embed_panel_plot_all.input,
+        rules.embed_condition_plot_all.input,
+        # rules.resolvi_all.input,
+        # rules.ovrlpy_all.input,

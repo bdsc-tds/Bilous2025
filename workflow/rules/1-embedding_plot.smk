@@ -9,6 +9,8 @@ n_comps = 50
 n_neighbors = 50
 min_dist = 0.3
 metric = 'cosine'
+s=0.3
+alpha=0.5
 
 cell_type_palette = palette_dir / 'col_palette_cell_types.csv'
 panel_palette = palette_dir / 'col_palette_panel.csv'
@@ -60,6 +62,8 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 cell_type_palette=cell_type_palette,
                                 panel_palette=panel_palette,
                                 sample_palette=sample_palette,
+                                s=s,
+                                alpha=alpha,
                             threads: 1
                             resources:
                                 mem='30GB',
@@ -80,7 +84,9 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 --cell_type_palette {params.cell_type_palette} \
                                 --panel_palette {params.panel_palette} \
                                 --sample_palette {params.sample_palette} \
-
+                                --s {params.s} \
+                                --alpha {params.alpha} \
+                                
                                 echo "DONE"
                                 """
 
@@ -122,6 +128,8 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 cell_type_palette=cell_type_palette,
                                 panel_palette=panel_palette,
                                 sample_palette=sample_palette,
+                                s=s,
+                                alpha=alpha,
                             threads: 1
                             resources:
                                 mem='30GB',
@@ -142,6 +150,8 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 --cell_type_palette {params.cell_type_palette} \
                                 --panel_palette {params.panel_palette} \
                                 --sample_palette {params.sample_palette} \
+                                --s {params.s} \
+                                --alpha {params.alpha} \
 
                                 echo "DONE"
                                 """

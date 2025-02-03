@@ -17,6 +17,8 @@ parser.add_argument("--out_file", type=str, help="Path to the output file.")
 parser.add_argument("--cell_type_palette", type=Path, help="Path to palette csv file")
 parser.add_argument("--panel_palette", type=Path, help="Path to palette csv file")
 parser.add_argument("--sample_palette", type=Path, help="Path to palette csv file")
+parser.add_argument("--s", type=float, help="scatter point size")
+parser.add_argument("--alpha", type=float, help="scatter alpha (transparency)")
 args = parser.parse_args()
 
 # Access the arguments
@@ -29,6 +31,8 @@ out_file = args.out_file
 cell_type_palette = args.cell_type_palette
 panel_palette = args.panel_palette
 sample_palette = args.sample_palette
+s = args.s
+alpha = args.alpha
 
 if level == "sample":
     palette = pd.read_csv(sample_palette, index_col=0).iloc[:, 0]
@@ -122,8 +126,8 @@ sns.scatterplot(
     data=df,
     x="UMAP1",
     y="UMAP2",
-    s=0.1,
-    alpha=0.5,
+    s=s,
+    alpha=alpha,
     hue=params,
     ax=ax,
     palette=palette,

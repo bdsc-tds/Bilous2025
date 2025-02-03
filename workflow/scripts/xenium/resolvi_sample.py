@@ -33,7 +33,9 @@ parser.add_argument(
     "--max_features", type=float, help="QC parameter from pipeline config"
 )
 parser.add_argument("--min_cells", type=int, help="QC parameter from pipeline config")
-
+parser.add_argument(
+    "--num_samples", type=int, help="Number of samples for RESOLVI generative model."
+)
 args = parser.parse_args()
 
 # Access the arguments
@@ -45,6 +47,7 @@ min_features = args.min_features
 max_counts = args.max_counts
 max_features = args.max_features
 min_cells = args.min_cells
+num_samples = args.num_samples
 
 # read counts
 adata = spatialdata_io.xenium(
@@ -89,8 +92,8 @@ samples_corr = resolvi.sample_posterior(
     model=resolvi.module.model_corrected,
     return_sites=["px_rate"],
     summary_fun={"post_donor_q50": np.median},
-    num_samples=3,
-    summary_frequency=30,
+    num_samples=num_samples,
+    summary_frequency=100,
 )
 samples_corr = pd.DataFrame(samples_corr).T
 
@@ -98,7 +101,7 @@ samples = resolvi.sample_posterior(
     model=resolvi.module.model_residuals,
     return_sites=["mixture_proportions"],
     summary_fun={"post_donor_means": np.mean},
-    num_samples=3,
+    num_samples=num_samples,
     summary_frequency=100,
 )
 samples_proportions = pd.DataFrame(samples).T

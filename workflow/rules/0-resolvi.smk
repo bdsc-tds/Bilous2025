@@ -12,6 +12,7 @@ max_features = float("inf")
 min_cells = 5
 
 # params
+num_samples = 100
 
 out_files = []
 for segmentation in (segmentations := xenium_dir.iterdir()):
@@ -45,10 +46,11 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 max_counts=max_counts,
                                 max_features=max_features,
                                 min_cells=min_cells,
+                                num_samples=num_samples,
                             threads: 1
                             resources:
                                 mem='30GB' if panel.stem == '5k' else '10GB',
-                                runtime='2h' if panel.stem == '5k' else '1h',
+                                runtime='3h' if panel.stem == '5k' else '2h',
                                 slurm_partition = "gpu",
                                 slurm_extra = '--gres=gpu:1',
                             conda:
@@ -66,6 +68,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 --max_counts {params.max_counts} \
                                 --max_features {params.max_features} \
                                 --min_cells {params.min_cells} \
+                                --num_samples {params.num_samples} \
 
                                 echo "DONE"
                                 """

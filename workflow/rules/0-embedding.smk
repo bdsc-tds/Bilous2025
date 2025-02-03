@@ -2,12 +2,12 @@
 xenium_dir = Path(config['xenium_processed_data_dir'])
 results_dir = Path(config['results_dir'])
 
-# params from pipeline config
-min_counts = 10
-min_features = 5
+# stricter params than pipeline config
+min_counts = 20
+min_features = 10
 max_counts = float("inf")
 max_features = float("inf")
-min_cells = 5
+min_cells = 20
 
 # Params
 n_comps = 50
@@ -44,6 +44,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                     max_counts=max_counts,
                     max_features=max_features,
                     min_cells=min_cells,
+
                 threads: 1
                 resources:
                     mem='100GB' if panel.stem == '5k' else '50GB',
@@ -67,8 +68,8 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                         --min_features {params.min_features} \
                         --max_counts {params.max_counts} \
                         --max_features {params.max_features} \
-                        --min_cells {params.min_cells}
-
+                        --min_cells {params.min_cells} \
+                        
                     echo "DONE"
                     """
 

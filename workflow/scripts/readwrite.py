@@ -82,40 +82,40 @@ def xenium_specs(path):
 
 
 ######### Xenium readers
-def xenium_donors_files(dir_segmentation_condition, segmentation=None, donors=None):
+def xenium_samples_files(dir_segmentation_condition, segmentation=None, samples=None):
     """
-    Get a dictionary of files for each donor in a Xenium segmentation run.
+    Get a dictionary of files for each sample in a Xenium segmentation run.
 
     Parameters
     ----------
     dir_segmentation_condition (str): The directory path of the segmentation run.
     segmentation (str): The segmentation name, e.g., 'default', '10x_5um', 'baysor'.
-    donors (list): The donor names to include. If None, include all donors.
+    samples (list): The sample names to include. If None, include all samples.
 
     Returns
     -------
-    dict: A dictionary of files for each donor.
+    dict: A dictionary of files for each sample.
     """
     files = {}
-    for donor_path in pathlib.Path(dir_segmentation_condition).iterdir():
-        for sample_path in donor_path.iterdir():
-            donor_name = sample_path.stem
+    for sample_path in pathlib.Path(dir_segmentation_condition).iterdir():
+        for sample_path in sample_path.iterdir():
+            sample_name = sample_path.stem
 
-            if donors is not None and donor_name not in donors:
+            if samples is not None and sample_name not in samples:
                 continue
-            elif "corrupted" in donor_name:
+            elif "corrupted" in sample_name:
                 continue
             else:
                 if segmentation != "default":
-                    files[donor_name] = sample_path / "normalised_results/outs"
+                    files[sample_name] = sample_path / "normalised_results/outs"
                 else:
-                    files[donor_name] = sample_path
+                    files[sample_name] = sample_path
 
     return files
 
 
-def read_xenium_donor(
-    donor_name,
+def read_xenium_sample(
+    sample_name,
     path,
     cells_as_circles=False,
     cells_boundaries=False,
@@ -129,11 +129,11 @@ def read_xenium_donor(
     anndata_only=False,
 ):
     """
-    Reads a xenium donor from a directory path.
+    Reads a xenium sample from a directory path.
 
     Parameters
     ----------
-    donor_name (str): The donor name.
+    sample_name (str): The sample name.
     path (str): The directory path of the segmentation run.
     cells_as_circles (bool): Whether to include cell polygons as circles or not.
     cells_boundaries (bool): Whether to include cell boundaries or not.
@@ -148,8 +148,8 @@ def read_xenium_donor(
 
     Returns
     -------
-    If anndata_only, returns a tuple of the donor name and anndata object.
-    Otherwise, returns a tuple of the donor name and spatialdata object.
+    If anndata_only, returns a tuple of the sample name and anndata object.
+    Otherwise, returns a tuple of the sample name and spatialdata object.
     """
     import spatialdata_io
 
@@ -176,11 +176,11 @@ def read_xenium_donor(
         print("metrics_summary.csv not found at:", metrics_path)
 
     if anndata_only:
-        return donor_name, ad
-    return donor_name, xdata
+        return sample_name, ad
+    return sample_name, xdata
 
 
-def read_xenium_donors(
+def read_xenium_samples(
     data_dirs,
     cells_as_circles=False,
     cells_boundaries=False,
@@ -192,16 +192,16 @@ def read_xenium_donors(
     morphology_focus=False,
     aligned_images=False,
     anndata_only=False,
-    donor_name_as_key=True,
+    sample_name_as_key=True,
 ):
     """
-    Reads in a dictionary of donor directories and returns a dictionary of
+    Reads in a dictionary of sample directories and returns a dictionary of
     AnnData objects or spatialdata objects depending on the anndata_only flag.
 
     Parameters
     ----------
     data_dirs : dict or list
-        A dictionary of donor directories or a list of paths to donor directories.
+        A dictionary of sample directories or a list of paths to sample directories.
     cells_as_circles : bool, optional
         Whether to include cell boundary data as circles, by default False
     cells_boundaries : bool, optional
@@ -222,20 +222,21 @@ def read_xenium_donors(
         Whether to include aligned images, by default False
     anndata_only : bool, optional
         Whether to only return an AnnData object, by default False
-    donor_name_as_key: bool, optional
-        Whether to use the donor name as the key in the return dictionary, otherwise returns full path
+    sample_name_as_key: bool, optional
+        Whether to use the sample name as the key in the return dictionary, otherwise returns full path
 
     Returns
     -------
     dict
-        A dictionary of donor names mapped to AnnData objects or spatialdata objects.
+        A dictionary of sample names mapped to AnnData objects or spatialdata objects.
     """
     if isinstance(data_dirs, list):
-        donor_names = [
-            pathlib.Path(path).stem if donor_name_as_key else path for path in data_dirs
+        sample_names = [
+            pathlib.Path(path).stem if sample_name_as_key else path
+            for path in data_dirs
         ]
         data_dirs = {
-            donor_name: path for donor_name, path in zip(donor_names, data_dirs)
+            sample_name: path for sample_name, path in zip(sample_names, data_dirs)
         }
 
     # Parallel processing
@@ -243,8 +244,8 @@ def read_xenium_donors(
     with ProcessPoolExecutor() as executor:
         futures = [
             executor.submit(
-                read_xenium_donor,
-                donor_name,
+                read_xenium_sample,
+                sample_name,
                 path,
                 cells_as_circles,
                 cells_boundaries,
@@ -257,13 +258,13 @@ def read_xenium_donors(
                 aligned_images,
                 anndata_only,
             )
-            for donor_name, path in data_dirs.items()
+            for sample_name, path in data_dirs.items()
         ]
 
         for future in as_completed(futures):
             try:
-                donor_name, result = future.result()
-                xdatas[donor_name] = result
+                sample_name, result = future.result()
+                xdatas[sample_name] = result
             except Exception as e:
                 print(f"Error processing {e}")
 
@@ -305,9 +306,9 @@ def _rds2py_dict_to_df(r_obj_df, mode="results_df"):
     return pandas_df
 
 
-def read_rctd_donor(donor_name, rctd_results_path):
+def read_rctd_sample(sample_name, rctd_results_path):
     """
-    Reads RCTD results from a single donor and returns a dictionary containing:
+    Reads RCTD results from a single sample and returns a dictionary containing:
 
     - results_df: a pandas DataFrame with columns to be added to the anndata object's obs
     - weights: a pandas Series with the weights for each cell for the given reference
@@ -316,16 +317,16 @@ def read_rctd_donor(donor_name, rctd_results_path):
 
     Parameters
     ----------
-    donor_name: str
-        The name of the donor
+    sample_name: str
+        The name of the sample
     rctd_results_path : str
-        The path to the donor RCTD results
+        The path to the sample RCTD results
     rsuffix : str, optional
         The suffix to append to the reference name when storing to the anndata objects
 
     Returns
     -------
-    A tuple containing the donor name and the results dictionary
+    A tuple containing the sample name and the results dictionary
     """
     from rds2py import read_rds
 
@@ -341,10 +342,10 @@ def read_rctd_donor(donor_name, rctd_results_path):
             results["data"][results_keys_idx[k]], mode=k
         )
 
-    return donor_name, pandas_results
+    return sample_name, pandas_results
 
 
-def read_rctd_donors(ads, rctd_results_paths, prefix=""):
+def read_rctd_samples(ads, rctd_results_paths, prefix=""):
     """
     Read RCTD results into anndata objects in parallel using ProcessPoolExecutor.
 
@@ -366,35 +367,35 @@ def read_rctd_donors(ads, rctd_results_paths, prefix=""):
     with ProcessPoolExecutor() as executor:
         futures = {
             executor.submit(
-                read_rctd_donor,
-                donor_name,
-                rctd_results_paths[donor_name],
-            ): donor_name
-            for donor_name in ads.keys()
+                read_rctd_sample,
+                sample_name,
+                rctd_results_paths[sample_name],
+            ): sample_name
+            for sample_name in ads.keys()
         }
 
         # Update anndata objects in the parent process
         for future in as_completed(futures):
             try:
-                donor_name, results = future.result()
+                sample_name, results = future.result()
                 if results:
-                    ad = ads[donor_name]
+                    ad = ads[sample_name]
                     ad.obs = ad.obs.join(results["results_df"].add_prefix(prefix))
                     ad.uns[f"{prefix}_weights"] = results["weights"]
 
             except Exception as e:
-                print(f"Error processing donor {futures[future]}: {e}")
+                print(f"Error processing sample {futures[future]}: {e}")
 
 
 ###### coexpression files readers
 def read_coexpression_file(k, method, target_count, results_dir):
     """
-    Worker function to read the coexpression and positivity rate parquet for a single donor.
+    Worker function to read the coexpression and positivity rate parquet for a single sample.
 
     Parameters
     ----------
     k : tuple
-        The donor name tuple (segmentation, condition, panel, donor, sample).
+        The sample name tuple (segmentation, condition, panel, sample, sample).
     method : str
         The coexpression method.
     target_count : int
@@ -432,7 +433,7 @@ def read_coexpression_files(cc_paths, results_dir):
     Parameters
     ----------
     cc_paths : list of tuples
-        A list of tuples containing the key `k`, i.e., a donor name tuple (segmentation, condition, panel, donor, sample)
+        A list of tuples containing the key `k`, i.e., a sample name tuple (segmentation, condition, panel, sample, sample)
         and the method and target count to read.
     results_dir : str
         The directory containing the coexpression results.

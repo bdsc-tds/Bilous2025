@@ -54,7 +54,7 @@ for segmentation in (segmentations := (results_dir/'coexpression').iterdir()):
                         threads: 1
                         resources:
                             mem='80GB' if panel.stem == '5k' else '20GB',
-                            runtime='20m' if panel.stem == '5k' else '10m',
+                            runtime='40m' if panel.stem == '5k' else '10m',
                         conda:
                             "spatial"
                         shell:

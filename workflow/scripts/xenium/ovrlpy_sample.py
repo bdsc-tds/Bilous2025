@@ -2,11 +2,39 @@ import ovrlpy
 import scipy
 import sys
 import pandas as pd
+import argparse
 
-sample_transcripts_path = sys.argv[1]
-out_file_signal_integrity = sys.argv[2]
-out_file_signal_strength = sys.argv[3]
-out_file_doublet_df = sys.argv[4]
+# Set up argument parser
+parser = argparse.ArgumentParser(description="Compute ovrlpy correction.")
+parser.add_argument(
+    "--sample_transcripts_path",
+    type=str,
+    help="Path to the sample_signal_integrity file.",
+)
+parser.add_argument(
+    "--out_file_signal_integrity",
+    type=str,
+    help="out_file_signal_integrity file to output.",
+)
+parser.add_argument(
+    "--out_file_signal_strength",
+    type=str,
+    help="out_file_signal_strength file to output.",
+)
+parser.add_argument(
+    "--out_file_doublet_df",
+    type=str,
+    help="out_file_doublet_df file to output.",
+)
+
+args = parser.parse_args()
+
+# Access the arguments
+sample_transcripts_path = args.sample_transcripts_path
+out_file_signal_integrity = args.out_file_signal_integrity
+out_file_signal_strength = args.out_file_signal_strength
+out_file_doublet_df = args.out_file_doublet_df
+
 
 # load data
 coordinate_df = (

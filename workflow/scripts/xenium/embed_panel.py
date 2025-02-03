@@ -57,8 +57,8 @@ for donor in (donors := panel.iterdir()):
 
         xenium_paths[k] = sample_path
 
-ads = readwrite.read_xenium_donors(
-    xenium_paths, anndata_only=True, transcripts=False, donor_name_as_key=False
+ads = readwrite.read_xenium_samples(
+    xenium_paths, anndata_only=True, transcripts=False, sample_name_as_key=False
 )
 
 # concatenate
