@@ -42,7 +42,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--signal_integrity_threshold",
-    type=int,
+    type=float,
     help="signal_integrity_threshold parameter (threshold below which a pixel is low quality).",
 )
 

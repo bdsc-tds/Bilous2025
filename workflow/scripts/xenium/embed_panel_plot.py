@@ -13,7 +13,7 @@ parser.add_argument("--panel", type=Path, help="Path to the panel file.")
 parser.add_argument("--embed_file", type=str, help="Path to the embedding file.")
 parser.add_argument("--reference", type=str, help="annotation reference")
 parser.add_argument("--method", type=str, help="annotation method")
-parser.add_argument("--level", type=str, help="annotation level")
+parser.add_argument("--color", type=str, help="annotation color")
 parser.add_argument("--out_file", type=str, help="Path to the output file.")
 parser.add_argument("--cell_type_palette", type=Path, help="Path to palette csv file")
 parser.add_argument("--panel_palette", type=Path, help="Path to palette csv file")
@@ -27,7 +27,7 @@ panel = args.panel
 embed_file = args.embed_file
 reference = args.reference
 method = args.method
-level = args.level
+color = args.color
 out_file = args.out_file
 cell_type_palette = args.cell_type_palette
 panel_palette = args.panel_palette
@@ -35,14 +35,14 @@ sample_palette = args.sample_palette
 s = args.s
 alpha = args.alpha
 
-if level == "sample":
+if color == "sample":
     palette = pd.read_csv(sample_palette, index_col=0).iloc[:, 0]
-elif level == "panel":
+elif color == "panel":
     palette = pd.read_csv(panel_palette, index_col=0).iloc[:, 0]
 else:
     palette = (
         pd.read_csv(cell_type_palette)
-        .set_index(level)[f"cols_{level}"]
+        .set_index(color)[f"cols_{color}"]
         .drop_duplicates()
     )
 
@@ -57,10 +57,10 @@ obs = pd.read_parquet(embed_file)
 obs["cell_id"] = obs.index
 
 
-if level == "sample":
+if color == "sample":
     # plot sample as color, no need to load annotations
     df = obs
-    params = level
+    params = color
     title = f"Segmentation: {segmentation.stem}, condition: {condition.stem}, Panel: {panel.stem}"
 
 else:
@@ -80,10 +80,10 @@ else:
             annot[k] = {}
             annot_file = (
                 sample
-                / f"cell_type_annotation/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet"
+                / f"cell_type_annotation/reference_based/{reference}/{method}/{color}/single_cell/labels.parquet"
             )
             if annot_file.exists():
-                annot[k][reference, method, level] = (
+                annot[k][reference, method, color] = (
                     pd.read_parquet(annot_file).set_index("cell_id").iloc[:, 0]
                 )
 
@@ -101,8 +101,8 @@ else:
     # merge umap and cell type annotations
     df = pd.merge(obs, df_annot, on=xenium_levels, how="inner")
 
-    params = (reference, method, level)
-    title = f"Segmentation: {segmentation.stem}, condition: {condition.stem}, Panel: {panel.stem}\n Method: {method}, Reference: {reference}, Level: {level}"
+    params = (reference, method, color)
+    title = f"Segmentation: {segmentation.stem}, condition: {condition.stem}, Panel: {panel.stem}\n Method: {method}, Reference: {reference}"
 
 
 # plotting params, palette
@@ -113,7 +113,7 @@ legend_handles = [
 ]
 
 print(
-    f"Segmentation: {segmentation.stem}, condition: {condition.stem}, Panel: {panel.stem}, Method: {method}, Reference: {reference}, Level: {level}"
+    f"Segmentation: {segmentation.stem}, condition: {condition.stem}, Panel: {panel.stem}, Method: {method}, Reference: {reference}"
 )
 
 

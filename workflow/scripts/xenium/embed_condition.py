@@ -1,3 +1,7 @@
+import dask
+
+dask.config.set({"dataframe.query-planning": False})
+
 from pathlib import Path
 import argparse
 import sys

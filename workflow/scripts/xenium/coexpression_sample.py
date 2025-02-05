@@ -26,7 +26,7 @@ adata = spatialdata_io.xenium(
 )["table"]
 
 # compute coexpression
-CC, X_downdonord, pos, pos_rate, mask = coexpression.coexpression(
+CC, X_downsampled, pos, pos_rate, mask = coexpression.coexpression(
     adata, target_count=target_count, method=method
 )
 

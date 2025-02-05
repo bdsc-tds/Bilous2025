@@ -5,7 +5,7 @@ xenium_dir = Path(config['xenium_processed_data_dir'])
 results_dir = Path(config['results_dir'])
 
 # Params
-methods = ['conditional','jaccard','pearson','spearman']
+methods = ['conditional','jaccard']#,'pearson','spearman']
 target_counts = [30,50,200]
 out_files = []
 

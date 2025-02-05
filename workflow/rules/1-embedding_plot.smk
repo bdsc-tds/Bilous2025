@@ -9,7 +9,7 @@ n_comps = 50
 n_neighbors = 50
 min_dist = 0.3
 metric = 'cosine'
-s=0.3
+s=0.5
 alpha=0.5
 
 cell_type_palette = palette_dir / 'col_palette_cell_types.csv'
@@ -18,7 +18,7 @@ sample_palette = palette_dir / 'col_palette_donor.csv'
 
 references = ['matched_reference','external_reference']
 methods = ['rctd_class_aware']
-levels = ['Level1','Level2','Level3','Level4','panel','sample',] # condition and sample as color to plot added here in addition to levels
+colors = ['Level1','Level2','Level3','Level4','panel','sample',] # condition and sample as color to plot added here in addition to levels
 extension = 'png'
 
 out_files_panel = []
@@ -35,21 +35,21 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
 
             for reference in references:
                 for method in methods:
-                    for level in levels:
+                    for color in colors:
 
                         # no need to plot panel for panel level UMAPs
-                        if level == 'panel':
+                        if color == 'panel':
                             continue
                         
                         # no need to plot sample coloring for every param combination
-                        if level == 'sample' and reference != references[0] and method != methods[0]:
+                        if color == 'sample' and reference != references[0] and method != methods[0]:
                             continue
 
-                        out_file = figures_dir / f"embed_panel/{name}/umap_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}_{reference}_{method}_{level}.{extension}"
+                        out_file = figures_dir / f"embed_panel/{name}/umap_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}_{reference}_{method}_{color}.{extension}"
                         out_files_panel.append(out_file)
 
                         rule:
-                            name: f'embed_panel_plot/{name}/umap_{reference}_{method}_{level}'
+                            name: f'embed_panel_plot/{name}/umap_{reference}_{method}_{color}'
                             input:
                                 panel=panel,
                                 embed_file=embed_file,
@@ -58,7 +58,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                             params:
                                 reference=reference,
                                 method=method,
-                                level=level,
+                                color=color,
                                 cell_type_palette=cell_type_palette,
                                 panel_palette=panel_palette,
                                 sample_palette=sample_palette,
@@ -79,7 +79,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 --embed_file {input.embed_file} \
                                 --reference {params.reference} \
                                 --method {params.method} \
-                                --level {params.level} \
+                                --color {params.color} \
                                 --out_file {output.out_file} \
                                 --cell_type_palette {params.cell_type_palette} \
                                 --panel_palette {params.panel_palette} \

@@ -21,11 +21,11 @@ parser.add_argument(
     type=str,
     help="out_file_signal_strength file to output.",
 )
-parser.add_argument(
-    "--out_file_doublet_df",
-    type=str,
-    help="out_file_doublet_df file to output.",
-)
+# parser.add_argument(
+#     "--out_file_doublet_df",
+#     type=str,
+#     help="out_file_doublet_df file to output.",
+# )
 
 args = parser.parse_args()
 
@@ -33,7 +33,7 @@ args = parser.parse_args()
 sample_transcripts_path = args.sample_transcripts_path
 out_file_signal_integrity = args.out_file_signal_integrity
 out_file_signal_strength = args.out_file_signal_strength
-out_file_doublet_df = args.out_file_doublet_df
+# out_file_doublet_df = args.out_file_doublet_df
 
 
 # load data
@@ -55,9 +55,9 @@ coordinate_df["gene"] = coordinate_df["gene"].astype("category")
 signal_integrity, signal_strength, visualizer = ovrlpy.run(
     df=coordinate_df, cell_diameter=10, n_expected_celltypes=30
 )
-doublet_df = ovrlpy.detect_doublets(
-    signal_integrity, signal_strength, minimum_signal_strength=3, integrity_sigma=2
-)
+# doublet_df = ovrlpy.detect_doublets(
+#     signal_integrity, signal_strength, minimum_signal_strength=3, integrity_sigma=2
+# )
 
 # store results
 signal_integrity = scipy.sparse.csr_matrix(signal_integrity)
@@ -65,4 +65,4 @@ signal_strength = scipy.sparse.csr_matrix(signal_strength)
 
 scipy.io.mmwrite(out_file_signal_integrity, signal_integrity)
 scipy.io.mmwrite(out_file_signal_strength, signal_strength)
-doublet_df.to_parquet(out_file_doublet_df)
+# doublet_df.to_parquet(out_file_doublet_df)

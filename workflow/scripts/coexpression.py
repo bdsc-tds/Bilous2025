@@ -3,6 +3,45 @@ import pandas as pd
 import scipy
 
 
+def get_exclusive_gene_pairs(df_markers):
+    """
+    Get exclusive gene pairs from a DataFrame of cell type markers.
+    Markers for a given cell type are assumed to be exclusive with all other cell types
+
+    Parameters
+    ----------
+    df_markers : pd.DataFrame
+        A DataFrame with first column corresponding to cell types and second column for gene names.
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame with columns 'cti', 'ctj', 'genei', 'genej'.
+    """
+    u_cell_types = df_markers.iloc[:, 0].unique()
+    n_cell_types = len(u_cell_types)
+
+    exclusive_gene_pairs = []
+    for i in range(n_cell_types):
+        for j in range(i + 1, n_cell_types):
+            cti = u_cell_types[i]
+            ctj = u_cell_types[j]
+
+            df_markers_cti = df_markers[df_markers.iloc[:, 0] == cti]
+            df_markers_ctj = df_markers[df_markers.iloc[:, 0] == ctj]
+
+            for genei in df_markers_cti.iloc[:, 1]:
+                for genej in df_markers_ctj.iloc[:, 1]:
+                    exclusive_gene_pairs.append(
+                        (*sorted((cti, ctj)), *sorted((genei, genej)))
+                    )
+
+    exclusive_gene_pairs = pd.DataFrame(
+        exclusive_gene_pairs, columns=["cti", "ctj", "genei", "genej"]
+    )
+    return exclusive_gene_pairs
+
+
 def counts_to_positivity(X, cutoff):
     """
     Convert counts to a binary positivity matrix based on a cutoff value.
@@ -153,21 +192,21 @@ def spearman_coexpression(X):
 #     n_counts = X.sum(axis=1)
 #     probabilities = (X / n_counts).tocsr()
 
-#     X_downdonord = X.copy()
+#     X_downsampled = X.copy()
 #     for i in range(X.shape[0]):
 #         diff_size = n_counts[i] - target_size
 #         if diff_size > 0:
-#             X_downdonord[i] -= rs.multinomial(
+#             X_downsampled[i] -= rs.multinomial(
 #                 n=diff_size, pvals=probabilities[i].toarray().flat
 #             )
 
 #     # Ensure no negative values by recursion if needed
-#     if np.any(X_downdonord.data < 0):
+#     if np.any(X_downsampled.data < 0):
 #         print("clipping negative counts to 0...")
-#         X_downdonord.data = np.clip(X_downdonord.data, 0, None, out=X_downdonord)
-#         return thin_counts(X_downdonord, target_size=target_size)
+#         X_downsampled.data = np.clip(X_downsampled.data, 0, None, out=X_downsampled)
+#         return thin_counts(X_downsampled, target_size=target_size)
 
-#     return X_downdonord
+#     return X_downsampled
 
 
 # def thin_counts_v3(X, target_size, rs=None):
@@ -177,17 +216,17 @@ def spearman_coexpression(X):
 #     n_counts = X.sum(axis=1)
 #     probabilities = (X / n_counts).tocsr()
 
-#     X_downdonord = X.copy()
+#     X_downsampled = X.copy()
 #     for i in tqdm(range(X.shape[0])):
 #         diff_size = n_counts[i] - target_size
 #         pvals = probabilities[i].toarray().flat
 #         while diff_size > 0:
 #             thin = rs.multinomial(n=1, pvals=pvals)
-#             if X_downdonord[i, np.where(thin)[0]] > 0:
-#                 X_downdonord[i] -= thin
+#             if X_downsampled[i, np.where(thin)[0]] > 0:
+#                 X_downsampled[i] -= thin
 #                 diff_size -= 1
 
-#     return X_downdonord
+#     return X_downsampled
 
 
 # def thin_counts_old(X, target_count, rs=None):
@@ -247,7 +286,7 @@ def coexpression(
     method="conditional",
     seed=0,
     # min_positivity_rate: float = 0.01,
-    # min_cond_coex: float =0.0,
+    # min_cond_coex: float = 0.0,
 ):
     """
     Calculate co-expression matrix using different methods.
@@ -289,14 +328,14 @@ def coexpression(
             mask = np.argsort(n_counts)[::-1][:min_donors]
 
         # Downdonor counts
-        X_downdonor = thin_counts(X[mask], target_count, gen=gen)
+        X_downsample = thin_counts(X[mask], target_count, gen=gen)
     else:
         mask = np.ones(X.shape[0], dtype=bool)
-        X_downdonor = X
+        X_downsample = X
 
     # Convert counts to binary positivity matrix based on threshold
     pos, pos_rate = counts_to_positivity(
-        X_downdonor,
+        X_downsample,
         positivity_cutoff,
     )  # min_positivity_rate)
 
@@ -306,14 +345,14 @@ def coexpression(
     elif method == "jaccard":
         CC = jaccard_coexpression(pos.T).toarray()
     elif method == "pearson":
-        CC = pearson_coexpression(X_downdonor)
+        CC = pearson_coexpression(X_downsample)
     elif method == "spearman":
-        CC = spearman_coexpression(X_downdonor)
+        CC = spearman_coexpression(X_downsample)
 
     CC = pd.DataFrame(CC, index=adata.var_names, columns=adata.var_names)
     pos_rate = pd.Series(pos_rate, index=adata.var_names)
 
-    return CC, X_downdonor, pos, pos_rate, mask
+    return CC, X_downsample, pos, pos_rate, mask
 
 
 def censored_ratio(
@@ -322,6 +361,7 @@ def censored_ratio(
     pos_rate_ref_seg=None,
     pos_rate_other_seg=None,
     min_positivity_rate=0.0,
+    min_cond_coex=0.0,
     log2=True,
 ):
     """
@@ -338,7 +378,14 @@ def censored_ratio(
     Returns:
     pd.DataFrame: Censored and transformed ratio matrix.
     """
-    CCdiff = CC_other_seg / CC_ref_seg
+    # pseudocount to avoid zero numerators or denominators
+    if min_cond_coex > 0.0:
+        CCdiff = CC_other_seg.clip(lower=min_cond_coex) / CC_ref_seg.clip(
+            lower=min_cond_coex
+        )
+    else:
+        CCdiff = CC_other_seg / CC_ref_seg
+
     if log2:
         CCdiff = np.log2(CCdiff)
 
@@ -347,7 +394,6 @@ def censored_ratio(
         mask = (pos_rate_ref_seg < min_positivity_rate) | (
             pos_rate_other_seg < min_positivity_rate
         )
-        # CCdiff[np.ix_(mask, mask)] = 0
         CCdiff.loc[mask, mask] = 0.0
 
     return CCdiff
@@ -359,7 +405,8 @@ def compare_segmentations(
     pos_rate_ref_seg,
     pos_rate_other_seg,
     min_positivity_rate=0.01,
-    cc_cutoff=2.0,
+    min_cond_coex=0.05,
+    cc_cutoff=1.5,
     method=None,
     log2=True,
 ):

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 # cfg paths
+xenium_dir = Path(config['xenium_processed_data_dir'])
 silhouette_dir = Path(config['results_dir']) / 'silhouette'
 figures_dir = Path(config['figures_dir'])
 palette_dir = Path(config['xenium_metadata_dir'])
@@ -13,7 +14,7 @@ levels = ['Level2']
 extension = 'png'
 
 out_files_panel = []
-for segmentation in (segmentations := silhouette_dir.iterdir()):
+for segmentation in (segmentations := xenium_dir.iterdir()):
     if segmentation.stem == 'proseg_v1':
         continue
     for condition in (conditions := segmentation.iterdir()): 
@@ -25,16 +26,18 @@ for segmentation in (segmentations := silhouette_dir.iterdir()):
                         k = (segmentation.stem,condition.stem,panel.stem)
                         name = '/'.join(k)
 
+                        panel_silhouette = results_dir / f'silhouette/{name}'
                         out_file = figures_dir / f'silhouette_plot_panel/{name}/silhouette_{reference}_{method}_{level}.{extension}'
                         out_files_panel.append(out_file)
 
                         rule:
                             name: f'silhouette_plot_panel/{name}/silhouette_{reference}_{method}_{level}'
                             input:
-                                panel=panel,
+                                silhouette_is_done=results_dir / "silhouette.done",                            
                             output:
                                 out_file=out_file,
                             params:
+                                panel=panel_silhouette,
                                 segmentation_palette=segmentation_palette,
                                 reference=reference,
                                 method=method,
@@ -50,7 +53,7 @@ for segmentation in (segmentations := silhouette_dir.iterdir()):
                                 mkdir -p "$(dirname {output.out_file})"
 
                                 python workflow/scripts/xenium/silhouette_panel_plot.py \
-                                --panel {input.panel} \
+                                --panel {params.panel} \
                                 --out_file {output.out_file} \
                                 --segmentation_palette {params.segmentation_palette} \
                                 --reference {params.reference} \
@@ -65,7 +68,7 @@ for segmentation in (segmentations := silhouette_dir.iterdir()):
 
 
 out_files_condition = []
-for segmentation in (segmentations := silhouette_dir.iterdir()):
+for segmentation in (segmentations := xenium_dir.iterdir()):
     if segmentation.stem == 'proseg_v1':
         continue
     for condition in (conditions := segmentation.iterdir()): 
@@ -75,6 +78,7 @@ for segmentation in (segmentations := silhouette_dir.iterdir()):
 
                         k = (segmentation.stem,condition.stem)
                         name = '/'.join(k)
+                        condition_silhouette = results_dir / f'silhouette/{name}'
 
                         out_file = figures_dir / f'silhouette_plot_condition/{name}/silhouette_{reference}_{method}_{level}.{extension}'
                         out_files_condition.append(out_file)
@@ -82,7 +86,7 @@ for segmentation in (segmentations := silhouette_dir.iterdir()):
                         rule:
                             name: f'silhouette_plot_condition/{name}/silhouette_{reference}_{method}_{level}'
                             input:
-                                condition=condition,
+                                condition=condition_silhouette,
                             output:
                                 out_file=out_file,
                             params:

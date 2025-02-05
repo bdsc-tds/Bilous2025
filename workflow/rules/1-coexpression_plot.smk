@@ -1,23 +1,24 @@
 from pathlib import Path
 
 # cfg paths
+xenium_dir = Path(config['xenium_processed_data_dir'])
 results_dir = Path(config['results_dir'])
 figures_dir = Path(config['figures_dir'])
 palette_dir = Path(config['xenium_metadata_dir'])
 
 # Params
-methods = ['conditional','jaccard','pearson','spearman']
+methods = ['conditional','jaccard']#,'pearson','spearman']
 target_counts = [30,50,200]
 min_positivity_rate = 0.01
+# min_cond_coex = 0.05
 cc_cutoff = 1.5
-log2 = True
 ref_segmentation = '10x_0um'
 ref_oversegmentation = '10x_15um'
 segmentation_palette = palette_dir / 'col_palette_segmentation.csv'
 extension = 'png'
 
 out_files = []
-for segmentation in (segmentations := (results_dir/'coexpression').iterdir()):
+for segmentation in (segmentations := xenium_dir.iterdir()):
     if segmentation.stem == 'proseg_v1':
         continue
     for condition in (conditions := segmentation.iterdir()): 
@@ -30,40 +31,57 @@ for segmentation in (segmentations := (results_dir/'coexpression').iterdir()):
                     k = (segmentation.stem,condition.stem,panel.stem)
                     name = '/'.join(k)
 
-                    out_file_plot = figures_dir / f'coexpression_plot/{name}/coexpression_{method}_{target_count=}.{extension}'
+                    panel_coexpression = results_dir / f'coexpression/{name}'
+                    out_file_plot_sample = figures_dir / f'coexpression_plot/{name}/coexpression_{method}_{target_count=}_sample.{extension}'
+                    out_file_plot_panel = figures_dir / f'coexpression_plot/{name}/coexpression_{method}_{target_count=}_panel.{extension}'
                     out_file_gene_pairs = results_dir / f'coexpression_gene_pairs/{name}/coexpression_gene_pairs_{method}_{target_count=}.parquet'
-                    out_files.extend([out_file_plot,out_file_gene_pairs])
+                    out_files.extend([out_file_plot_sample,out_file_plot_panel,out_file_gene_pairs])
+
+                    # adapt resources
+                    if panel.stem == '5k':
+                        if target_count > 50:
+                            mem = '120GB'
+                            runtime = '40m'
+                        else:
+                            mem = '80GB'
+                            runtime = '40m'
+                    else:
+                        mem = '20GB'
+                        runtime = '10m'
 
                     rule:
                         name: f'coexpression_plot_panel/{name}/coexpression_{method}_{target_count=}'
                         input:
                             coexpression_is_done=results_dir / "coexpression.done",
-                            panel=panel,
                         output:
-                            out_file_plot=out_file_plot,
+                            out_file_plot_sample=out_file_plot_sample,
+                            out_file_plot_panel=out_file_plot_panel,
                             out_file_gene_pairs=out_file_gene_pairs,
                         params:
+                            panel=panel_coexpression,
                             method=method,
                             target_count=target_count,
                             min_positivity_rate=min_positivity_rate,
+                            # min_cond_coex=min_cond_coex if method in ['conditional','jaccard'] else 0.,
                             cc_cutoff=cc_cutoff,
-                            log2=log2,
+                            log2=True if method in ['conditional','jaccard'] else False,
                             ref_segmentation=ref_segmentation,
                             ref_oversegmentation=ref_oversegmentation,
                             segmentation_palette=segmentation_palette,
                         threads: 1
                         resources:
-                            mem='80GB' if panel.stem == '5k' else '20GB',
-                            runtime='40m' if panel.stem == '5k' else '10m',
+                            mem=mem,
+                            runtime=runtime,
                         conda:
                             "spatial"
                         shell:
                             """
-                            mkdir -p "$(dirname {output.out_file_plot})"
+                            mkdir -p "$(dirname {output.out_file_plot_sample})"
 
                             python workflow/scripts/xenium/coexpression_panel_plot.py \
-                            --panel {input.panel} \
-                            --out_file_plot {output.out_file_plot} \
+                            --panel {params.panel} \
+                            --out_file_plot_sample {output.out_file_plot_sample} \
+                            --out_file_plot_panel {output.out_file_plot_panel} \
                             --out_file_gene_pairs {output.out_file_gene_pairs} \
                             --method {params.method} \
                             --target_count {params.target_count} \
@@ -76,6 +94,7 @@ for segmentation in (segmentations := (results_dir/'coexpression').iterdir()):
 
                             echo "DONE"
                             """
+                            # --min_cond_coex {params.min_cond_coex} \
 
 
 rule coexpression_plot_all:

@@ -1,3 +1,7 @@
+import dask
+
+dask.config.set({"dataframe.query-planning": False})
+
 import spatialdata_io
 import numpy as np
 import pandas as pd

@@ -52,7 +52,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 """
                                 mkdir -p "$(dirname {output.out_file})"
 
-                                python workflow/scripts/xenium/silhouette_donor.py \
+                                python workflow/scripts/xenium/silhouette_sample.py \
                                 {input.sample_path} \
                                 {output.out_file} \
                                 {params.max_donor_size}
@@ -64,3 +64,5 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
 rule silhouette_all:
     input:
         out_files
+    output:
+        touch(results_dir / "silhouette.done")

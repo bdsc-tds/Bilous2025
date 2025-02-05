@@ -44,7 +44,6 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                     max_counts=max_counts,
                     max_features=max_features,
                     min_cells=min_cells,
-
                 threads: 1
                 resources:
                     mem='100GB' if panel.stem == '5k' else '50GB',
