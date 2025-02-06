@@ -33,8 +33,6 @@ parser.add_argument(
     type=str,
     help="out_file_corrected_counts file to output.",
 )
-parser.add_argument("--out_file_corrected_counts_index", type=str)
-parser.add_argument("--out_file_corrected_counts_columns", type=str)
 parser.add_argument(
     "--out_file_cells_mean_integrity",
     type=str,
@@ -94,8 +92,5 @@ corrected_counts = transcripts_to_count_matrix(
 
 
 # store results
-corrected_counts = scipy.sparse.csr_matrix(corrected_counts)
-corrected_counts.index.to_frame().to_parquet(out_file_corrected_counts_index)
-corrected_counts.columns.to_frame().to_parquet(out_file_corrected_counts_columns)
-
+corrected_counts.to_parquet(out_file_corrected_counts)
 cell_mean_integrity.to_frame().to_parquet(out_file_cells_mean_integrity)

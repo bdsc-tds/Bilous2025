@@ -60,9 +60,7 @@ signal_integrity, signal_strength, visualizer = ovrlpy.run(
 # )
 
 # store results
-signal_integrity = scipy.sparse.csr_matrix(signal_integrity)
-signal_strength = scipy.sparse.csr_matrix(signal_strength)
+pd.DataFrame(signal_integrity).to_parquet(out_file_signal_integrity)
+pd.DataFrame(signal_strength).to_parquet(out_file_signal_strength)
 
-scipy.io.mmwrite(out_file_signal_integrity, signal_integrity)
-scipy.io.mmwrite(out_file_signal_strength, signal_strength)
 # doublet_df.to_parquet(out_file_doublet_df)

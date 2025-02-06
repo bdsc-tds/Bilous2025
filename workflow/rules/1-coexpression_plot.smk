@@ -41,10 +41,9 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                     if panel.stem == '5k':
                         if target_count > 50:
                             mem = '120GB'
-                            runtime = '40m'
                         else:
                             mem = '80GB'
-                            runtime = '40m'
+                        runtime = '80m'
                     else:
                         mem = '20GB'
                         runtime = '10m'

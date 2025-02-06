@@ -20,8 +20,8 @@ for condition in (conditions := ref_segmentation.iterdir()):
 
                 if sample_transcripts_path.exists():
 
-                    out_file_signal_integrity = results_dir / f'ovrlpy/{name}/signal_integrity.mtx' 
-                    out_file_signal_strength = results_dir / f'ovrlpy/{name}/signal_strength.mtx'
+                    out_file_signal_integrity = results_dir / f'ovrlpy/{name}/signal_integrity.parquet' 
+                    out_file_signal_strength = results_dir / f'ovrlpy/{name}/signal_strength.parquet'
                     # out_file_doublet_df = results_dir / f'ovrlpy/{name}/doublet_df.parquet'
 
                     out_files_ovrlpy.extend([
@@ -76,18 +76,14 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                     ref_name = '/'.join(k_ref)
 
                     sample_transcripts_path = sample / "normalised_results/outs/transcripts.parquet"
-                    sample_signal_integrity = results_dir / f'ovrlpy/{ref_name}/signal_integrity.mtx' 
+                    sample_signal_integrity = results_dir / f'ovrlpy/{ref_name}/signal_integrity.parquet' 
 
                     if sample_transcripts_path.exists():
-                        out_file_corrected_counts = results_dir / f'ovrlpy_correction/{name}/corrected_counts_{signal_integrity_threshold=}.mtx'
-                        out_file_corrected_counts_index = results_dir / f'ovrlpy_correction/{name}/corrected_counts_{signal_integrity_threshold=}_index.parquet'
-                        out_file_corrected_counts_columns = results_dir / f'ovrlpy_correction/{name}/corrected_counts_{signal_integrity_threshold=}_columns.parquet'
+                        out_file_corrected_counts = results_dir / f'ovrlpy_correction/{name}/corrected_counts_{signal_integrity_threshold=}.parquet'
                         out_file_cells_mean_integrity = results_dir / f'ovrlpy_correction/{name}/cells_mean_integrity.parquet'
 
                         out_files_ovrlpy_correction.extend([
                             out_file_corrected_counts,
-                            out_file_corrected_counts_index,
-                            out_file_corrected_counts_columns,
                             out_file_cells_mean_integrity,])
 
                         rule:
@@ -97,8 +93,6 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 sample_signal_integrity=sample_signal_integrity,
                             output:
                                 out_file_corrected_counts=out_file_corrected_counts,
-                                out_file_corrected_counts_index=out_file_corrected_counts_index,
-                                out_file_corrected_counts_columns=out_file_corrected_counts_columns,
                                 out_file_cells_mean_integrity=out_file_cells_mean_integrity,
                             params:
                                 signal_integrity_threshold=signal_integrity_threshold
@@ -116,8 +110,6 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 --sample_transcripts_path {input.sample_transcripts_path} \
                                 --sample_signal_integrity {input.sample_signal_integrity} \
                                 --out_file_corrected_counts {output.out_file_corrected_counts} \
-                                --out_file_corrected_counts_index {output.out_file_corrected_counts_index} \
-                                --out_file_corrected_counts_columns {output.out_file_corrected_counts_columns} \
                                 --out_file_cells_mean_integrity {output.out_file_cells_mean_integrity} \
                                 --signal_integrity_threshold {params.signal_integrity_threshold} \
 

@@ -432,6 +432,7 @@ def compare_segmentations(
         pos_rate_ref_seg=pos_rate_ref_seg,
         pos_rate_other_seg=pos_rate_other_seg,
         min_positivity_rate=min_positivity_rate,
+        min_cond_coex=min_cond_coex,
         log2=log2,
     )
 

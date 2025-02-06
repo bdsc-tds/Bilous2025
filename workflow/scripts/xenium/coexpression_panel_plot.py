@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import warnings
+import natsort
 
 sys.path.append("workflow/scripts/")
 import readwrite
@@ -160,7 +161,7 @@ df["log2 relative coexpression"] = df["log2 relative coexpression"].astype(float
 
 
 # plotting params, palette
-unique_labels = np.unique(df[hue].dropna())
+unique_labels = natsort.natsorted(np.unique(df[hue].dropna()))
 palette = {u: palette[u] for u in unique_labels}
 
 # Create sample violinplot
