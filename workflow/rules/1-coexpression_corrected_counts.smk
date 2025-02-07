@@ -1,7 +1,8 @@
 from pathlib import Path
 
 # cfg paths
-xenium_dir = Path(config['xenium_processed_data_dir'])
+# xenium_dir = Path(config['xenium_processed_data_dir'])
+xenium_std_seurat_analysis_dir =  Path(config['xenium_std_seurat_analysis_dir'])
 results_dir = Path(config['results_dir'])
 
 # Params
@@ -9,9 +10,7 @@ methods = ['conditional','jaccard','pearson','spearman']
 target_counts = [30,50,200]
 out_files_resolvi = []
 
-for segmentation in (segmentations := xenium_dir.iterdir()):
-    if segmentation.stem == 'proseg_v1':
-        continue
+for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
             for donor in (donors := panel.iterdir()):
@@ -53,7 +52,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                         """
                                         mkdir -p "$(dirname {output.out_file_coexpr})"
 
-                                        python workflow/scripts/xenium/coexpression_donor_resolvi.py \
+                                        python workflow/scripts/xenium/coexpression_sample_resolvi.py \
                                         {input.sample_path} \
                                         {output.out_file_coexpr} \
                                         {output.out_file_pos_rate} \

@@ -21,6 +21,11 @@ parser.add_argument(
     type=str,
     help="out_file_signal_strength file to output.",
 )
+parser.add_argument(
+    "--out_file_transcript_info",
+    type=str,
+    help="out_file_transcript_info file to output.",
+)
 # parser.add_argument(
 #     "--out_file_doublet_df",
 #     type=str,
@@ -33,6 +38,7 @@ args = parser.parse_args()
 sample_transcripts_path = args.sample_transcripts_path
 out_file_signal_integrity = args.out_file_signal_integrity
 out_file_signal_strength = args.out_file_signal_strength
+out_file_transcript_info = args.out_file_transcript_info
 # out_file_doublet_df = args.out_file_doublet_df
 
 
@@ -60,7 +66,11 @@ signal_integrity, signal_strength, visualizer = ovrlpy.run(
 # )
 
 # store results
+
 pd.DataFrame(signal_integrity).to_parquet(out_file_signal_integrity)
 pd.DataFrame(signal_strength).to_parquet(out_file_signal_strength)
+coordinate_df[["x_pixel", "y_pixel", "n_pixel", "z_delim"]].to_parquet(
+    out_file_transcript_info
+)
 
 # doublet_df.to_parquet(out_file_doublet_df)

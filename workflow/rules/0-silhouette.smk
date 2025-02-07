@@ -6,16 +6,16 @@ with open(f) as f:
     donors_config = yaml.safe_load(f)
 
 # cfg paths
-xenium_dir = Path(config['xenium_processed_data_dir'])
+xenium_std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
+xenium_cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
 results_dir = Path(config['results_dir'])
 
 # Params
+normalisations = ['lognorm','sctransform']
 max_donor_size = 1_000
 out_files = []
 
-for segmentation in (segmentations := xenium_dir.iterdir()):
-    if segmentation.stem == 'proseg_v1':
-        continue
+for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
             for donor in (donors := panel.iterdir()):
@@ -25,40 +25,52 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                     if donor.stem not in donors_config[condition.stem][panel.stem]:
                         continue
 
-                    k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
-                    sample_path = sample / "normalised_results/outs"
-                    name = '/'.join(k)
+                    for norm in normalisations:
 
-                    if sample_path.exists():
+                        k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,norm)
+                        name = '/'.join(k)
 
-                        out_file = results_dir / f'silhouette/{name}/silhouette.parquet'
-                        out_files.append(out_file)
+                        sample_counts = sample / f'{norm}/normalised_counts/counts.parquet'
+                        sample_idx = sample / f'{norm}/normalised_counts/cells.parquet'
+                        sample_annotation_dir = xenium_cell_type_annotation_dir / f'{name}/reference_based'
 
-                        rule:
-                            name: f'silhouette/{name}'
-                            input:
-                                sample_path=sample_path,
-                            output:
-                                out_file=out_file,
-                            params:
-                                max_donor_size=max_donor_size
-                            threads: 1
-                            resources:
-                                mem='30GB',
-                                runtime='15m',
-                            conda:
-                                "spatial"
-                            shell:
-                                """
-                                mkdir -p "$(dirname {output.out_file})"
+                        # sample_path = sample / "normalised_results/outs"
 
-                                python workflow/scripts/xenium/silhouette_sample.py \
-                                {input.sample_path} \
-                                {output.out_file} \
-                                {params.max_donor_size}
 
-                                echo "DONE"
-                                """
+                        if sample_path.exists():
+
+                            out_file = results_dir / f'silhouette/{name}/silhouette.parquet'
+                            out_files.append(out_file)
+
+                            rule:
+                                name: f'silhouette/{name}'
+                                input:
+                                    sample_counts=sample_counts,
+                                    sample_idx=sample_idx,
+                                    sample_annotation_dir=sample_annotation_dir,
+                                output:
+                                    out_file=out_file,
+                                params:
+                                    max_donor_size=max_donor_size
+                                threads: 1
+                                resources:
+                                    mem='30GB',
+                                    runtime='15m',
+                                conda:
+                                    "spatial"
+                                shell:
+                                    """
+                                    mkdir -p "$(dirname {output.out_file})"
+
+                                    python workflow/scripts/xenium/silhouette_sample.py \
+                                    {input.sample_path} \
+                                    {input.sample_idx} \
+                                    {input.sample_annotation_dir} \
+                                    {output.out_file} \
+                                    {params.max_donor_size}
+
+                                    echo "DONE"
+                                    """
 
 
 rule silhouette_all:

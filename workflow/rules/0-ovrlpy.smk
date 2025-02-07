@@ -22,11 +22,13 @@ for condition in (conditions := ref_segmentation.iterdir()):
 
                     out_file_signal_integrity = results_dir / f'ovrlpy/{name}/signal_integrity.parquet' 
                     out_file_signal_strength = results_dir / f'ovrlpy/{name}/signal_strength.parquet'
+                    out_file_transcript_info = results_dir / f'ovrlpy/{name}/transcript_info.parquet'
                     # out_file_doublet_df = results_dir / f'ovrlpy/{name}/doublet_df.parquet'
 
                     out_files_ovrlpy.extend([
                                     out_file_signal_integrity,
                                     out_file_signal_strength,
+                                    out_file_transcript_info,
                                         #out_file_doublet_df
                                         ])
 
@@ -37,11 +39,12 @@ for condition in (conditions := ref_segmentation.iterdir()):
                         output:
                             out_file_signal_integrity=out_file_signal_integrity,
                             out_file_signal_strength=out_file_signal_strength,
+                            out_file_transcript_info=out_file_transcript_info,
                             # out_file_doublet_df=out_file_doublet_df,
                         threads: 1
                         resources:
-                            mem='400GB' if panel.stem == '5k' else '200GB',
-                            runtime='10h' if panel.stem == '5k' else '1h',
+                            mem='300GB' if panel.stem == '5k' else '200GB',
+                            runtime='20h' if panel.stem == '5k' else '1h',
                         conda:
                             "spatial"
                         shell:
@@ -52,6 +55,7 @@ for condition in (conditions := ref_segmentation.iterdir()):
                             --sample_transcripts_path {input.sample_transcripts_path} \
                             --out_file_signal_integrity {output.out_file_signal_integrity} \
                             --out_file_signal_strength {output.out_file_signal_strength} \
+                            --out_file_transcript_info {output.out_file_transcript_info} \
 
                             echo "DONE"
                             """
@@ -77,6 +81,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
 
                     sample_transcripts_path = sample / "normalised_results/outs/transcripts.parquet"
                     sample_signal_integrity = results_dir / f'ovrlpy/{ref_name}/signal_integrity.parquet' 
+                    sample_transcript_info = results_dir / f'ovrlpy/{ref_name}/transcript_info.parquet'
 
                     if sample_transcripts_path.exists():
                         out_file_corrected_counts = results_dir / f'ovrlpy_correction/{name}/corrected_counts_{signal_integrity_threshold=}.parquet'
@@ -91,6 +96,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                             input:
                                 sample_transcripts_path=sample_transcripts_path,
                                 sample_signal_integrity=sample_signal_integrity,
+                                sample_transcript_info=sample_transcript_info,
                             output:
                                 out_file_corrected_counts=out_file_corrected_counts,
                                 out_file_cells_mean_integrity=out_file_cells_mean_integrity,
@@ -109,6 +115,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 python workflow/scripts/xenium/ovrlpy_sample_correction.py \
                                 --sample_transcripts_path {input.sample_transcripts_path} \
                                 --sample_signal_integrity {input.sample_signal_integrity} \
+                                --sample_transcript_info {input.sample_transcript_info} \
                                 --out_file_corrected_counts {output.out_file_corrected_counts} \
                                 --out_file_cells_mean_integrity {output.out_file_cells_mean_integrity} \
                                 --signal_integrity_threshold {params.signal_integrity_threshold} \

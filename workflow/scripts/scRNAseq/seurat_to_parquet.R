@@ -27,26 +27,21 @@ for (assay_name in Assays(seurat_obj)) {
     DefaultAssay(seurat_obj) <- assay_name  # Set active assay
 
     for (slot in c("counts", "data", "scale.data")) {
-        if (slot %in% slotNames(GetAssay(seurat_obj, assay_name))) {
 
-            message("  - Extracting ", slot, " from ", assay_name)
+        message("  - Extracting ", slot, " from ", assay_name)
 
-            mat <- GetAssayData(seurat_obj, layer = slot, assay = assay_name)
-            
-            if((nrow(mat) > 0 && ncol(mat) > 0)){
-                slot_parquet_path <- file.path(output_dir, paste0(assay_name, "_", slot, ".parquet"))
-                write_parquet(as.data.frame(mat), slot_parquet_path)
-                message("  ✅ Saved: ", slot_parquet_path)
+        mat <- GetAssayData(seurat_obj, layer = slot, assay = assay_name)
+        
+        if((nrow(mat) > 0 && ncol(mat) > 0)){
+            slot_parquet_path <- file.path(output_dir, paste0(assay_name, "_", slot, ".parquet"))
+            write_parquet(as.data.frame(mat), slot_parquet_path)
+            message("  ✅ Saved: ", slot_parquet_path)
 
-            } else{
-                message("  ❌ Skipping ", slot, " (empty matrix in ", assay_name, ")")
+        } else{
+            message("  ❌ Skipping ", slot, " (empty matrix in ", assay_name, ")")
 
-            }
-
-
-        } else {
-            message("  ❌ Skipping ", slot, " (not found in ", assay_name, ")")
         }
+
     }
 }
 

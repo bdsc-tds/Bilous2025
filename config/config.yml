@@ -10,6 +10,9 @@ xenium_metadata_dir: "data/xenium/metadata/"
 
 xenium_raw_data_dir: "data/xenium/raw/"
 xenium_processed_data_dir: "data/xenium/processed/segmentation/"
+xenium_std_seurat_analysis_dir: "data/xenium/processed/std_seurat_analysis/"
+xenium_cell_type_annotation_dir: "data/xenium/processed/cell_type_annotation/"
+
 scrnaseq_processed_data_dir: "data/scRNAseq/processed/"
 visium_raw_data_dir: "data/visium/raw/"
 visium_processed_data_dir: "data/visium/processed/"

@@ -8,7 +8,7 @@ def transcripts_to_count_matrix(
     transcripts, cell_column="cell_id", feature_column="feature_name", qv_treshold=20
 ):
     transcripts = transcripts.query(
-        f"(qv >= {qv_treshold}) & ({cell_column} != 'UNASSIGNED')"
+        f"is_gene &(qv >= {qv_treshold}) & ({cell_column} != 'UNASSIGNED')"
     )
     cm = transcripts.pivot_table(
         index=cell_column, columns=feature_column, aggfunc="size", fill_value=0
@@ -27,6 +27,11 @@ parser.add_argument(
     "--sample_signal_integrity",
     type=Path,
     help="Path to the sample_signal_integrity file.",
+)
+parser.add_argument(
+    "--sample_transcript_info",
+    type=str,
+    help="sample_transcript_info file to output.",
 )
 parser.add_argument(
     "--out_file_corrected_counts",
@@ -49,9 +54,8 @@ args = parser.parse_args()
 # Access the arguments
 sample_transcripts_path = args.sample_transcripts_path
 sample_signal_integrity = args.sample_signal_integrity
+sample_transcript_info = args.sample_transcript_info
 out_file_corrected_counts = args.out_file_corrected_counts
-out_file_corrected_counts_index = args.out_file_corrected_counts_index
-out_file_corrected_counts_columns = args.out_file_corrected_counts_columns
 out_file_cells_mean_integrity = args.out_file_cells_mean_integrity
 signal_integrity_threshold = args.signal_integrity_threshold
 
@@ -60,11 +64,11 @@ signal_integrity_threshold = args.signal_integrity_threshold
 coordinate_df = pd.read_parquet(sample_transcripts_path).query(
     "is_gene & (qv >= 20)"
 )  # remove dummy & low qv molecules
-coordinate_df["gene"] = coordinate_df["gene"].astype("category")
-
+transcript_info = pd.read_parquet(sample_transcript_info)
+coordinate_df = coordinate_df.join(transcript_info)
 
 # load ovrlpy
-signal_integrity = scipy.io.mmread(sample_signal_integrity).toarray()
+signal_integrity = pd.read_parquet(sample_signal_integrity).values
 # x and y are transposed in ovrlpy output. sanity check x and y must be transposed
 assert (coordinate_df.y_pixel.max() + 1) == signal_integrity.shape[0]
 assert (coordinate_df.x_pixel.max() + 1) == signal_integrity.shape[1]
@@ -87,7 +91,7 @@ cell_mean_integrity = (
 
 # create filtered count matrix
 corrected_counts = transcripts_to_count_matrix(
-    coordinate_df_filtered, feature_column="gene"
+    coordinate_df_filtered, feature_column="feature_name"
 ).sum(1)
 
 

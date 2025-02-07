@@ -24,7 +24,7 @@ for scrnaseq_reference_rds in (scrnaseq_references := scrnaseq_dir.iterdir()):
             out_dir=out_dir
         threads: 1
         resources:
-            mem='200GB',
+            mem='300GB',
             runtime='20m',
         conda:
             "rctd"

@@ -83,6 +83,7 @@ preprocessing.preprocess(
     max_counts=max_counts,
     max_genes=max_features,
     min_cells=min_cells,
+    backend="cpu",
 )
 
 
