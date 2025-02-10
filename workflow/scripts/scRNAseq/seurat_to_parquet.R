@@ -1,7 +1,6 @@
 library(Seurat)
-library(Matrix)
 library(arrow)
-
+source("/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/workflow/scripts/scRNAseq/write10x.R")
 
 args <- commandArgs(trailingOnly = TRUE)
 input_rds <- args[1]
@@ -33,8 +32,8 @@ for (assay_name in Assays(seurat_obj)) {
         mat <- GetAssayData(seurat_obj, layer = slot, assay = assay_name)
         
         if((nrow(mat) > 0 && ncol(mat) > 0)){
-            slot_parquet_path <- file.path(output_dir, paste0(assay_name, "_", slot, ".parquet"))
-            write_parquet(as.data.frame(mat), slot_parquet_path)
+            slot_parquet_path <- file.path(output_dir, paste0(assay_name, "_", slot, ".h5"))
+            write10xCounts(path=slot_parquet_path, x=mat,type='HDF5')
             message("  ✅ Saved: ", slot_parquet_path)
 
         } else{

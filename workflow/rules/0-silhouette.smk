@@ -12,7 +12,7 @@ results_dir = Path(config['results_dir'])
 
 # Params
 normalisations = ['lognorm','sctransform']
-max_donor_size = 1_000
+max_sample_size = 50_000
 out_files = []
 
 for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
@@ -51,7 +51,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                 output:
                                     out_file=out_file,
                                 params:
-                                    max_donor_size=max_donor_size
+                                    max_sample_size=max_sample_size
                                 threads: 1
                                 resources:
                                     mem='30GB',
@@ -67,7 +67,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                     {input.sample_idx} \
                                     {input.sample_annotation_dir} \
                                     {output.out_file} \
-                                    {params.max_donor_size}
+                                    {params.max_sample_size}
 
                                     echo "DONE"
                                     """

@@ -43,8 +43,8 @@ for condition in (conditions := ref_segmentation.iterdir()):
                             # out_file_doublet_df=out_file_doublet_df,
                         threads: 1
                         resources:
-                            mem='300GB' if panel.stem == '5k' else '200GB',
-                            runtime='20h' if panel.stem == '5k' else '1h',
+                            mem='400GB',
+                            runtime='15h',
                         conda:
                             "spatial"
                         shell:
@@ -84,12 +84,10 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                     sample_transcript_info = results_dir / f'ovrlpy/{ref_name}/transcript_info.parquet'
 
                     if sample_transcripts_path.exists():
-                        out_file_corrected_counts = results_dir / f'ovrlpy_correction/{name}/corrected_counts_{signal_integrity_threshold=}.parquet'
+                        out_file_corrected_counts = results_dir / f'ovrlpy_correction/{name}/corrected_counts_{signal_integrity_threshold=}.h5'
                         out_file_cells_mean_integrity = results_dir / f'ovrlpy_correction/{name}/cells_mean_integrity.parquet'
 
-                        out_files_ovrlpy_correction.extend([
-                            out_file_corrected_counts,
-                            out_file_cells_mean_integrity,])
+                        out_files_ovrlpy_correction.extend([ out_file_corrected_counts, out_file_cells_mean_integrity,])
 
                         rule:
                             name: f'ovrlpy_correction/{name}'
@@ -101,7 +99,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 out_file_corrected_counts=out_file_corrected_counts,
                                 out_file_cells_mean_integrity=out_file_cells_mean_integrity,
                             params:
-                                signal_integrity_threshold=signal_integrity_threshold
+                                signal_integrity_threshold=signal_integrity_threshold,
                             threads: 1
                             resources:
                                 mem='30GB' if panel.stem == '5k' else '20GB',

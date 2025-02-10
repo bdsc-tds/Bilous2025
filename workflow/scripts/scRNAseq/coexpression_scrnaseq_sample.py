@@ -1,5 +1,5 @@
 import pandas as pd
-import anndata as ad
+import scanpy as sc
 import sys
 
 sys.path.append("workflow/scripts/")
@@ -13,8 +13,7 @@ method = sys.argv[4]
 target_count = int(sys.argv[5])
 
 # read counts
-X = pd.read_parquet(sample_counts)
-adata = ad.AnnData(X)
+adata = sc.read_10x_h5(sample_counts)
 
 # compute coexpression
 CC, X_downsampled, pos, pos_rate, mask = coexpression.coexpression(

@@ -29,16 +29,16 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
 
                     if path.exists():
 
-                        out_file_resolvi_corrected = results_dir / f'resolvi/{name}/resolvi_corrected.parquet'
+                        out_file_resolvi_corrected_counts = results_dir / f'resolvi/{name}/resolvi_corrected_counts.h5'
                         out_file_resolvi_proportions = results_dir/ f'resolvi/{name}/resolvi_proportions.parquet'
-                        out_files.extend([out_file_resolvi_corrected,out_file_resolvi_proportions])
+                        out_files.extend([out_file_resolvi_corrected_counts,out_file_resolvi_proportions])
 
                         rule:
                             name: f'resolvi/{name}'
                             input:
                                 path=path,
                             output:
-                                out_file_resolvi_corrected=out_file_resolvi_corrected,
+                                out_file_resolvi_corrected_counts=out_file_resolvi_corrected_counts,
                                 out_file_resolvi_proportions=out_file_resolvi_proportions,
                             params:
                                 min_counts=min_counts,
@@ -49,19 +49,19 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 num_samples=num_samples,
                             threads: 1
                             resources:
-                                mem='100GB' if panel.stem == '5k' else '10GB',
-                                runtime='3h' if panel.stem == '5k' else '2h',
+                                mem='200GB' if panel.stem == '5k' else '10GB',
+                                runtime='8h',
                                 slurm_partition = "gpu",
                                 slurm_extra = '--gres=gpu:1',
                             conda:
                                 "spatial"
                             shell:
                                 """
-                                mkdir -p "$(dirname {output.out_file_resolvi_corrected})"
+                                mkdir -p "$(dirname {output.out_file_resolvi_corrected_counts})"
 
                                 python workflow/scripts/xenium/resolvi_sample.py \
                                 --path {input.path} \
-                                --out_file_resolvi_corrected {output.out_file_resolvi_corrected} \
+                                --out_file_resolvi_corrected_counts {output.out_file_resolvi_corrected_counts} \
                                 --out_file_resolvi_proportions {output.out_file_resolvi_proportions} \
                                 --min_counts {params.min_counts} \
                                 --min_features {params.min_features} \

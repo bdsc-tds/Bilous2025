@@ -1,7 +1,11 @@
-import scipy
 import pandas as pd
 import argparse
+import anndata as ad
 from pathlib import Path
+import sys
+
+sys.path.append("workflow/scripts/")
+import readwrite
 
 
 def transcripts_to_count_matrix(
@@ -76,6 +80,7 @@ coordinate_df["signal_integrity"] = signal_integrity[
     coordinate_df.y_pixel, coordinate_df.x_pixel
 ]
 
+
 # filter transcripts based on ovrlpy signal integrity
 coordinate_df_filtered = coordinate_df[
     coordinate_df.signal_integrity > signal_integrity_threshold
@@ -92,9 +97,11 @@ cell_mean_integrity = (
 # create filtered count matrix
 corrected_counts = transcripts_to_count_matrix(
     coordinate_df_filtered, feature_column="feature_name"
-).sum(1)
+)
 
 
 # store results
-corrected_counts.to_parquet(out_file_corrected_counts)
-cell_mean_integrity.to_frame().to_parquet(out_file_cells_mean_integrity)
+adata_out = ad.AnnData(corrected_counts)
+readwrite.write_10X_h5(adata_out, out_file_corrected_counts)
+if out_file_cells_mean_integrity != "":
+    cell_mean_integrity.to_frame().to_parquet(out_file_cells_mean_integrity)

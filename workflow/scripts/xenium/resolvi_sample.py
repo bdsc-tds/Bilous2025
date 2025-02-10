@@ -8,16 +8,18 @@ import pandas as pd
 import scvi
 import sys
 import argparse
+import anndata as ad
 from pathlib import Path
 
 sys.path.append("workflow/scripts/")
 import preprocessing
+import readwrite
 
 # params
 parser = argparse.ArgumentParser(description="Embed panel of Xenium samples.")
 parser.add_argument("--path", type=Path, help="Path to the xenium donor file.")
 parser.add_argument(
-    "--out_file_resolvi_corrected",
+    "--out_file_resolvi_corrected_counts",
     type=str,
     help="Path to resolvi corrected counts parquet file.",
 )
@@ -44,7 +46,7 @@ args = parser.parse_args()
 
 # Access the arguments
 path = args.path
-out_file_resolvi_corrected = args.out_file_resolvi_corrected
+out_file_resolvi_corrected_counts = args.out_file_resolvi_corrected_counts
 out_file_resolvi_proportions = args.out_file_resolvi_proportions
 min_counts = args.min_counts
 min_features = args.min_features
@@ -111,6 +113,7 @@ samples = resolvi.sample_posterior(
 )
 samples_proportions = pd.DataFrame(samples).T
 
+### save
 samples_corr = pd.DataFrame(
     samples_corr.loc["post_donor_q50", "px_rate"],
     index=adata.obs_names,
@@ -122,5 +125,8 @@ samples_proportions = pd.DataFrame(
     columns=["true_proportion", "diffusion_proportion", "background_proportion"],
 )
 
-samples_corr.to_parquet(out_file_resolvi_corrected)
+
+adata_out = ad.AnnData(samples_corr)
+readwrite.write_10X_h5(adata_out, out_file_resolvi_corrected_counts)
+# samples_corr.to_parquet(out_file_resolvi_corrected)
 samples_proportions.to_parquet(out_file_resolvi_proportions)
