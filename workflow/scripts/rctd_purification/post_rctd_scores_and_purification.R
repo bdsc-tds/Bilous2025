@@ -4,7 +4,7 @@ library(arrow)
 library(dplyr)
 
 if (!requireNamespace("puRCTD", quietly = TRUE)){
-  devtools::install_github("mariiabilous/puRCTD")
+  remotes::install_git("bdsc-tds/puRCTD")
 }
 library(puRCTD)
 
