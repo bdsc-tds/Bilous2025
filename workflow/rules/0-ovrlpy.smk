@@ -43,7 +43,7 @@ for condition in (conditions := ref_segmentation.iterdir()):
                             # out_file_doublet_df=out_file_doublet_df,
                         threads: 1
                         resources:
-                            mem='400GB',
+                            mem='600GB',
                             runtime='15h',
                         conda:
                             "spatial"

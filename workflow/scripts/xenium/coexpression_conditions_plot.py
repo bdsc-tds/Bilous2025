@@ -23,18 +23,22 @@ def float_or_str(value):
 
 
 def format_ticks(x):
-    if x < 0.1:
-        return ""
-    elif x < 1:
-        return f".{str(x.round(6))[2:]}"
+    if x < 1:
+        if "5" in str(x.round(6)) or "1" in str(x.round(6)):
+            return f".{str(x.round(6))[2:]}"
+        else:
+            return ""
     else:
-        return int(x)
+        if "5" in str(x.round(6)) or "1" in str(x.round(6)):
+            return int(x)
+        else:
+            return ""
 
 
 # Set up argument parser
 parser = argparse.ArgumentParser(description="Plot violins of Xenium coexpression QC for a given panel.")
 parser.add_argument("--coexpression_dir", type=Path, help="Path to coexpression results to plot")
-parser.add_argument("--out_file_plot_panels", type=Path, help="Path to the output plot file")
+parser.add_argument("--out_file_plot", type=Path, help="Path to the output plot file")
 parser.add_argument("--out_file_gene_pairs", type=Path, help="Path to the output gene pairs file")
 parser.add_argument("--method", type=str, help="method annotation parameter")
 parser.add_argument("--target_count", type=int, help="target count parameter")
@@ -46,15 +50,15 @@ parser.add_argument("--ref_segmentation", type=str, help="reference segmentation
 parser.add_argument("--ref_oversegmentation", type=str, help="reference oversegmentation")
 parser.add_argument("--segmentation_palette", type=Path, help="segmentation palette")
 parser.add_argument("--dpi", type=int, help="figures dpi")
-parser.add_argument("--showfliers", type=bool, help="showfliers or not in boxplots")
-parser.add_argument("--log_scale", type=bool, help="log_scale for boxplots")
+parser.add_argument("--showfliers", action="store_true", help="showfliers or not in boxplots")
+parser.add_argument("--log_scale", action="store_true", help="log_scale for boxplots")
 parser.add_argument("--n_top_gene_pairs", type=int, help="n_top_gene_pairs to show for boxplots")
 
 args = parser.parse_args()
 
 # Access the arguments
 coexpression_dir = args.coexpression_dir
-out_file_plot_panels = args.out_file_plot_panels
+out_file_plot = args.out_file_plot
 out_file_gene_pairs = args.out_file_gene_pairs
 method = args.method
 target_count = args.target_count
@@ -212,12 +216,13 @@ g = sns.boxplot(
 if log_scale:
     ax.set_xticklabels([format_ticks(x) for x in ax.get_xticks(minor=True)], minor=True)
     ax.set_xticklabels([format_ticks(x) for x in ax.get_xticks()])
-    ax.tick_params(axis="both", which="minor", labelsize=8)
+    ax.tick_params(axis="both", which="major", labelsize=14)
+    ax.tick_params(axis="both", which="minor", labelsize=10)
 
 ax.xaxis.grid(True)
 plt.title(f"{method=} {target_count=}")
 plt.legend(loc="center left", bbox_to_anchor=(1, 0.5), title=hue, frameon=False)
-plt.savefig(out_file_plot_panels, dpi=dpi, bbox_inches="tight")
+plt.savefig(out_file_plot, dpi=dpi, bbox_inches="tight")
 plt.close()
 
 df.to_parquet(out_file_gene_pairs)

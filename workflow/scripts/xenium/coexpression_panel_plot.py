@@ -23,12 +23,16 @@ def float_or_str(value):
 
 
 def format_ticks(x):
-    if x < 0.1:
-        return ""
-    elif x < 1:
-        return f".{str(x.round(6))[2:]}"
+    if x < 1:
+        if "5" in str(x.round(6)) or "1" in str(x.round(6)):
+            return f".{str(x.round(6))[2:]}"
+        else:
+            return ""
     else:
-        return int(x)
+        if "5" in str(x.round(6)) or "1" in str(x.round(6)):
+            return int(x)
+        else:
+            return ""
 
 
 # Set up argument parser
@@ -49,8 +53,8 @@ parser.add_argument("--ref_segmentation", type=str, help="reference segmentation
 parser.add_argument("--ref_oversegmentation", type=str, help="reference oversegmentation")
 parser.add_argument("--segmentation_palette", type=Path, help="segmentation palette")
 parser.add_argument("--dpi", type=int, help="figures dpi")
-parser.add_argument("--showfliers", type=bool, help="showfliers or not in boxplots")
-parser.add_argument("--log_scale", type=bool, help="log_scale for boxplots")
+parser.add_argument("--showfliers", action="store_true", help="showfliers or not in boxplots")
+parser.add_argument("--log_scale", action="store_true", help="log_scale for boxplots")
 
 args = parser.parse_args()
 
@@ -74,6 +78,7 @@ dpi = args.dpi
 showfliers = args.showfliers
 log_scale = args.log_scale
 
+print(f"{showfliers=}")
 
 # vars
 xenium_levels = ["segmentation", "condition", "panel", "donor", "sample"]
@@ -173,6 +178,8 @@ for y in ["sample", "panel"]:
         figsize = (6, 6)
         out_file_ = out_file_plot_panel
 
+    print(f"{showfliers=}")
+
     plt.figure(figsize=figsize)
     ax = plt.subplot()
     g = sns.boxplot(
@@ -201,7 +208,8 @@ for y in ["sample", "panel"]:
     if log_scale:
         ax.set_xticklabels([format_ticks(x) for x in ax.get_xticks(minor=True)], minor=True)
         ax.set_xticklabels([format_ticks(x) for x in ax.get_xticks()])
-        ax.tick_params(axis="both", which="minor", labelsize=8)
+        ax.tick_params(axis="both", which="major", labelsize=14)
+        ax.tick_params(axis="both", which="minor", labelsize=10)
 
     ax.xaxis.grid(True)
     plt.title(f"{plot_condition=} {plot_panel=} {method=} {target_count=}")

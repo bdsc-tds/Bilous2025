@@ -78,8 +78,8 @@ for condition in (conditions := (coexpression_dir / segmentation).iterdir()):
                         ref_oversegmentation=ref_oversegmentation,
                         segmentation_palette=segmentation_palette,
                         dpi=dpi,
-                        showfliers=showfliers,
-                        log_scale=log_scale,
+                        showfliers='--showfliers' if showfliers else '',
+                        log_scale='--log_scale' if log_scale else '',
                     threads: 1
                     resources:
                         mem=mem,
@@ -107,8 +107,8 @@ for condition in (conditions := (coexpression_dir / segmentation).iterdir()):
                         --ref_oversegmentation {params.ref_oversegmentation} \
                         --segmentation_palette {params.segmentation_palette} \
                         --dpi {params.dpi} \
-                        --showfliers {params.showfliers} \
-                        --log_scale {params.log_scale} \
+                        {params.showfliers} \
+                        {params.log_scale} \
 
                         echo "DONE"
                         """
@@ -156,8 +156,9 @@ for method in methods:
                 ref_oversegmentation=ref_oversegmentation,
                 segmentation_palette=segmentation_palette,
                 dpi=dpi,
-                showfliers=showfliers,
-                log_scale=log_scale,
+                showfliers='--showfliers' if showfliers else '',
+                log_scale='--log_scale' if log_scale else '',
+                n_top_gene_pairs=n_top_gene_pairs,
             threads: 1
             resources:
                 mem=mem,
@@ -166,9 +167,9 @@ for method in methods:
                 "spatial"
             shell:
                 """
-                mkdir -p "$(dirname {output.out_file_plot_sample})"
+                mkdir -p "$(dirname {output.out_file_plot})"
 
-                python workflow/scripts/xenium/coexpression_panel_plot.py \
+                python workflow/scripts/xenium/coexpression_conditions_plot.py \
                 --coexpression_dir {params.coexpression_dir} \
                 --out_file_plot {output.out_file_plot} \
                 --out_file_gene_pairs {output.out_file_gene_pairs} \
@@ -182,8 +183,9 @@ for method in methods:
                 --ref_oversegmentation {params.ref_oversegmentation} \
                 --segmentation_palette {params.segmentation_palette} \
                 --dpi {params.dpi} \
-                --showfliers {params.showfliers} \
-                --log_scale {params.log_scale} \
+                {params.showfliers} \
+                {params.log_scale} \
+                --n_top_gene_pairs {params.n_top_gene_pairs} \
 
                 echo "DONE"
                 """

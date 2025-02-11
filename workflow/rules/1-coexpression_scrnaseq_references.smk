@@ -35,7 +35,7 @@ for reference in (references := scrnaseq_processed_data_dir.iterdir()):
                     target_count=target_count,
                 threads: 1
                 resources:
-                    mem='100GB',
+                    mem='150GB',
                     runtime='30m',
                 conda:
                     "spatial"

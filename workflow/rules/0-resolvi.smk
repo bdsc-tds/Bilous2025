@@ -49,7 +49,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 num_samples=num_samples,
                             threads: 1
                             resources:
-                                mem='200GB' if panel.stem == '5k' else '10GB',
+                                mem='300GB',# if panel.stem == '5k' else '10GB',
                                 runtime='8h',
                                 slurm_partition = "gpu",
                                 slurm_extra = '--gres=gpu:1',

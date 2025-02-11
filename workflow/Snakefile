@@ -19,10 +19,10 @@ include: "rules/0-resolvi.smk"
 rule all:
     input:
         # rules.seurat_to_h5_all.input,
-        # rules.coexpression_all.input,
+        rules.coexpression_all.input,
         rules.coexpression_plot_panel_all.input,
-        # rules.coexpression_plot_conditions_all.input,
-        # rules.coexpression_scrnaseq_references_all.input,
+        rules.coexpression_plot_conditions_all.input,
+        rules.coexpression_scrnaseq_references_all.input,
         # #
         # rules.silhouette_all.input,
         # rules.silhouette_plot_panel_all.input,
@@ -34,7 +34,7 @@ rule all:
         # rules.embed_panel_plot_all.input,
         # rules.embed_condition_plot_all.input,
         # #
-        # rules.resolvi_all.input,
+        rules.resolvi_all.input,
         # #
-        # rules.ovrlpy_all.input,
-        # rules.ovrlpy_correction_all.input,
+        rules.ovrlpy_all.input,
+        rules.ovrlpy_correction_all.input,
