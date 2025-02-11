@@ -22,4 +22,4 @@ rule purify_with_rctd:
         spot_class_purified_counts=results_dir / f'puRCTD/spot_class_counts.parquet',
         score_based_purified_counts=results_dir / f'puRCTD/score_based_purified_counts.parquet'
     script:
-        "workflow/scripts/rctd_purification/post_rctd.R"
+      "workflow/scripts/rctd_purification/post_rctd_scores_and_purification.R"
