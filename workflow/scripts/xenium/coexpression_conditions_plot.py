@@ -34,10 +34,7 @@ def format_ticks(x):
 # Set up argument parser
 parser = argparse.ArgumentParser(description="Plot violins of Xenium coexpression QC for a given panel.")
 parser.add_argument("--coexpression_dir", type=Path, help="Path to coexpression results to plot")
-parser.add_argument("--plot_condition", type=str, help="condition results to plot")
-parser.add_argument("--plot_panel", type=str, help=" panel results to plot")
-parser.add_argument("--out_file_plot_sample", type=Path, help="Path to the output plot file")
-parser.add_argument("--out_file_plot_panel", type=Path, help="Path to the output plot file")
+parser.add_argument("--out_file_plot_panels", type=Path, help="Path to the output plot file")
 parser.add_argument("--out_file_gene_pairs", type=Path, help="Path to the output gene pairs file")
 parser.add_argument("--method", type=str, help="method annotation parameter")
 parser.add_argument("--target_count", type=int, help="target count parameter")
@@ -51,15 +48,13 @@ parser.add_argument("--segmentation_palette", type=Path, help="segmentation pale
 parser.add_argument("--dpi", type=int, help="figures dpi")
 parser.add_argument("--showfliers", type=bool, help="showfliers or not in boxplots")
 parser.add_argument("--log_scale", type=bool, help="log_scale for boxplots")
+parser.add_argument("--n_top_gene_pairs", type=int, help="n_top_gene_pairs to show for boxplots")
 
 args = parser.parse_args()
 
 # Access the arguments
 coexpression_dir = args.coexpression_dir
-plot_condition = args.plot_condition
-plot_panel = args.plot_panel
-out_file_plot_sample = args.out_file_plot_sample
-out_file_plot_panel = args.out_file_plot_panel
+out_file_plot_panels = args.out_file_plot_panels
 out_file_gene_pairs = args.out_file_gene_pairs
 method = args.method
 target_count = args.target_count
@@ -73,7 +68,7 @@ palette = pd.read_csv(args.segmentation_palette, index_col=0).iloc[:, 0]
 dpi = args.dpi
 showfliers = args.showfliers
 log_scale = args.log_scale
-
+n_top_gene_pairs = args.n_top_gene_pairs
 
 # vars
 xenium_levels = ["segmentation", "condition", "panel", "donor", "sample"]
@@ -85,11 +80,7 @@ hue_order = ["10x_mm_0um", "10x_mm_5um", "10x_mm_15um", "10x_0um", "10x_5um", "1
 cc_paths = []
 for segmentation in (segmentations := coexpression_dir.iterdir()):
     for condition in (conditions := segmentation.iterdir()):
-        if condition.stem != plot_condition:
-            continue
         for panel in (panels := condition.iterdir()):
-            if panel.stem != plot_panel:
-                continue
             for donor in (donors := panel.iterdir()):
                 for sample in (samples := donor.iterdir()):
                     k = (
@@ -137,6 +128,40 @@ for k in CC.keys():
     )
 
 
+# genes in each panel
+panels_genes = [CCdiff[k][method, target_count].columns for k in CCdiff.keys() if k[0] == ref_oversegmentation]
+
+# spurious genes in each panel for ref_oversegmentation
+panels_spurious_gene_pairs = pd.concat(
+    [pd.DataFrame(spurious_gene_pairs[k][method, target_count]) for k in CCdiff.keys() if k[0] == ref_oversegmentation]
+).drop_duplicates()
+
+# common genes between panels
+common_genes = list(set.intersection(*map(set, panels_genes)))
+
+# common spurious genes across panels
+common_spurious_gene_pairs = panels_spurious_gene_pairs[panels_spurious_gene_pairs.isin(common_genes).all(1)].values
+i = common_spurious_gene_pairs[:, 0]
+j = common_spurious_gene_pairs[:, 1]
+
+# reduce to top 50
+if n_top_gene_pairs < len(i):
+    top_values = []
+    for k in CCdiff.keys():
+        if k[0] == ref_oversegmentation:
+            mat = CCdiff[k][method, target_count]
+
+            top_values.append(mat.values[mat.index.get_indexer(i), mat.columns.get_indexer(j)])
+
+    top_values = np.nanmean(top_values, axis=0)
+    top_values_idx = np.argsort(top_values)[::-1][:n_top_gene_pairs]
+
+    i = i[top_values_idx]
+    j = j[top_values_idx]
+else:
+    n_top_gene_pairs = len(i)
+
+
 # extract spurious gene pairs based on ref_oversegmentation/ref_segmentation ratio
 # and stack into one df
 keys = pd.DataFrame(CCdiff.keys(), columns=xenium_levels)
@@ -146,9 +171,6 @@ for _, k in keys.iterrows():
     k_ref_over = (ref_oversegmentation, *k[1:])
 
     mat = CCdiff[*k][method, target_count]
-
-    i = spurious_gene_pairs[k_ref_over][method, target_count][:, 0]
-    j = spurious_gene_pairs[k_ref_over][method, target_count][:, 1]
     flat_values = mat.values[mat.index.get_indexer(i), mat.columns.get_indexer(j)]
     data.extend(np.hstack((np.tile(k, (len(i), 1)), i[:, None], j[:, None], flat_values[:, None])))
 
@@ -165,48 +187,37 @@ palette = {u: palette[u] for u in unique_labels}
 
 
 # Create boxplot
-for y in ["sample", "panel"]:
-    if y == "sample":
-        figsize = (6, df["sample"].nunique())
-        out_file_ = out_file_plot_sample
-    else:
-        figsize = (6, 6)
-        out_file_ = out_file_plot_panel
+plt.figure(figsize=(6, df["panel"].nunique() * 1.5))
+ax = plt.subplot()
+g = sns.boxplot(
+    data=df,
+    x="relative coexpression",
+    y="panel",
+    hue=hue,
+    hue_order=unique_labels,
+    palette=palette,
+    log_scale=log_scale,
+    showfliers=showfliers,
+    flierprops={
+        "marker": "o",
+        "color": "black",
+        "markersize": 1,
+        "markerfacecolor": "w",
+    },
+    ax=ax,
+)
 
-    plt.figure(figsize=figsize)
-    ax = plt.subplot()
-    g = sns.boxplot(
-        data=df,
-        x="relative coexpression",
-        y=y,
-        hue=hue,
-        hue_order=unique_labels,
-        palette=palette,
-        # cut=0,
-        # width=0.8,
-        # inner="quart",
-        log_scale=log_scale,
-        showfliers=showfliers,
-        flierprops={
-            "marker": "o",
-            "color": "black",
-            "markersize": 1,
-            "markerfacecolor": "w",
-        },
-        ax=ax,
-    )
+# sns.despine(offset=10, trim=True)
 
-    # sns.despine(offset=10, trim=True)
+if log_scale:
+    ax.set_xticklabels([format_ticks(x) for x in ax.get_xticks(minor=True)], minor=True)
+    ax.set_xticklabels([format_ticks(x) for x in ax.get_xticks()])
+    ax.tick_params(axis="both", which="minor", labelsize=8)
 
-    if log_scale:
-        ax.set_xticklabels([format_ticks(x) for x in ax.get_xticks(minor=True)], minor=True)
-        ax.set_xticklabels([format_ticks(x) for x in ax.get_xticks()])
-        ax.tick_params(axis="both", which="minor", labelsize=8)
-
-    ax.xaxis.grid(True)
-    plt.title(f"{plot_condition=} {plot_panel=} {method=} {target_count=}")
-    plt.legend(loc="center left", bbox_to_anchor=(1, 0.5), title=hue, frameon=False)
-    plt.savefig(out_file_, dpi=dpi, bbox_inches="tight")
-    plt.close()
+ax.xaxis.grid(True)
+plt.title(f"{method=} {target_count=}")
+plt.legend(loc="center left", bbox_to_anchor=(1, 0.5), title=hue, frameon=False)
+plt.savefig(out_file_plot_panels, dpi=dpi, bbox_inches="tight")
+plt.close()
 
 df.to_parquet(out_file_gene_pairs)

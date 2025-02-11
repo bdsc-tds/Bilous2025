@@ -7,6 +7,8 @@ figures_dir: "figures/"
 log_dir: "log/"
 markers_dir: "data/markers/"
 xenium_metadata_dir: "data/xenium/metadata/"
+cell_type_annotation_dir: "data/xenium/processed/cell_type_annotation/"
+std_seurat_analysis_dir: "data/xenium/processed/std_seurat_analysis/"
 
 xenium_raw_data_dir: "data/xenium/raw/"
 xenium_processed_data_dir: "data/xenium/processed/segmentation/"

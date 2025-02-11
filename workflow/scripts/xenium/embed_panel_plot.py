@@ -11,6 +11,7 @@ from pathlib import Path
 parser = argparse.ArgumentParser(description="Plot panel of Xenium donors.")
 parser.add_argument("--panel", type=Path, help="Path to the panel file.")
 parser.add_argument("--embed_file", type=str, help="Path to the embedding file.")
+parser.add_argument("--preprocessing",type=str, help='Preprocessing method')
 parser.add_argument("--reference", type=str, help="annotation reference")
 parser.add_argument("--method", type=str, help="annotation method")
 parser.add_argument("--color", type=str, help="annotation color")
@@ -25,6 +26,7 @@ args = parser.parse_args()
 # Access the arguments
 panel = args.panel
 embed_file = args.embed_file
+preprocessing = args.preprocessing
 reference = args.reference
 method = args.method
 color = args.color
@@ -80,7 +82,7 @@ else:
             annot[k] = {}
             annot_file = (
                 sample
-                / f"cell_type_annotation/reference_based/{reference}/{method}/{color}/single_cell/labels.parquet"
+                / f"{preprocessing}/reference_based/{reference}/{method}/{color}/single_cell/labels.parquet"
             )
             if annot_file.exists():
                 annot[k][reference, method, color] = (

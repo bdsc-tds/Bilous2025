@@ -41,9 +41,7 @@ def config(path=config_path):
     return cfg
 
 
-def soma_to_anndata(
-    soma_uri, measurement_name, X_layer_name, return_experiment=False, **kwargs
-):
+def soma_to_anndata(soma_uri, measurement_name, X_layer_name, return_experiment=False, **kwargs):
     """
     Export a SOMA experiment to an anndata object.
 
@@ -234,12 +232,8 @@ def read_xenium_samples(
         A dictionary of sample names mapped to AnnData objects or spatialdata objects.
     """
     if isinstance(data_dirs, list):
-        sample_names = [
-            Path(path).stem if sample_name_as_key else path for path in data_dirs
-        ]
-        data_dirs = {
-            sample_name: path for sample_name, path in zip(sample_names, data_dirs)
-        }
+        sample_names = [Path(path).stem if sample_name_as_key else path for path in data_dirs]
+        data_dirs = {sample_name: path for sample_name, path in zip(sample_names, data_dirs)}
 
     # Parallel processing
     xdatas = {}
@@ -321,17 +315,13 @@ def write_10X_h5(adata, file):
         "barcodes",
         data=np.array(adata.obs_names, dtype=f"|S{str_max(adata.obs_names)}"),
     )
-    grp.create_dataset(
-        "data", data=np.array(adata.X.data, dtype=f"<i{int_max(adata.X.data)}")
-    )
+    grp.create_dataset("data", data=np.array(adata.X.data, dtype=f"<i{int_max(adata.X.data)}"))
     ftrs = grp.create_group("features")
     # this group will lack the following keys:
     # '_all_tag_keys', 'feature_type', 'genome', 'id', 'name', 'pattern', 'read', 'sequence'
     ftrs.create_dataset(
         "feature_type",
-        data=np.array(
-            adata.var.feature_types, dtype=f"|S{str_max(adata.var.feature_types)}"
-        ),
+        data=np.array(adata.var.feature_types, dtype=f"|S{str_max(adata.var.feature_types)}"),
     )
     ftrs.create_dataset(
         "genome",
@@ -341,15 +331,9 @@ def write_10X_h5(adata, file):
         "id",
         data=np.array(adata.var.gene_ids, dtype=f"|S{str_max(adata.var.gene_ids)}"),
     )
-    ftrs.create_dataset(
-        "name", data=np.array(adata.var.index, dtype=f"|S{str_max(adata.var.index)}")
-    )
-    grp.create_dataset(
-        "indices", data=np.array(adata.X.indices, dtype=f"<i{int_max(adata.X.indices)}")
-    )
-    grp.create_dataset(
-        "indptr", data=np.array(adata.X.indptr, dtype=f"<i{int_max(adata.X.indptr)}")
-    )
+    ftrs.create_dataset("name", data=np.array(adata.var.index, dtype=f"|S{str_max(adata.var.index)}"))
+    grp.create_dataset("indices", data=np.array(adata.X.indices, dtype=f"<i{int_max(adata.X.indices)}"))
+    grp.create_dataset("indptr", data=np.array(adata.X.indptr, dtype=f"<i{int_max(adata.X.indptr)}"))
     grp.create_dataset(
         "shape",
         data=np.array(list(adata.X.shape)[::-1], dtype=f"<i{int_max(adata.X.shape)}"),
@@ -381,12 +365,8 @@ def _rds2py_dict_to_df(r_obj_df, mode="results_df"):
     elif mode == "weights":
         r_obj_df_columns = r_obj_df["attributes"]["dimnames"]["data"][1]["data"]
         r_obj_df_index = r_obj_df["attributes"]["dimnames"]["data"][0]["data"]
-        r_obj_df["data"] = r_obj_df["data"].reshape(
-            r_obj_df["attributes"]["dim"]["data"], order="F"
-        )
-        pandas_df = pd.DataFrame(
-            r_obj_df["data"], index=r_obj_df_index, columns=r_obj_df_columns
-        )
+        r_obj_df["data"] = r_obj_df["data"].reshape(r_obj_df["attributes"]["dim"]["data"], order="F")
+        pandas_df = pd.DataFrame(r_obj_df["data"], index=r_obj_df_index, columns=r_obj_df_columns)
 
     return pandas_df
 
@@ -423,9 +403,7 @@ def read_rctd_sample(sample_name, rctd_results_path):
 
     pandas_results = {}
     for k in ["results_df", "weights"]:
-        pandas_results[k] = _rds2py_dict_to_df(
-            results["data"][results_keys_idx[k]], mode=k
-        )
+        pandas_results[k] = _rds2py_dict_to_df(results["data"][results_keys_idx[k]], mode=k)
 
     return sample_name, pandas_results
 
@@ -499,12 +477,8 @@ def read_coexpression_file(k, method, target_count, results_dir):
     pos_rate : pd.Series
         The positivity rate.
     """
-    out_file_coexpr = (
-        results_dir / f"{'/'.join(k)}/coexpression_{method}_{target_count}.parquet"
-    )
-    out_file_pos_rate = (
-        results_dir / f"{'/'.join(k)}/positivity_rate_{method}_{target_count}.parquet"
-    )
+    out_file_coexpr = results_dir / f"{'/'.join(k)}/coexpression_{method}_{target_count}.parquet"
+    out_file_pos_rate = results_dir / f"{'/'.join(k)}/positivity_rate_{method}_{target_count}.parquet"
 
     cc = pd.read_parquet(out_file_coexpr)
     pos_rate = pd.read_parquet(out_file_pos_rate)[0]
@@ -532,9 +506,7 @@ def read_coexpression_files(cc_paths, results_dir):
     """
     with ThreadPoolExecutor() as executor:
         futures = [
-            executor.submit(
-                read_coexpression_file, k, method, target_count, results_dir
-            )
+            executor.submit(read_coexpression_file, k, method, target_count, results_dir)
             for k, method, target_count in cc_paths
         ]
 
@@ -542,9 +514,7 @@ def read_coexpression_files(cc_paths, results_dir):
         pos_rate = {}
         for future in as_completed(futures):
             method, target_count, cc, pr = future.result()
-            k = cc_paths[futures.index(future)][
-                0
-            ]  # Retrieve the `k` corresponding to this future
+            k = cc_paths[futures.index(future)][0]  # Retrieve the `k` corresponding to this future
 
             if k not in CC:
                 CC[k] = {}
@@ -554,3 +524,20 @@ def read_coexpression_files(cc_paths, results_dir):
             CC[k][method, target_count] = cc
             pos_rate[k][method, target_count] = pr
     return CC, pos_rate
+
+
+def get_gene_panel_info(path):
+    with open(path, "r") as f:
+        gene_panel = json.load(f)["payload"]["targets"]
+
+    gene_panel_info = pd.DataFrame(columns=["codewords"])
+    for i, g in enumerate(gene_panel):
+        gene_panel_info.at[i, "gene_coverage"] = g["info"]["gene_coverage"]
+        gene_panel_info.at[i, "id"] = g["type"]["data"].get("id")
+        gene_panel_info.at[i, "name"] = g["type"]["data"]["name"]
+        gene_panel_info.at[i, "codewords"] = g["codewords"]
+        gene_panel_info.at[i, "source_category"] = g["source"]["category"]
+        gene_panel_info.at[i, "source_design_id"] = g["source"]["identity"]["design_id"]
+        gene_panel_info.at[i, "source_name"] = g["source"]["identity"]["name"]
+        gene_panel_info.at[i, "source_version"] = g["source"]["identity"]["version"]
+    return gene_panel_info

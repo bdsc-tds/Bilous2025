@@ -1,8 +1,10 @@
 # cfg paths
 xenium_dir = Path(config['xenium_processed_data_dir'])
 results_dir = Path(config['results_dir'])
+std_seurat_analysis_dir = Path(config['std_seurat_analysis_dir'])
 
 # stricter params than pipeline config
+preprocessings = ['lognorm']
 min_counts = 20
 min_features = 10
 max_counts = float("inf")
@@ -16,61 +18,64 @@ min_dist = 0.3
 metric = 'cosine'
 
 out_files_panel = []
-for segmentation in (segmentations := xenium_dir.iterdir()):
-    if segmentation.stem == 'proseg_v1':
-        continue
-    for condition in (conditions := segmentation.iterdir()): 
-        for panel in (panels := condition.iterdir()):
+for preprocessing in preprocessings: 
+    for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
+        if segmentation.stem == 'proseg_v1':
+            continue
+        for condition in (conditions := segmentation.iterdir()): 
+            for panel in (panels := condition.iterdir()):
 
-            k = (segmentation.stem,condition.stem,panel.stem)
-            name = '/'.join(k)
+                k = (segmentation.stem,condition.stem,panel.stem,preprocessing)
+                name = '/'.join(k)
 
-            out_file = results_dir / f'embed_panel/{name}/umap_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet' 
-            out_files_panel.append(out_file)
+                out_file = results_dir / f'embed_panel/{name}/umap_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet' 
+                out_files_panel.append(out_file)
 
-            rule:
-                name: f'embed_panel/{name}'
-                input:
-                    panel=panel,
-                output:
-                    out_file=out_file,
-                params:
-                    n_comps=n_comps,
-                    n_neighbors=n_neighbors,
-                    metric=metric,
-                    min_dist=min_dist,
-                    min_counts=min_counts,
-                    min_features=min_features,
-                    max_counts=max_counts,
-                    max_features=max_features,
-                    min_cells=min_cells,
-                threads: 1
-                resources:
-                    mem='100GB' if panel.stem == '5k' else '50GB',
-                    runtime='30m' if panel.stem == '5k' else '20m',
-                    slurm_partition = "gpu",
-                    slurm_extra = '--gres=gpu:1',
-                conda:
-                    "spatial"
-                shell:
-                    """
-                    mkdir -p "$(dirname {output.out_file})"
+                rule:
+                    name: f'embed_panel/{name}'
+                    input:
+                        panel=panel,
+                    output:
+                        out_file=out_file,
+                    params:
+                        preprocessing=preprocessing,
+                        n_comps=n_comps,
+                        n_neighbors=n_neighbors,
+                        metric=metric,
+                        min_dist=min_dist,
+                        min_counts=min_counts,
+                        min_features=min_features,
+                        max_counts=max_counts,
+                        max_features=max_features,
+                        min_cells=min_cells,
+                    threads: 1
+                    resources:
+                        mem='100GB' if panel.stem == '5k' else '50GB',
+                        runtime='30m' if panel.stem == '5k' else '20m',
+                        slurm_partition = "gpu",
+                        slurm_extra = '--gres=gpu:1',
+                    conda:
+                        "spatial"
+                    shell:
+                        """
+                        mkdir -p "$(dirname {output.out_file})"
 
-                    python workflow/scripts/xenium/embed_panel.py \
-                        --panel {input.panel} \
-                        --out_file {output.out_file} \
-                        --n_comps {params.n_comps} \
-                        --n_neighbors {params.n_neighbors} \
-                        --metric {params.metric} \
-                        --min_dist {params.min_dist} \
-                        --min_counts {params.min_counts} \
-                        --min_features {params.min_features} \
-                        --max_counts {params.max_counts} \
-                        --max_features {params.max_features} \
-                        --min_cells {params.min_cells} \
-                        
-                    echo "DONE"
-                    """
+                        python workflow/scripts/xenium/embed_panel.py \
+                            --panel {input.panel} \
+                            --out_file {output.out_file} \
+                            --preprocessing_method {params.preprocessing} \
+                            --n_comps {params.n_comps} \
+                            --n_neighbors {params.n_neighbors} \
+                            --metric {params.metric} \
+                            --min_dist {params.min_dist} \
+                            --min_counts {params.min_counts} \
+                            --min_features {params.min_features} \
+                            --max_counts {params.max_counts} \
+                            --max_features {params.max_features} \
+                            --min_cells {params.min_cells} \
+                            
+                        echo "DONE"
+                        """
 
 
 out_files_condition = []

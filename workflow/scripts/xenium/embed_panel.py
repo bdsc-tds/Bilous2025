@@ -4,6 +4,7 @@ dask.config.set({"dataframe.query-planning": False})
 
 from pathlib import Path
 import argparse
+import scipy
 import sys
 import pandas as pd
 import scanpy as sc
@@ -16,20 +17,15 @@ import preprocessing
 parser = argparse.ArgumentParser(description="Embed panel of Xenium donors.")
 parser.add_argument("--panel", type=Path, help="Path to the panel file.")
 parser.add_argument("--out_file", type=str, help="Path to the output file.")
+parser.add_argument("--preprocessing_method", type=str, help="Preprocessing method")
 parser.add_argument("--n_comps", type=int, help="Number of components.")
 parser.add_argument("--n_neighbors", type=int, help="Number of neighbors.")
 parser.add_argument("--metric", type=str, help="Distance metric to use.")
 parser.add_argument("--min_dist", type=float, help="Minimum distance parameter.")
 parser.add_argument("--min_counts", type=int, help="QC parameter from pipeline config")
-parser.add_argument(
-    "--min_features", type=int, help="QC parameter from pipeline config"
-)
-parser.add_argument(
-    "--max_counts", type=float, help="QC parameter from pipeline config"
-)
-parser.add_argument(
-    "--max_features", type=float, help="QC parameter from pipeline config"
-)
+parser.add_argument("--min_features", type=int, help="QC parameter from pipeline config")
+parser.add_argument("--max_counts", type=float, help="QC parameter from pipeline config")
+parser.add_argument("--max_features", type=float, help="QC parameter from pipeline config")
 parser.add_argument("--min_cells", type=int, help="QC parameter from pipeline config")
 
 args = parser.parse_args()
@@ -37,6 +33,7 @@ args = parser.parse_args()
 # Access the arguments
 panel = args.panel
 out_file = args.out_file
+preprocessing_method = args.preprocessing_method
 n_comps = args.n_comps
 n_neighbors = args.n_neighbors
 metric = args.metric
@@ -51,19 +48,29 @@ min_cells = args.min_cells
 segmentation = panel.parents[1].stem
 condition = panel.parents[0].stem
 
-# read xenium donors
-xenium_paths = {}
+# read xenium samples
+# xenium_paths = {}
+# for donor in (donors := panel.iterdir()):
+#     for sample in (samples := donor.iterdir()):
+#         k = (segmentation, condition, panel.stem, donor.stem, sample.stem)
+#         sample_path = sample / "normalised_results/outs"
+
+#         xenium_paths[k] = sample_path
+
+# ads = readwrite.read_xenium_samples(xenium_paths, anndata_only=True, transcripts=False, sample_name_as_key=False)
+ads = {}
 for donor in (donors := panel.iterdir()):
     for sample in (samples := donor.iterdir()):
+        print(sample)
+
         k = (segmentation, condition, panel.stem, donor.stem, sample.stem)
-        sample_path = sample / "normalised_results/outs"
-        name = "/".join(k)
+        sample_counts_path = sample / f"{preprocessing_method}/normalised_counts/counts.parquet"
+        sample_idx_path = sample / f"{preprocessing_method}/normalised_counts/cells.parquet"
 
-        xenium_paths[k] = sample_path
+        ads[k] = sc.AnnData(pd.read_parquet(sample_counts_path))
+        ads[k].X = scipy.sparse.csr_matrix(ads[k].X)
+        ads[k].obs_names = pd.read_parquet(sample_idx_path).iloc[:, 0]
 
-ads = readwrite.read_xenium_samples(
-    xenium_paths, anndata_only=True, transcripts=False, sample_name_as_key=False
-)
 
 # concatenate
 xenium_levels = ["segmentation", "condition", "panel", "donor", "sample"]
@@ -93,9 +100,7 @@ preprocessing.preprocess(
 )
 
 # save
-df_umap = pd.DataFrame(
-    ad_merge.obsm["X_umap"], index=ad_merge.obs_names, columns=["UMAP1", "UMAP2"]
-)
+df_umap = pd.DataFrame(ad_merge.obsm["X_umap"], index=ad_merge.obs_names, columns=["UMAP1", "UMAP2"])
 df_umap[xenium_levels] = ad_merge.obs[xenium_levels]
 
 df_umap.to_parquet(out_file)

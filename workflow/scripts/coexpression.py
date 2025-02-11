@@ -32,13 +32,9 @@ def get_exclusive_gene_pairs(df_markers):
 
             for genei in df_markers_cti.iloc[:, 1]:
                 for genej in df_markers_ctj.iloc[:, 1]:
-                    exclusive_gene_pairs.append(
-                        (*sorted((cti, ctj)), *sorted((genei, genej)))
-                    )
+                    exclusive_gene_pairs.append((*sorted((cti, ctj)), *sorted((genei, genej))))
 
-    exclusive_gene_pairs = pd.DataFrame(
-        exclusive_gene_pairs, columns=["cti", "ctj", "genei", "genej"]
-    )
+    exclusive_gene_pairs = pd.DataFrame(exclusive_gene_pairs, columns=["cti", "ctj", "genei", "genej"])
     return exclusive_gene_pairs
 
 
@@ -122,126 +118,6 @@ def spearman_coexpression(X):
     return scipy.stats.spearmanr(X.toarray()).statistic
 
 
-# def odds_ratio_coexpression(positivity, min_odds_ratio=0.01):
-#     # Compute joint and marginal sums
-#     joint_counts = (
-#         positivity.T @ positivity
-#     )  # Joint presence counts for each pair of genes
-#     total_cells = positivity.shape[0]
-
-#     gene_sums = positivity.sum(axis=0)
-#     neither_counts = (
-#         total_cells - gene_sums[:, None] - gene_sums + joint_counts
-#     )  # Cells with neither gene expressed
-#     gene_only_counts_a = (
-#         gene_sums[:, None] - joint_counts
-#     )  # Cells with only gene A expressed
-#     gene_only_counts_b = gene_sums - joint_counts  # Cells with only gene B expressed
-
-#     # Calculate odds ratio matrix
-#     odds_ratio_matrix = (joint_counts * neither_counts) / (
-#         gene_only_counts_a * gene_only_counts_b + 1e-10
-#     )
-
-#     # Clip odds ratios to avoid values below the minimum threshold
-#     return np.clip(odds_ratio_matrix, min_odds_ratio, np.inf)
-
-
-# def relative_risk_coexpression(positivity, min_relative_risk=0.01):
-#     # Compute joint and marginal sums
-#     joint_counts = (
-#         positivity.T @ positivity
-#     )  # Joint presence counts for each pair of genes
-#     total_cells = positivity.shape[0]
-
-#     gene_sums = positivity.sum(axis=0)
-
-#     # Calculate probabilities
-#     prob_joint = joint_counts / total_cells  # Probability of both genes expressed
-#     prob_a = gene_sums / total_cells  # Probability of gene A expressed
-#     prob_b = gene_sums / total_cells  # Probability of gene B expressed
-
-#     # Calculate relative risk matrix
-#     relative_risk_matrix = prob_joint / (prob_a * prob_b + 1e-10)
-
-#     # Clip relative risks to avoid values below the minimum threshold
-#     return np.clip(relative_risk_matrix, min_relative_risk, np.inf)
-
-
-# def relative_coexpression(CC_ref_seg, cc, gene_pairs):
-#     rel_ccs = []
-#     for a, b in gene_pairs:
-#         i = CC_ref_seg.genes.index(a)
-#         j = CC_ref_seg.genes.index(b)
-#         CC_ref_seg_ij = CC_ref_seg.CC[i, j]
-
-#         i = cc.genes.index(a)
-#         j = cc.genes.index(b)
-#         cc_ij = cc.CC[i, j]
-
-#         rel_cc = np.log2(cc_ij / CC_ref_seg_ij)
-#         rel_ccs.append(rel_cc)
-
-#     return rel_ccs
-
-
-# def thin_counts_v2(X, target_size, rs=None):
-#     if rs is None:
-#         rs = np.random.RandomState()
-
-#     n_counts = X.sum(axis=1)
-#     probabilities = (X / n_counts).tocsr()
-
-#     X_downsampled = X.copy()
-#     for i in range(X.shape[0]):
-#         diff_size = n_counts[i] - target_size
-#         if diff_size > 0:
-#             X_downsampled[i] -= rs.multinomial(
-#                 n=diff_size, pvals=probabilities[i].toarray().flat
-#             )
-
-#     # Ensure no negative values by recursion if needed
-#     if np.any(X_downsampled.data < 0):
-#         print("clipping negative counts to 0...")
-#         X_downsampled.data = np.clip(X_downsampled.data, 0, None, out=X_downsampled)
-#         return thin_counts(X_downsampled, target_size=target_size)
-
-#     return X_downsampled
-
-
-# def thin_counts_v3(X, target_size, rs=None):
-#     if rs is None:
-#         rs = np.random.RandomState()
-
-#     n_counts = X.sum(axis=1)
-#     probabilities = (X / n_counts).tocsr()
-
-#     X_downsampled = X.copy()
-#     for i in tqdm(range(X.shape[0])):
-#         diff_size = n_counts[i] - target_size
-#         pvals = probabilities[i].toarray().flat
-#         while diff_size > 0:
-#             thin = rs.multinomial(n=1, pvals=pvals)
-#             if X_downsampled[i, np.where(thin)[0]] > 0:
-#                 X_downsampled[i] -= thin
-#                 diff_size -= 1
-
-#     return X_downsampled
-
-
-# def thin_counts_old(X, target_count, rs=None):
-#     if rs is None:
-#         rs = np.random.RandomState()
-
-#     n_counts = X.sum(axis=1)
-#     probabilities = (X / n_counts).tocsr()
-#     rows = []
-#     for i in range(probabilities.shape[0]):
-#         counts = rs.multinomial(target_count, probabilities[i].toarray().flat)
-#         rows.append(scipy.sparse.csr_matrix(counts))
-#     return scipy.sparse.vstack(rows)
-
-
 def thin_counts(X, target_count, gen=None):
     """
     Downdonor counts to a target count per row.
@@ -322,12 +198,10 @@ def coexpression(
 
         # Modify mask based on min_donors threshold
         if sum(mask) < min_donors:
-            print(
-                f"Less than {min_donors=} reach the target count. Setting to {min_donors}"
-            )
+            print(f"Less than {min_donors=} reach the target count. Setting to {min_donors}")
             mask = np.argsort(n_counts)[::-1][:min_donors]
 
-        # Downdonor counts
+        # Downsampled counts
         X_downsample = thin_counts(X[mask], target_count, gen=gen)
     else:
         mask = np.ones(X.shape[0], dtype=bool)
@@ -362,7 +236,7 @@ def censored_ratio(
     pos_rate_other_seg=None,
     min_positivity_rate=0.0,
     min_cond_coex=0.0,
-    log2=True,
+    min_cond_coex_mode="both",
 ):
     """
     Compute the ratio of co-expression matrices with optional censoring and log transformation.
@@ -373,28 +247,26 @@ def censored_ratio(
     pos_rate_ref_seg (pd.Series, optional): Positivity rate for reference segmentation.
     pos_rate_other_seg (pd.Series, optional): Positivity rate for other segmentation.
     min_positivity_rate (float): Minimum positivity rate for filtering.
-    log2 (bool): Whether to apply log2 transformation.
+    min_cond_coex (float): Minimum coexpression rate to clip CC matrices to
+    min_cond_coex_mode (str): 'both', 'ref' or 'none'. Whether to clip min_cond_coex for CC_ref_seg or both matrices or no clipping
 
     Returns:
     pd.DataFrame: Censored and transformed ratio matrix.
     """
     # pseudocount to avoid zero numerators or denominators
-    if min_cond_coex > 0.0:
-        CCdiff = CC_other_seg.clip(lower=min_cond_coex) / CC_ref_seg.clip(
-            lower=min_cond_coex
-        )
-    else:
+    if min_cond_coex_mode == "both":
+        CCdiff = CC_other_seg.clip(lower=min_cond_coex) / CC_ref_seg.clip(lower=min_cond_coex)
+    elif min_cond_coex_mode == "ref":
+        CCdiff = CC_other_seg / CC_ref_seg.clip(lower=min_cond_coex)
+    elif min_cond_coex_mode == "none":
         CCdiff = CC_other_seg / CC_ref_seg
-
-    if log2:
-        CCdiff = np.log2(CCdiff)
+    else:
+        raise ValueError("min_cond_coex_mode must be either 'both' or 'ref' or 'none'")
 
     # exclude stuff that's barely expressed in one or the other
     if min_positivity_rate > 0.0:
-        mask = (pos_rate_ref_seg < min_positivity_rate) | (
-            pos_rate_other_seg < min_positivity_rate
-        )
-        CCdiff.loc[mask, mask] = 0.0
+        mask = (pos_rate_ref_seg < min_positivity_rate) | (pos_rate_other_seg < min_positivity_rate)
+        CCdiff.loc[mask, mask] = 1.0
 
     return CCdiff
 
@@ -406,9 +278,9 @@ def compare_segmentations(
     pos_rate_other_seg,
     min_positivity_rate=0.01,
     min_cond_coex=0.05,
+    min_cond_coex_mode="none",
     cc_cutoff=1.5,
     method=None,
-    log2=True,
 ):
     """
     Compare two co-expression segmentations and identify spurious gene pairs.
@@ -418,9 +290,10 @@ def compare_segmentations(
     pos_rate_ref_seg (pd.Series): Positivity rate for reference segmentation.
     pos_rate_other_seg (pd.Series): Positivity rate for other segmentation.
     min_positivity_rate (float): Minimum positivity rate for filtering.
+    min_cond_coex (float): Minimum coexpression rate to clip CC matrices to
+    min_cond_coex_mode (str): 'both', 'ref' or 'none'. Whether to clip min_cond_coex for CC_ref_seg or both matrices or no clipping
     cc_cutoff (float): Cutoff for spurious gene pair identification.
     method (str, optional): Method for co-expression calculation.
-    log2 (bool): Whether to apply log2 transformation.
 
     Returns:
     tuple: A tuple containing the difference matrix and spurious gene pairs.
@@ -433,11 +306,8 @@ def compare_segmentations(
         pos_rate_other_seg=pos_rate_other_seg,
         min_positivity_rate=min_positivity_rate,
         min_cond_coex=min_cond_coex,
-        log2=log2,
+        min_cond_coex_mode=min_cond_coex_mode,
     )
-
-    if log2:
-        cc_cutoff = np.log2(cc_cutoff)
 
     if method == "conditional":
         spurious_gene_pairs = np.where(CCdiff >= cc_cutoff)
@@ -466,9 +336,7 @@ def coexpression_by_cell_type(CC, genes_markers, df_markers_panel):
     Returns:
     tuple: DataFrames of co-expression by cell type and melted co-expression.
     """
-    df_cc_melt = (
-        CC.loc[genes_markers, genes_markers].melt(ignore_index=False).reset_index()
-    )
+    df_cc_melt = CC.loc[genes_markers, genes_markers].melt(ignore_index=False).reset_index()
     df_cc_melt = df_cc_melt[df_cc_melt["index"] != df_cc_melt["variable"].values]
     df_cc_melt.columns = ["genei", "genej", "value"]
 
@@ -535,9 +403,7 @@ def coexpression_cells_score_gene_pairs(CC_cells, gene_pairs_idx):
     """
     CC_cells_score = []
     for i in range(len(CC_cells)):
-        CC_cells_score.append(
-            CC_cells[i][gene_pairs_idx[:, 0], gene_pairs_idx[:, 1]].sum()
-        )
+        CC_cells_score.append(CC_cells[i][gene_pairs_idx[:, 0], gene_pairs_idx[:, 1]].sum())
     return np.array(CC_cells_score)
 
 
@@ -571,9 +437,7 @@ def find_markers(adata, ct_key, threshold_fraction=0.05, threshold_diff=0.25):
         df_fraction[ct] = (adata_ct.X > 0).mean(0).A1
 
     # Initialize result DataFrame and dictionary
-    df_max_difference_thresholded = pd.DataFrame(
-        0.0, index=u_cell_types, columns=u_cell_types
-    )
+    df_max_difference_thresholded = pd.DataFrame(0.0, index=u_cell_types, columns=u_cell_types)
     df_difference_thresholded = {}
 
     # Compute differences and thresholds
@@ -586,15 +450,11 @@ def find_markers(adata, ct_key, threshold_fraction=0.05, threshold_diff=0.25):
                 diff[df_fraction[ctj] > threshold_fraction] = 0.0
                 diff[diff < threshold_diff] = 0.0
 
-                df_max_difference_thresholded.loc[
-                    ctj, cti
-                ] = df_max_difference_thresholded.loc[cti, ctj] = diff.max()
+                df_max_difference_thresholded.loc[ctj, cti] = df_max_difference_thresholded.loc[cti, ctj] = diff.max()
                 df_difference_thresholded[cti, ctj] = diff
 
     # Convert dictionary to DataFrame and sort columns by maximum values
     df_difference_thresholded = pd.DataFrame(df_difference_thresholded)
-    df_difference_thresholded.columns = [
-        "_".join(pair) for pair in df_difference_thresholded.columns
-    ]
+    df_difference_thresholded.columns = ["_".join(pair) for pair in df_difference_thresholded.columns]
 
     return df_fraction, df_difference_thresholded, df_max_difference_thresholded

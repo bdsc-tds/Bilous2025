@@ -6,99 +6,195 @@ results_dir = Path(config['results_dir'])
 figures_dir = Path(config['figures_dir'])
 palette_dir = Path(config['xenium_metadata_dir'])
 
+# take arbitrary segmentation just to loop over all conditions and panel combinations
+segmentation = list(xenium_dir.iterdir())[0].stem 
+coexpression_dir = results_dir / 'coexpression/'
+
 # Params
 methods = ['conditional','jaccard']#,'pearson','spearman']
 target_counts = [30,50,200]
 min_positivity_rate = 0.01
-# min_cond_coex = 0.05
+min_cond_coex = 'auto'
+min_cond_coex_mode = 'both'
 cc_cutoff = 1.5
 ref_segmentation = '10x_0um'
 ref_oversegmentation = '10x_15um'
 segmentation_palette = palette_dir / 'col_palette_segmentation.csv'
 extension = 'png'
+dpi = 100
+showfliers = False
+log_scale = True
+n_top_gene_pairs = 100_000_000_000 # big number to plot all gene pairs
 
-out_files = []
-for segmentation in (segmentations := xenium_dir.iterdir()):
-    if segmentation.stem == 'proseg_v1':
-        continue
-    for condition in (conditions := segmentation.iterdir()): 
-        for panel in (panels := condition.iterdir()):
-            for method in methods:
-                for target_count in target_counts:
-                    if target_count > 50 and panel.stem != '5k':
-                        continue
+out_files_panel = []
 
-                    k = (segmentation.stem,condition.stem,panel.stem)
-                    name = '/'.join(k)
+for condition in (conditions := (coexpression_dir / segmentation).iterdir()): 
+    for panel in (panels := condition.iterdir()):
+        for method in methods:
+            for target_count in target_counts:
+                if target_count > 50 and panel.stem != '5k':
+                    continue
 
-                    panel_coexpression = results_dir / f'coexpression/{name}'
-                    out_file_plot_sample = figures_dir / f'coexpression_plot/{name}/coexpression_{method}_{target_count=}_sample.{extension}'
-                    out_file_plot_panel = figures_dir / f'coexpression_plot/{name}/coexpression_{method}_{target_count=}_panel.{extension}'
-                    out_file_gene_pairs = results_dir / f'coexpression_gene_pairs/{name}/coexpression_gene_pairs_{method}_{target_count=}.parquet'
-                    out_files.extend([out_file_plot_sample,out_file_plot_panel,out_file_gene_pairs])
+                k = (condition.stem,panel.stem)
+                name = '/'.join(k)
+                min_cond_coex_str = f'{min_cond_coex=}' if isinstance(min_cond_coex,float) else min_cond_coex
 
-                    # adapt resources
-                    if panel.stem == '5k':
-                        if target_count > 50:
-                            mem = '120GB'
-                        else:
-                            mem = '80GB'
-                        runtime = '80m'
+                panel_coexpression = results_dir / f'coexpression/{name}'
+                out_file_plot_sample = figures_dir / f'coexpression_plot_panel/{name}/coexpression_{method}_{target_count=}_{min_cond_coex_str}_sample.{extension}'
+                out_file_plot_panel = figures_dir / f'coexpression_plot_panel/{name}/coexpression_{method}_{target_count=}_{min_cond_coex_str}_panel.{extension}'
+                out_file_gene_pairs = results_dir / f'coexpression_gene_pairs/{name}/coexpression_gene_pairs_{method}_{target_count=}_{min_cond_coex_str}.parquet'
+                out_files_panel.extend([out_file_plot_sample,out_file_plot_panel,out_file_gene_pairs])
+
+                # adapt resources
+                if panel.stem == '5k':
+                    if target_count > 50:
+                        mem = '120GB'
                     else:
-                        mem = '20GB'
-                        runtime = '10m'
+                        mem = '80GB'
+                    runtime = '80m'
+                else:
+                    mem = '20GB'
+                    runtime = '10m'
 
-                    rule:
-                        name: f'coexpression_plot_panel/{name}/coexpression_{method}_{target_count=}'
-                        input:
-                            coexpression_is_done=results_dir / "coexpression.done",
-                        output:
-                            out_file_plot_sample=out_file_plot_sample,
-                            out_file_plot_panel=out_file_plot_panel,
-                            out_file_gene_pairs=out_file_gene_pairs,
-                        params:
-                            panel=panel_coexpression,
-                            method=method,
-                            target_count=target_count,
-                            min_positivity_rate=min_positivity_rate,
-                            # min_cond_coex=min_cond_coex if method in ['conditional','jaccard'] else 0.,
-                            cc_cutoff=cc_cutoff,
-                            log2=True if method in ['conditional','jaccard'] else False,
-                            ref_segmentation=ref_segmentation,
-                            ref_oversegmentation=ref_oversegmentation,
-                            segmentation_palette=segmentation_palette,
-                        threads: 1
-                        resources:
-                            mem=mem,
-                            runtime=runtime,
-                        conda:
-                            "spatial"
-                        shell:
-                            """
-                            mkdir -p "$(dirname {output.out_file_plot_sample})"
+                rule:
+                    name: f'coexpression_plot_panel/{name}/coexpression_{method}_{target_count=}'
+                    input:
+                        coexpression_is_done=results_dir / "coexpression.done",
+                    output:
+                        out_file_plot_sample=out_file_plot_sample,
+                        out_file_plot_panel=out_file_plot_panel,
+                        out_file_gene_pairs=out_file_gene_pairs,
+                    params:
+                        coexpression_dir=coexpression_dir,  
+                        plot_condition=condition.stem,
+                        plot_panel=panel.stem,
+                        method=method,
+                        target_count=target_count,
+                        min_positivity_rate=min_positivity_rate,
+                        min_cond_coex=min_cond_coex,
+                        min_cond_coex_mode=min_cond_coex_mode,
+                        cc_cutoff=cc_cutoff,
+                        ref_segmentation=ref_segmentation,
+                        ref_oversegmentation=ref_oversegmentation,
+                        segmentation_palette=segmentation_palette,
+                        dpi=dpi,
+                        showfliers=showfliers,
+                        log_scale=log_scale,
+                    threads: 1
+                    resources:
+                        mem=mem,
+                        runtime=runtime,
+                    conda:
+                        "spatial"
+                    shell:
+                        """
+                        mkdir -p "$(dirname {output.out_file_plot_sample})"
 
-                            python workflow/scripts/xenium/coexpression_panel_plot.py \
-                            --panel {params.panel} \
-                            --out_file_plot_sample {output.out_file_plot_sample} \
-                            --out_file_plot_panel {output.out_file_plot_panel} \
-                            --out_file_gene_pairs {output.out_file_gene_pairs} \
-                            --method {params.method} \
-                            --target_count {params.target_count} \
-                            --min_positivity_rate {params.min_positivity_rate} \
-                            --cc_cutoff {params.cc_cutoff} \
-                            --log2 {params.log2} \
-                            --ref_segmentation {params.ref_segmentation} \
-                            --ref_oversegmentation {params.ref_oversegmentation} \
-                            --segmentation_palette {params.segmentation_palette} \
+                        python workflow/scripts/xenium/coexpression_panel_plot.py \
+                        --coexpression_dir {params.coexpression_dir} \
+                        --plot_condition {params.plot_condition} \
+                        --plot_panel {params.plot_panel} \
+                        --out_file_plot_sample {output.out_file_plot_sample} \
+                        --out_file_plot_panel {output.out_file_plot_panel} \
+                        --out_file_gene_pairs {output.out_file_gene_pairs} \
+                        --method {params.method} \
+                        --target_count {params.target_count} \
+                        --min_positivity_rate {params.min_positivity_rate} \
+                        --cc_cutoff {params.cc_cutoff} \
+                        --min_cond_coex {params.min_cond_coex} \
+                        --min_cond_coex_mode {params.min_cond_coex_mode} \
+                        --ref_segmentation {params.ref_segmentation} \
+                        --ref_oversegmentation {params.ref_oversegmentation} \
+                        --segmentation_palette {params.segmentation_palette} \
+                        --dpi {params.dpi} \
+                        --showfliers {params.showfliers} \
+                        --log_scale {params.log_scale} \
 
-                            echo "DONE"
-                            """
-                            # --min_cond_coex {params.min_cond_coex} \
+                        echo "DONE"
+                        """
 
 
-rule coexpression_plot_all:
+out_files_conditions = []
+for method in methods:
+    for target_count in target_counts:
+        if target_count > 50 and panel.stem != '5k':
+            continue
+
+        min_cond_coex_str = f'{min_cond_coex=}' if isinstance(min_cond_coex,float) else min_cond_coex
+
+        out_file_plot = figures_dir / f'coexpression_plot_conditions/coexpression_{method}_{target_count=}_{min_cond_coex_str}_conditions.{extension}'
+        out_file_gene_pairs = results_dir / f'coexpression_conditions_gene_pairs/coexpression_gene_pairs_{method}_{target_count=}_{min_cond_coex_str}.parquet'
+        out_files_conditions.extend([out_file_plot_sample,out_file_plot_panel,out_file_gene_pairs])
+
+        # adapt resources
+        if panel.stem == '5k':
+            if target_count > 50:
+                mem = '120GB'
+            else:
+                mem = '80GB'
+            runtime = '80m'
+        else:
+            mem = '20GB'
+            runtime = '10m'
+
+        rule:
+            name: f'coexpression_plot_conditions/coexpression_{method}_{target_count=}'
+            input:
+                coexpression_is_done=results_dir / "coexpression.done",
+            output:
+                out_file_plot=out_file_plot,
+                out_file_gene_pairs=out_file_gene_pairs,
+            params:
+                coexpression_dir=coexpression_dir,
+                method=method,
+                target_count=target_count,
+                min_positivity_rate=min_positivity_rate,
+                min_cond_coex=min_cond_coex,
+                min_cond_coex_mode=min_cond_coex_mode,
+                cc_cutoff=cc_cutoff,
+                ref_segmentation=ref_segmentation,
+                ref_oversegmentation=ref_oversegmentation,
+                segmentation_palette=segmentation_palette,
+                dpi=dpi,
+                showfliers=showfliers,
+                log_scale=log_scale,
+            threads: 1
+            resources:
+                mem=mem,
+                runtime=runtime,
+            conda:
+                "spatial"
+            shell:
+                """
+                mkdir -p "$(dirname {output.out_file_plot_sample})"
+
+                python workflow/scripts/xenium/coexpression_panel_plot.py \
+                --coexpression_dir {params.coexpression_dir} \
+                --out_file_plot {output.out_file_plot} \
+                --out_file_gene_pairs {output.out_file_gene_pairs} \
+                --method {params.method} \
+                --target_count {params.target_count} \
+                --min_positivity_rate {params.min_positivity_rate} \
+                --cc_cutoff {params.cc_cutoff} \
+                --min_cond_coex {params.min_cond_coex} \
+                --min_cond_coex_mode {params.min_cond_coex_mode} \
+                --ref_segmentation {params.ref_segmentation} \
+                --ref_oversegmentation {params.ref_oversegmentation} \
+                --segmentation_palette {params.segmentation_palette} \
+                --dpi {params.dpi} \
+                --showfliers {params.showfliers} \
+                --log_scale {params.log_scale} \
+
+                echo "DONE"
+                """
+
+
+rule coexpression_plot_panel_all:
     input:
-        out_files
+        out_files_panel
 
+rule coexpression_plot_conditions_all:
+    input:
+        out_files_conditions
 
 

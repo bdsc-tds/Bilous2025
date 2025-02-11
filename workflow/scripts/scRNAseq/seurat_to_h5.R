@@ -1,6 +1,6 @@
 library(Seurat)
 library(arrow)
-source("/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/workflow/scripts/scRNAseq/write10x.R")
+source("/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/workflow/scripts/readwrite.R")
 
 args <- commandArgs(trailingOnly = TRUE)
 input_rds <- args[1]
