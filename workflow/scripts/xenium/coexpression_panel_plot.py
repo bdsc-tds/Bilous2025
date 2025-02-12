@@ -78,8 +78,6 @@ dpi = args.dpi
 showfliers = args.showfliers
 log_scale = args.log_scale
 
-print(f"{showfliers=}")
-
 # vars
 xenium_levels = ["segmentation", "condition", "panel", "donor", "sample"]
 hue = "segmentation"
@@ -177,8 +175,6 @@ for y in ["sample", "panel"]:
     else:
         figsize = (6, 6)
         out_file_ = out_file_plot_panel
-
-    print(f"{showfliers=}")
 
     plt.figure(figsize=figsize)
     ax = plt.subplot()

@@ -539,5 +539,5 @@ def get_gene_panel_info(path):
         gene_panel_info.at[i, "source_category"] = g["source"]["category"]
         gene_panel_info.at[i, "source_design_id"] = g["source"]["identity"]["design_id"]
         gene_panel_info.at[i, "source_name"] = g["source"]["identity"]["name"]
-        gene_panel_info.at[i, "source_version"] = g["source"]["identity"]["version"]
+        gene_panel_info.at[i, "source_version"] = g["source"]["identity"].get("version")
     return gene_panel_info
