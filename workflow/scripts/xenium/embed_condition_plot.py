@@ -10,6 +10,7 @@ from pathlib import Path
 parser = argparse.ArgumentParser(description="Plot condition of Xenium donors.")
 parser.add_argument("--condition", type=Path, help="Path to the condition file.")
 parser.add_argument("--embed_file", type=str, help="Path to the embedding file.")
+parser.add_argument("--normalisation_method", type=str, help="normalisation_method method")
 parser.add_argument("--reference", type=str, help="annotation reference")
 parser.add_argument("--method", type=str, help="annotation method")
 parser.add_argument("--color", type=str, help="annotation color")
@@ -24,6 +25,7 @@ args = parser.parse_args()
 # Access the arguments
 condition = args.condition
 embed_file = args.embed_file
+normalisation_method = args.normalisation_method
 reference = args.reference
 method = args.method
 color = args.color
@@ -39,11 +41,7 @@ if color == "sample":
 elif color == "panel":
     palette = pd.read_csv(panel_palette, index_col=0).iloc[:, 0]
 else:
-    palette = (
-        pd.read_csv(cell_type_palette)
-        .set_index(color)[f"cols_{color}"]
-        .drop_duplicates()
-    )
+    palette = pd.read_csv(cell_type_palette).set_index(color)[f"cols_{color}"].drop_duplicates()
 
 
 # vars
@@ -84,9 +82,7 @@ else:
                     / f"cell_type_annotation/reference_based/{reference}/{method}/{color}/single_cell/labels.parquet"
                 )
                 if annot_file.exists():
-                    annot[k][reference, method, color] = (
-                        pd.read_parquet(annot_file).set_index("cell_id").iloc[:, 0]
-                    )
+                    annot[k][reference, method, color] = pd.read_parquet(annot_file).set_index("cell_id").iloc[:, 0]
 
     # merge annotations
     df_annot = {}
@@ -109,13 +105,9 @@ else:
 # plotting params, palette
 unique_labels = np.unique(df[params].dropna())
 palette = {u: palette[u] for u in unique_labels}
-legend_handles = [
-    mpatches.Patch(color=color, label=label) for label, color in palette.items()
-]
+legend_handles = [mpatches.Patch(color=color, label=label) for label, color in palette.items()]
 
-print(
-    f"Segmentation: {segmentation.stem}, condition: {condition.stem}, Method: {method}, Reference: {reference}"
-)
+print(f"Segmentation: {segmentation.stem}, condition: {condition.stem}, Method: {method}, Reference: {reference}")
 
 
 # plot

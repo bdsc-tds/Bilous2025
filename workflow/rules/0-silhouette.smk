@@ -25,13 +25,13 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                     if donor.stem not in donors_config[condition.stem][panel.stem]:
                         continue
 
-                    for norm in normalisations:
+                    for normalisation in normalisations:
 
-                        k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,norm)
+                        k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,normalisation)
                         name = '/'.join(k)
 
-                        sample_counts = sample / f'{norm}/normalised_counts/counts.parquet'
-                        sample_idx = sample / f'{norm}/normalised_counts/cells.parquet'
+                        sample_counts = sample / f'{normalisation}/normalised_counts/counts.parquet'
+                        sample_idx = sample / f'{normalisation}/normalised_counts/cells.parquet'
                         sample_annotation_dir = xenium_cell_type_annotation_dir / f'{name}/reference_based'
 
                         # sample_path = sample / "normalised_results/outs"

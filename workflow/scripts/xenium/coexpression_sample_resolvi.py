@@ -1,4 +1,4 @@
-import spatialdata_io
+import scanpy as sc
 import sys
 
 sys.path.append("workflow/scripts/")
@@ -12,23 +12,10 @@ method = sys.argv[4]
 target_count = int(sys.argv[5])
 
 # read counts
-# adata = spatialdata_io.xenium(
-#     path,
-#     cells_as_circles=False,
-#     cells_boundaries=False,
-#     nucleus_boundaries=False,
-#     cells_labels=False,
-#     nucleus_labels=False,
-#     transcripts=False,
-#     morphology_mip=False,
-#     morphology_focus=False,
-#     aligned_images=False,
-# )["table"]
+adata = sc.read_10x_h5(path)
 
 # compute coexpression
-CC, X_downsampled, pos, pos_rate, mask = coexpression.coexpression(
-    adata, target_count=target_count, method=method
-)
+CC, X_downsampled, pos, pos_rate, mask = coexpression.coexpression(adata, target_count=target_count, method=method)
 
 # save as parquet
 CC.to_parquet(out_file)

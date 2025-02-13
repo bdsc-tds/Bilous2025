@@ -29,19 +29,11 @@ parser.add_argument(
     help="Path to resolvi proportions parquet file.",
 )
 parser.add_argument("--min_counts", type=int, help="QC parameter from pipeline config")
-parser.add_argument(
-    "--min_features", type=int, help="QC parameter from pipeline config"
-)
-parser.add_argument(
-    "--max_counts", type=float, help="QC parameter from pipeline config"
-)
-parser.add_argument(
-    "--max_features", type=float, help="QC parameter from pipeline config"
-)
+parser.add_argument("--min_features", type=int, help="QC parameter from pipeline config")
+parser.add_argument("--max_counts", type=float, help="QC parameter from pipeline config")
+parser.add_argument("--max_features", type=float, help="QC parameter from pipeline config")
 parser.add_argument("--min_cells", type=int, help="QC parameter from pipeline config")
-parser.add_argument(
-    "--num_samples", type=int, help="Number of samples for RESOLVI generative model."
-)
+parser.add_argument("--num_samples", type=int, help="Number of samples for RESOLVI generative model.")
 args = parser.parse_args()
 
 # Access the arguments
@@ -56,10 +48,11 @@ min_cells = args.min_cells
 num_samples = args.num_samples
 
 # read counts
-adata = spatialdata_io.xenium(
+adata = readwrite.read_xenium_sample(
     path,
     cells_as_circles=False,
     cells_boundaries=False,
+    cells_boundaries_layers=False,
     nucleus_boundaries=False,
     cells_labels=False,
     nucleus_labels=False,
@@ -67,8 +60,13 @@ adata = spatialdata_io.xenium(
     morphology_mip=False,
     morphology_focus=False,
     aligned_images=False,
-)["table"]
+    anndata=True,
+)
 
+# need to round proseg expected counts for resolVI to run
+# no need for if statement, doesn't change anything to other segmentation methods
+adata.X.data = adata.X.data.astype(np.float32).round()
+adata.obs_names = adata.obs_names.astype(str)
 
 # preprocess (QC filters only)
 # resolvi requires at least 5 counts in each cell
@@ -89,9 +87,7 @@ preprocessing.preprocess(
 )
 
 
-scvi.external.RESOLVI.setup_anndata(
-    adata, labels_key=None, layer=None, prepare_data_kwargs={"spatial_rep": "spatial"}
-)
+scvi.external.RESOLVI.setup_anndata(adata, labels_key=None, layer=None, prepare_data_kwargs={"spatial_rep": "spatial"})
 resolvi = scvi.external.RESOLVI(adata, semisupervised=False)
 resolvi.train(max_epochs=50)
 

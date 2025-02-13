@@ -29,16 +29,12 @@ adata.obs_names = adata.obs["cell_id"]
 
 # read annotations
 annotations = {}
-for reference in (
-    references := path.parents[1] / "cell_type_annotation/reference_based"
-).iterdir():
+for reference in (references := path.parents[1] / "cell_type_annotation/reference_based").iterdir():
     for method in (methods := reference.iterdir()):
         for level in (levels := method.iterdir()):
             if (level / "single_cell/labels.parquet").exists():
                 annotations[reference.stem, method.stem, level.stem] = (
-                    pd.read_parquet(level / "single_cell/labels.parquet")
-                    .set_index("cell_id")
-                    .iloc[:, 0]
+                    pd.read_parquet(level / "single_cell/labels.parquet").set_index("cell_id").iloc[:, 0]
                 )
 
 
@@ -65,9 +61,7 @@ silhouettes = {}
 for CT_KEY in CT_KEYS:
     print(CT_KEY)
     labels = adata.obs[CT_KEY].iloc[indices].values
-    silhouettes[CT_KEY] = sklearn.metrics.silhouette_score(
-        D, labels, random_state=seed, metric="precomputed"
-    )
+    silhouettes[CT_KEY] = sklearn.metrics.silhouette_score(D, labels, random_state=seed, metric="precomputed")
 
 # save
 silhouettes = pd.Series(silhouettes).reset_index()

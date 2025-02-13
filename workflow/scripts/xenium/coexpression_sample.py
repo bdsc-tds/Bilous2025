@@ -3,6 +3,7 @@ import sys
 
 sys.path.append("workflow/scripts/")
 import coexpression
+import readwrite
 
 # params
 path = sys.argv[1]
@@ -12,10 +13,11 @@ method = sys.argv[4]
 target_count = int(sys.argv[5])
 
 # read counts
-adata = spatialdata_io.xenium(
+adata = readwrite.read_xenium_sample(
     path,
     cells_as_circles=False,
     cells_boundaries=False,
+    cells_boundaries_layers=False,
     nucleus_boundaries=False,
     cells_labels=False,
     nucleus_labels=False,
@@ -23,12 +25,11 @@ adata = spatialdata_io.xenium(
     morphology_mip=False,
     morphology_focus=False,
     aligned_images=False,
-)["table"]
+    anndata=True,
+)
 
 # compute coexpression
-CC, X_downsampled, pos, pos_rate, mask = coexpression.coexpression(
-    adata, target_count=target_count, method=method
-)
+CC, X_downsampled, pos, pos_rate, mask = coexpression.coexpression(adata, target_count=target_count, method=method)
 
 # save as parquet
 CC.to_parquet(out_file)

@@ -11,7 +11,8 @@ from pathlib import Path
 parser = argparse.ArgumentParser(description="Plot panel of Xenium donors.")
 parser.add_argument("--panel", type=Path, help="Path to the panel file.")
 parser.add_argument("--embed_file", type=str, help="Path to the embedding file.")
-parser.add_argument("--preprocessing",type=str, help='Preprocessing method')
+parser.add_argument("--cell_type_annotation_dir", type=Path, help="Path to the cell_type_annotation_dir.")
+parser.add_argument("--normalisation_method", type=str, help="normalisation_method method")
 parser.add_argument("--reference", type=str, help="annotation reference")
 parser.add_argument("--method", type=str, help="annotation method")
 parser.add_argument("--color", type=str, help="annotation color")
@@ -26,7 +27,8 @@ args = parser.parse_args()
 # Access the arguments
 panel = args.panel
 embed_file = args.embed_file
-preprocessing = args.preprocessing
+cell_type_annotation_dir = args.cell_type_annotation_dir
+normalisation_method = args.normalisation_method
 reference = args.reference
 method = args.method
 color = args.color
@@ -42,11 +44,7 @@ if color == "sample":
 elif color == "panel":
     palette = pd.read_csv(panel_palette, index_col=0).iloc[:, 0]
 else:
-    palette = (
-        pd.read_csv(cell_type_palette)
-        .set_index(color)[f"cols_{color}"]
-        .drop_duplicates()
-    )
+    palette = pd.read_csv(cell_type_palette).set_index(color)[f"cols_{color}"].drop_duplicates()
 
 
 # vars
@@ -81,13 +79,12 @@ else:
 
             annot[k] = {}
             annot_file = (
-                sample
-                / f"{preprocessing}/reference_based/{reference}/{method}/{color}/single_cell/labels.parquet"
+                cell_type_annotation_dir
+                / f"{segmentation}/{condition}/{donor.stem}/{sample.stem}"
+                / f"{normalisation_method}/reference_based/{reference}/{method}/{color}/single_cell/labels.parquet"
             )
             if annot_file.exists():
-                annot[k][reference, method, color] = (
-                    pd.read_parquet(annot_file).set_index("cell_id").iloc[:, 0]
-                )
+                annot[k][reference, method, color] = pd.read_parquet(annot_file).set_index("cell_id").iloc[:, 0]
 
     # merge annotations
     df_annot = {}
@@ -110,9 +107,7 @@ else:
 # plotting params, palette
 unique_labels = np.unique(df[params].dropna())
 palette = {u: palette[u] for u in unique_labels}
-legend_handles = [
-    mpatches.Patch(color=color, label=label) for label, color in palette.items()
-]
+legend_handles = [mpatches.Patch(color=color, label=label) for label, color in palette.items()]
 
 print(
     f"Segmentation: {segmentation.stem}, condition: {condition.stem}, Panel: {panel.stem}, Method: {method}, Reference: {reference}"
