@@ -55,7 +55,7 @@ for panel in (panels := condition.iterdir()):
         for sample in (samples := donor.iterdir()):
             print(sample)
 
-            k = (segmentation, condition, panel.stem, donor.stem, sample.stem)
+            k = (segmentation, condition.stem, panel.stem, donor.stem, sample.stem)
             sample_counts_path = sample / f"{normalisation_method}/normalised_counts/{layer}.parquet"
             sample_idx_path = sample / f"{normalisation_method}/normalised_counts/cells.parquet"
 

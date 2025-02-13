@@ -425,7 +425,7 @@ def read_xenium_sample(
 
     If sample_name is None, sample_name is not returned
     """
-
+    path = Path(path)
     kwargs = dict(
         cells_as_circles=cells_as_circles,
         cells_boundaries=cells_boundaries,
@@ -452,7 +452,7 @@ def read_xenium_sample(
     adata = sdata["table"]
     adata.obs_names = adata.obs["cell_id"].values
 
-    metrics_path = Path(path) / "metrics_summary.csv"
+    metrics_path = path / "metrics_summary.csv"
     if metrics_path.exists():
         adata.uns["metrics_summary"] = pd.read_csv(metrics_path)
     else:
