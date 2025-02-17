@@ -10,6 +10,7 @@ from pathlib import Path
 parser = argparse.ArgumentParser(description="Plot condition of Xenium donors.")
 parser.add_argument("--condition", type=Path, help="Path to the condition file.")
 parser.add_argument("--embed_file", type=str, help="Path to the embedding file.")
+parser.add_argument("--cell_type_annotation_dir", type=Path, help="Path to the cell_type_annotation_dir.")
 parser.add_argument("--normalisation_method", type=str, help="normalisation_method method")
 parser.add_argument("--reference", type=str, help="annotation reference")
 parser.add_argument("--method", type=str, help="annotation method")
@@ -25,6 +26,7 @@ args = parser.parse_args()
 # Access the arguments
 condition = args.condition
 embed_file = args.embed_file
+cell_type_annotation_dir = args.cell_type_annotation_dir
 normalisation_method = args.normalisation_method
 reference = args.reference
 method = args.method
@@ -73,16 +75,16 @@ else:
                     donor.stem,
                     sample.stem,
                 )
-                print(k)
-                annot[k] = {}
+                name = "/".join(k)
 
-                # read csv or parquet
+                annot[k] = {}
                 annot_file = (
-                    sample
-                    / f"cell_type_annotation/reference_based/{reference}/{method}/{color}/single_cell/labels.parquet"
+                    cell_type_annotation_dir
+                    / name
+                    / f"{normalisation_method}/reference_based/{reference}/{method}/{color}/single_cell/labels.parquet"
                 )
-                if annot_file.exists():
-                    annot[k][reference, method, color] = pd.read_parquet(annot_file).set_index("cell_id").iloc[:, 0]
+                # if annot_file.exists():
+                annot[k][reference, method, color] = pd.read_parquet(annot_file).set_index("cell_id").iloc[:, 0]
 
     # merge annotations
     df_annot = {}

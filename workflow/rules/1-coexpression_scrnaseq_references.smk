@@ -33,9 +33,10 @@ for reference in (references := scrnaseq_processed_data_dir.iterdir()):
                 params:
                     method=method,
                     target_count=target_count,
+                    genes=genes,
                 threads: 1
                 resources:
-                    mem='150GB',
+                    mem='50GB',
                     runtime='30m',
                 conda:
                     "spatial"
@@ -43,12 +44,13 @@ for reference in (references := scrnaseq_processed_data_dir.iterdir()):
                     """
                     mkdir -p "$(dirname {output.out_file_coexpr})"
 
-                    python workflow/scripts/scRNAseq/coexpression_scrnaseq_sample.py \
-                    {input.counts} \
-                    {output.out_file_coexpr} \
-                    {output.out_file_pos_rate} \
-                    {params.method} \
-                    {params.target_count} \
+                    python workflow/scripts/coexpression_sample.py \
+                    -i {input.counts} \
+                    -m {params.method} \
+                    -c {params.target_count} \
+                    --outcoexp {output.out_file_coexpr} \
+                    --outposrate {output.out_file_pos_rate} \
+                    -g {params.genes}
 
                     echo "DONE"
                     """

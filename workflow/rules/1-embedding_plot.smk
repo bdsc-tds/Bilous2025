@@ -16,13 +16,13 @@ alpha=0.5
 
 cell_type_palette = palette_dir / 'col_palette_cell_types.csv'
 panel_palette = palette_dir / 'col_palette_panel.csv'
-sample_palette = palette_dir / 'col_palette_donor.csv'
+sample_palette = palette_dir / 'col_palette_sample.csv'
 
 normalisation = ['lognorm']
 layers = ['data','scale_data']
 references = ['matched_reference_combo','external_reference']
 methods = ['rctd_class_aware']
-colors = ['Level1','Level2','Level3','Level4','panel','sample',] # condition and sample as color to plot added here in addition to levels
+colors = ['sample']#['Level1','Level2','Level3','Level4','panel','sample',] # condition and sample as color to plot added here in addition to levels
 extension = 'png'
 
 out_files_panel = []
@@ -111,7 +111,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
 
             k = (segmentation.stem,condition.stem)
             name = '/'.join(k)
-            embed_file = results_dir / f'embed_condition/{name}/umap_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet'
+            embed_file = results_dir / f'embed_condition/{name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet'
 
             for reference in references:
                 for method in methods:
@@ -132,6 +132,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                             output:
                                 out_file=out_file,
                             params:
+                                cell_type_annotation_dir=cell_type_annotation_dir,
                                 reference=reference,
                                 method=method,
                                 level=level,
@@ -153,6 +154,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 python workflow/scripts/xenium/embed_condition_plot.py \
                                 --condition {input.condition} \
                                 --embed_file {input.embed_file} \
+                                --cell_type_annotation_dir {params.cell_type_annotation_dir} \
                                 --reference {params.reference} \
                                 --method {params.method} \
                                 --level {params.level} \

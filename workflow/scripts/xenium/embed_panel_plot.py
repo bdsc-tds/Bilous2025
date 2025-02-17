@@ -80,11 +80,11 @@ else:
             annot[k] = {}
             annot_file = (
                 cell_type_annotation_dir
-                / f"{segmentation}/{condition}/{donor.stem}/{sample.stem}"
+                / name
                 / f"{normalisation_method}/reference_based/{reference}/{method}/{color}/single_cell/labels.parquet"
             )
-            if annot_file.exists():
-                annot[k][reference, method, color] = pd.read_parquet(annot_file).set_index("cell_id").iloc[:, 0]
+            # if annot_file.exists():
+            annot[k][reference, method, color] = pd.read_parquet(annot_file).set_index("cell_id").iloc[:, 0]
 
     # merge annotations
     df_annot = {}

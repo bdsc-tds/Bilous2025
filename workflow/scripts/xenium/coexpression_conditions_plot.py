@@ -36,7 +36,7 @@ def format_ticks(x):
 
 
 # Set up argument parser
-parser = argparse.ArgumentParser(description="Plot violins of Xenium coexpression QC for a given panel.")
+parser = argparse.ArgumentParser(description="Plot violins of Xenium coexpression QC for all panels.")
 parser.add_argument("--coexpression_dir", type=Path, help="Path to coexpression results to plot")
 parser.add_argument("--out_file_plot", type=Path, help="Path to the output plot file")
 parser.add_argument("--out_file_gene_pairs", type=Path, help="Path to the output gene pairs file")

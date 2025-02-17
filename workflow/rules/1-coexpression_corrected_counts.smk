@@ -2,67 +2,75 @@ from pathlib import Path
 
 # cfg paths
 # xenium_dir = Path(config['xenium_processed_data_dir'])
-xenium_std_seurat_analysis_dir =  Path(config['xenium_std_seurat_analysis_dir'])
 results_dir = Path(config['results_dir'])
 
 # Params
-methods = ['conditional','jaccard','pearson','spearman']
+correction_methods = ['resolvi','ovrlpy_correction']
+methods = ['conditional','jaccard']#,'pearson','spearman']
 target_counts = [30,50,200]
-out_files_resolvi = []
+signal_integrity_threshold = 0.5
+out_files = []
 
-for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
-    for condition in (conditions := segmentation.iterdir()): 
-        for panel in (panels := condition.iterdir()):
-            for donor in (donors := panel.iterdir()):
-                for sample in (samples := donor.iterdir()):
+for correction_method in correction_methods:
+    for segmentation in (segmentations := (results_dir / correction_method).iterdir()):
+        for condition in (conditions := segmentation.iterdir()): 
+            for panel in (panels := condition.iterdir()):
+                for donor in (donors := panel.iterdir()):
+                    for sample in (samples := donor.iterdir()):
 
-                    k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
-                    name = '/'.join(k)
-                    sample_path_resolvi = results_dir / f'resolvi/{name}/resolvi_corrected.parquet'
+                        k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
+                        name = '/'.join(k)
 
-                    if sample_path.exists():
+                        if correction_method == 'resolvi':
+                            sample_path = results_dir / f'{correction_method}/{name}/resolvi_corrected_counts.h5'
+                        elif correction_method == 'ovrlpy_correction':
+                            sample_path = results_dir / f'{correction_method}/{name}/corrected_counts_{signal_integrity_threshold=}.h5'
+                        else:
+                            raise ValueError(f"{correction_method} not supported. Use 'resolvi' or 'ovrlpy_correction'")
 
-                        for method in methods:
-                            for target_count in target_counts:
-                                if target_count > 50 and panel.stem != '5k':
-                                    continue
+                        if sample_path.exists():
 
-                                out_file_coexpr = results_dir / f'resolvi_coexpression/{name}/coexpression_{method}_{target_count}.parquet' 
-                                out_file_pos_rate = results_dir / f'resolvi_coexpression/{name}/positivity_rate_{method}_{target_count}.parquet'
+                            for method in methods:
+                                for target_count in target_counts:
+                                    if target_count > 50 and panel.stem != '5k':
+                                        continue
 
-                                out_files_resolvi.extend([out_file_coexpr,out_file_pos_rate])
+                                    out_file_coexpr = results_dir / f'{correction_method}_coexpression/{name}/coexpression_{method}_{target_count}.parquet' 
+                                    out_file_pos_rate = results_dir / f'{correction_method}_coexpression/{name}/positivity_rate_{method}_{target_count}.parquet'
 
-                                rule:
-                                    name: f'resolvi_coexpression/{name}/{method}_{target_count}'
-                                    input:
-                                        sample_path=sample_path,
-                                    output:
-                                        out_file_coexpr=out_file_coexpr,
-                                        out_file_pos_rate=out_file_pos_rate,
-                                    params:
-                                        method=method,
-                                        target_count=target_count,
-                                    threads: 1
-                                    resources:
-                                        mem='40GB' if panel.stem == '5k' else '20GB',
-                                        runtime='20m' if panel.stem == '5k' else '10m',
-                                    conda:
-                                        "spatial"
-                                    shell:
-                                        """
-                                        mkdir -p "$(dirname {output.out_file_coexpr})"
+                                    out_files.extend([out_file_coexpr,out_file_pos_rate])
 
-                                        python workflow/scripts/xenium/coexpression_sample_resolvi.py \
-                                        {input.sample_path} \
-                                        {output.out_file_coexpr} \
-                                        {output.out_file_pos_rate} \
-                                        {params.method} \
-                                        {params.target_count} \
+                                    rule:
+                                        name: f'{correction_method}_coexpression/{name}/{method}_{target_count}'
+                                        input:
+                                            sample_path=sample_path,
+                                        output:
+                                            out_file_coexpr=out_file_coexpr,
+                                            out_file_pos_rate=out_file_pos_rate,
+                                        params:
+                                            method=method,
+                                            target_count=target_count,
+                                        threads: 1
+                                        resources:
+                                            mem='40GB' if panel.stem == '5k' else '20GB',
+                                            runtime='20m' if panel.stem == '5k' else '10m',
+                                        conda:
+                                            "spatial"
+                                        shell:
+                                            """
+                                            mkdir -p "$(dirname {output.out_file_coexpr})"
 
-                                        echo "DONE"
-                                        """
+                                            python workflow/scripts/coexpression_sample.py \
+                                            -i {input.sample_path} \
+                                            --outcoexp {output.out_file_coexpr} \
+                                            --outposrate {output.out_file_pos_rate} \
+                                            -m {params.method} \
+                                            -c {params.target_count} \
+
+                                            echo "DONE"
+                                            """
 
 
-rule coexpression_resolvi_all:
+rule coexpression_corrected_counts_all:
     input:
-        out_files_resolvi
+        out_files
