@@ -7,6 +7,7 @@ scrnaseq_processed_data_dir = Path(config['scrnaseq_processed_data_dir'])
 seurat_to_h5_dir = results_dir / 'seurat_to_h5'
 
 # Params
+genes = 'conditions'
 methods = ['conditional','jaccard']#,'pearson','spearman']
 target_counts = [30,50,200]
 out_files = []

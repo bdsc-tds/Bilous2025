@@ -25,12 +25,10 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
 
                     if segmentation.stem == 'proseg':
                         path = sample / 'raw_results'
-                        segmentation_name = 'proseg_expected'
                     else:
                         path = sample / "normalised_results/outs"
-                        segmentation_name = segmentation.stem
                     
-                    k = (segmentation_name,condition.stem,panel.stem,donor.stem,sample.stem)
+                    k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
                     name = '/'.join(k)
 
                     if path.exists():

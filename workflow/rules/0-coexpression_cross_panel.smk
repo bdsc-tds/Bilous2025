@@ -7,7 +7,7 @@ results_dir = Path(config['results_dir'])
 # Params
 genes = 'conditions'
 methods = ['conditional','jaccard']#,'pearson','spearman']
-target_counts = [20]
+target_counts = [15]
 out_files = []
 
 for segmentation in (segmentations := xenium_dir.iterdir()):

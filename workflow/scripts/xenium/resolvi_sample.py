@@ -2,7 +2,6 @@ import dask
 
 dask.config.set({"dataframe.query-planning": False})
 
-import spatialdata_io
 import numpy as np
 import pandas as pd
 import scvi
@@ -17,7 +16,7 @@ import readwrite
 
 # params
 parser = argparse.ArgumentParser(description="Embed panel of Xenium samples.")
-parser.add_argument("--path", type=Path, help="Path to the xenium donor file.")
+parser.add_argument("--path", type=Path, help="Path to the xenium sample file.")
 parser.add_argument(
     "--out_file_resolvi_corrected_counts",
     type=str,

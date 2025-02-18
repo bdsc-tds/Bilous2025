@@ -52,7 +52,7 @@ for correction_method in correction_methods:
                                             target_count=target_count,
                                         threads: 1
                                         resources:
-                                            mem='40GB' if panel.stem == '5k' else '20GB',
+                                            mem='60GB' if panel.stem == '5k' else '20GB',
                                             runtime='20m' if panel.stem == '5k' else '10m',
                                         conda:
                                             "spatial"
@@ -74,3 +74,7 @@ for correction_method in correction_methods:
 rule coexpression_corrected_counts_all:
     input:
         out_files
+    output:
+        touch([results_dir / f"{correction_method}_coexpression.done"
+            for correction_method in correction_methods]
+        )

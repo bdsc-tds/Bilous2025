@@ -1,12 +1,14 @@
+import dask
+
+dask.config.set({"dataframe.query-planning": False})
+
 from pathlib import Path
-import sys
 import argparse
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import warnings
-import natsort
+import sys
 
 sys.path.append("workflow/scripts/")
 import readwrite
@@ -23,16 +25,14 @@ def float_or_str(value):
 
 
 def format_ticks(x):
-    if x < 1:
-        if "5" in str(x.round(6)) or "1" in str(x.round(6)):
-            return f".{str(x.round(6))[2:]}"
+    x_str = str(x.round(6))
+    if "5" in x_str or "1" in x_str:
+        if x < 1:
+            return f".{x_str[2:]}"
         else:
-            return ""
-    else:
-        if "5" in str(x.round(6)) or "1" in str(x.round(6)):
             return int(x)
-        else:
-            return ""
+    else:
+        return ""
 
 
 # Set up argument parser
@@ -112,10 +112,14 @@ for k in CC.keys():
     if k[0] == ref_segmentation:
         continue
 
+    k_ref = (ref_segmentation, *k[1:])
+    k_ref_over = (ref_oversegmentation, *k[1:])
+
+    if k_ref not in CC.keys() or k_ref_over not in CC.keys():
+        continue
+
     CCdiff[k] = {}
     spurious_gene_pairs[k] = {}
-
-    k_ref = (ref_segmentation, *k[1:])
 
     (CCdiff[k][method, target_count], spurious_gene_pairs[k][method, target_count]) = (
         coexpression.compare_segmentations(
@@ -182,7 +186,6 @@ for _, k in keys.iterrows():
 # Convert to DataFrame for plotting
 df = pd.DataFrame(data, columns=xenium_levels + ["genei", "genej", "relative coexpression"])
 df["relative coexpression"] = df["relative coexpression"].astype(float)
-
 
 # plotting params, palette
 unique_labels = [ct for ct in hue_order if ct in np.unique(df[hue].dropna())]

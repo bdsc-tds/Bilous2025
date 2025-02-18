@@ -3,33 +3,33 @@ import pandas as pd
 import numpy as np
 import scanpy as sc
 import sklearn
-import spatialdata_io
-import sys
+import argparse
 
-# parameters
-path = Path(sys.argv[1])
-out_file = sys.argv[2]
-max_donor_size = int(sys.argv[3])
+# Set up argument parser
+parser = argparse.ArgumentParser(description="Get silhouettes of a Xenium sample for all annotations.")
+parser.add_argument("--sample_pca", type=str, help="Path to the sample PCA file.")
+parser.add_argument("--sample_idx", type=str, help="Path to the sample index file.")
+parser.add_argument("--sample_annotation_dir", type=Path, help="Path to the sample cell type annotation directory.")
+parser.add_argument("--out_file", type=str, help="Path to the output file.")
+parser.add_argument("--max_sample_size", type=int, help="Max number of samples to compute distance matrix")
+
+args = parser.parse_args()
+
+# Access the arguments
+sample_pca = args.sample_pca
+sample_idx = args.sample_idx
+sample_annotation_dir = args.sample_annotation_dir
+out_file = args.out_file
+max_sample_size = args.max_sample_size
 seed = 0
 
 # read counts
-adata = spatialdata_io.xenium(
-    path,
-    cells_as_circles=False,
-    cells_boundaries=False,
-    nucleus_boundaries=False,
-    cells_labels=False,
-    nucleus_labels=False,
-    transcripts=False,
-    morphology_mip=False,
-    morphology_focus=False,
-    aligned_images=False,
-)["table"]
-adata.obs_names = adata.obs["cell_id"]
+adata = sc.AnnData(pd.read_parquet(sample_pca))
+adata.obs_names = pd.read_parquet(sample_idx).iloc[:, 0]
 
 # read annotations
 annotations = {}
-for reference in (references := path.parents[1] / "cell_type_annotation/reference_based").iterdir():
+for reference in (references := sample_annotation_dir.iterdir()):
     for method in (methods := reference.iterdir()):
         for level in (levels := method.iterdir()):
             if (level / "single_cell/labels.parquet").exists():
@@ -46,14 +46,14 @@ adata = adata[annotations.index]
 adata.obs = adata.obs.join(annotations)
 
 # preprocess data
-sc.pp.normalize_total(adata)
-sc.pp.log1p(adata)
-sc.pp.pca(adata)
+# sc.pp.normalize_total(adata)
+# sc.pp.log1p(adata)
+# sc.pp.pca(adata)
 
 # precompute distances on subdonor
-donor_size = min(max_donor_size, len(adata))
-indices = np.random.default_rng(seed).permutation(len(adata))[:donor_size]
-D = sklearn.metrics.pairwise_distances(adata.obsm["X_pca"][indices])
+sample_size = min(max_sample_size, len(adata))
+indices = np.random.default_rng(seed).permutation(len(adata))[:sample_size]
+D = sklearn.metrics.pairwise_distances(adata.X[indices], metric="euclidean")
 
 # compute silhouettes
 CT_KEYS = annotations.columns
