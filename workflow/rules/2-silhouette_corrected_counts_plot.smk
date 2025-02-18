@@ -95,11 +95,10 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                         rule:
                             name: f'silhouette_plot_condition/{name}/silhouette_{layer}_{reference}_{method}_{level}'
                             input:
-                                silhouette_is_done=results_dir / "silhouette.done",                            
+                                condition=condition_silhouette,
                             output:
                                 out_file=out_file,
                             params:
-                                condition=condition_silhouette,
                                 segmentation_palette=segmentation_palette,
                                 normalisation=normalisation,
                                 layer=layer,
@@ -117,7 +116,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 mkdir -p "$(dirname {output.out_file})"
 
                                 python workflow/scripts/xenium/silhouette_condition_plot.py \
-                                --condition {params.condition} \
+                                --condition {input.condition} \
                                 --out_file {output.out_file} \
                                 --segmentation_palette {params.segmentation_palette} \
                                 --normalisation {params.normalisation} \

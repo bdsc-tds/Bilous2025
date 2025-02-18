@@ -1,6 +1,10 @@
 from pathlib import Path
 import yaml
 
+# f = '/work/PRTNR/CHUV/DIR/rgottar1/single_cell_all/containers/skang/xenium_analysis_pipeline/samples/small_samples.yml'
+# with open(f) as f:
+#     donors_config = yaml.safe_load(f)
+
 # cfg paths
 xenium_std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
 xenium_cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
@@ -17,6 +21,11 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
         for panel in (panels := condition.iterdir()):
             for donor in (donors := panel.iterdir()):
                 for sample in (samples := donor.iterdir()):
+                    # if panel.stem not in donors_config[condition.stem]:
+                    #     continue
+                    # if donor.stem not in donors_config[condition.stem][panel.stem]:
+                    #     continue
+
                     for normalisation in normalisations:
                         for layer in layers:
 
@@ -27,9 +36,6 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                             sample_idx = sample / f'{normalisation}/preprocessed/cells.parquet'
                             sample_annotation_dir = xenium_cell_type_annotation_dir / f'{name}/reference_based'
 
-                            if not sample_annotation_dir.exists():
-                                continue
-                                
                             out_file = results_dir / f'silhouette/{name}/silhouette_{layer}.parquet'
                             out_files.append(out_file)
 

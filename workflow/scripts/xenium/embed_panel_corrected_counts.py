@@ -50,7 +50,7 @@ max_features = args.max_features
 min_cells = args.min_cells
 raw_corrected_counts = args.raw_corrected_counts
 
-correction_method = panel.parents[2].stem
+# correction_method = panel.parents[2].stem
 segmentation = panel.parents[1].stem
 condition = panel.parents[0].stem
 
@@ -60,11 +60,10 @@ if raw_corrected_counts:
     for donor in (donors := panel.iterdir()):
         for sample in (samples := donor.iterdir()):
             k = (segmentation, condition, panel.stem, donor.stem, sample.stem)
-            if correction_method == "resolvi":
-                sample_path = sample / "resolvi_corrected_counts.h5"
-            else:
-                sample_path = sample / "corrected_counts_signal_integrity_threshold=0.5.h5"
+            sample_path = sample / "corrected_counts.h5"
             ads[k] = sc.read_10x_h5(sample_path)
+    is_raw = True
+
 
 else:
     ads = {}
@@ -80,7 +79,7 @@ else:
             if layer != "scale_data":  # no need to sparsify scale_data which is dense
                 ads[k].X = scipy.sparse.csr_matrix(ads[k].X)
             ads[k].obs_names = pd.read_parquet(sample_idx_path).iloc[:, 0]
-
+    is_raw = False
     min_counts = None
     min_genes = None
     max_counts = None
@@ -97,8 +96,8 @@ ad_merge = sc.concat(ads)
 # preprocess
 preprocessing.preprocess(
     ad_merge,
-    normalize=False,
-    log1p=False,
+    normalize=is_raw,
+    log1p=is_raw,
     scale="none",
     n_comps=n_comps,
     metric=metric,

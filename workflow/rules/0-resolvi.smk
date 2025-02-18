@@ -33,8 +33,8 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
 
                     if path.exists():
 
-                        out_file_resolvi_corrected_counts = results_dir / f'resolvi/{name}/resolvi_corrected_counts.h5'
-                        out_file_resolvi_proportions = results_dir/ f'resolvi/{name}/resolvi_proportions.parquet'
+                        out_file_resolvi_corrected_counts = results_dir / f'resolvi/{name}/corrected_counts.h5'
+                        out_file_resolvi_proportions = results_dir/ f'resolvi/{name}/proportions.parquet'
                         out_files.extend([out_file_resolvi_corrected_counts,out_file_resolvi_proportions])
 
                         rule:
@@ -54,7 +54,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                             threads: 1
                             resources:
                                 mem='400GB',# if panel.stem == '5k' else '10GB',
-                                runtime='8h',
+                                runtime='12h',
                                 slurm_partition = "gpu",
                                 slurm_extra = '--gres=gpu:1',
                             conda:
@@ -81,3 +81,5 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
 rule resolvi_all:
     input:
         out_files
+    output:
+        touch(results_dir / "resolvi.done")

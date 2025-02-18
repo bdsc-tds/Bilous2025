@@ -59,10 +59,7 @@ if raw_corrected_counts:
         for donor in (donors := panel.iterdir()):
             for sample in (samples := donor.iterdir()):
                 k = (segmentation, condition, panel.stem, donor.stem, sample.stem)
-                if correction_method == "resolvi":
-                    sample_path = sample / "resolvi_corrected_counts.h5"
-                else:
-                    sample_path = sample / "corrected_counts_signal_integrity_threshold=0.5.h5"
+                sample_path = sample / "corrected_counts.h5"
                 ads[k] = sc.read_10x_h5(sample_path)
     is_raw = True
 

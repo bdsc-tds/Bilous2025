@@ -7,11 +7,11 @@ figures_dir = Path(config['figures_dir'])
 palette_dir = Path(config['xenium_metadata_dir'])
 
 # take arbitrary segmentation just to loop over all conditions and panel combinations
-segmentation = list(xenium_dir.iterdir())[0].stem 
-coexpression_corrected_counts_dir = results_dir / 'coexpression_corrected_counts/'
+segmentation = list(xenium_dir.iterdir())[0] 
 
 # Params
-correction_methods = ['resolvi','ovrlpy_correction']
+signal_integrity_thresholds = [0.5,0.7]
+correction_methods = ['resolvi'] + [f'ovrlpy_correction_{signal_integrity_threshold=}' for signal_integrity_threshold in signal_integrity_thresholds]
 methods = ['conditional','jaccard']#,'pearson','spearman']
 target_counts = [30,50,200]
 min_positivity_rate = 0.01
@@ -31,7 +31,7 @@ out_files_panel = []
 
 for correction_method in correction_methods:
     coexpression_corrected_counts_dir = results_dir / f'{correction_method}_coexpression'
-    for condition in (conditions := (coexpression_corrected_counts_dir / segmentation).iterdir()): 
+    for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
             for method in methods:
                 for target_count in target_counts:

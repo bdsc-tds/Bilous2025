@@ -18,7 +18,8 @@ cell_type_palette = palette_dir / 'col_palette_cell_types.csv'
 panel_palette = palette_dir / 'col_palette_panel.csv'
 sample_palette = palette_dir / 'col_palette_sample.csv'
 
-correction_methods = ['resolvi','ovrlpy_correction']
+signal_integrity_thresholds = [0.5,0.7]
+correction_methods = ['resolvi'] + [f'ovrlpy_correction_{signal_integrity_threshold=}' for signal_integrity_threshold in signal_integrity_thresholds]
 normalisations = ['lognorm','sctransform']
 layers = ['data','scale_data']
 references = ['matched_reference_combo','external_reference']
@@ -29,7 +30,7 @@ extension = 'png'
 out_files_panel = []
 
 for correction_method in correction_methods:
-    for segmentation in (segmentations := (results_dir / correction_method).iterdir()):
+    for segmentation in (segmentations := xenium_dir.iterdir()):
         if segmentation.stem == 'proseg_v1':
             continue
         for condition in (conditions := segmentation.iterdir()): 
@@ -42,8 +43,8 @@ for correction_method in correction_methods:
 
                                     # input embedding file (doesn't depend on ref,method or color loops but more readable to have here)
                                     k = (segmentation.stem,condition.stem,panel.stem)#,normalisation)
-                                    name = '/'.join(k)
-                                    embed_file = results_dir / f'{correction_method}_embed_panel/{name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet'
+                                    name = '/'.join(k)                                                      # {layer}_
+                                    embed_file = results_dir / f'{correction_method}_embed_panel/{name}/umap_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet'
 
                                     # no need to plot panel for panel level UMAPs
                                     if color == 'panel':
@@ -53,11 +54,11 @@ for correction_method in correction_methods:
                                     if color == 'sample' and (reference != references[0] or method != methods[0]):
                                         continue
                                                                                                                                                                     # _{layer}
-                                    out_file = figures_dir / f"{correction_method}_embed_panel_plot/{name}/umap_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}_{reference}_{method}.{extension}"
+                                    out_file = figures_dir / f"{correction_method}_embed_panel_plot/{name}/umap_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}_{reference}_{method}_{color}.{extension}"
                                     out_files_panel.append(out_file)
 
                                     rule:
-                                        name: f'{correction_method}_embed_panel_plot/{name}/umap_{reference}_{method}'#_{layer}'
+                                        name: f'{correction_method}_embed_panel_plot/{name}/umap_{reference}_{method}_{color}'#_{layer}'
                                         input:
                                             panel=panel,
                                             embed_file=embed_file,
@@ -106,7 +107,7 @@ for correction_method in correction_methods:
 
 # out_files_condition = []
 # for correction_method in correction_methods:
-#     for segmentation in (segmentations := (results_dir / correction_method).iterdir()):
+#     for segmentation in (segmentations := xenium_dir.iterdir()):
 #         if segmentation.stem == 'proseg_v1':
 #             continue
 #         for condition in (conditions := segmentation.iterdir()): 

@@ -4,7 +4,8 @@ results_dir = Path(config['results_dir'])
 corrected_counts_dir = Path(config['std_seurat_analysis_dir'])
 
 # stricter params than pipeline config
-correction_methods = ['resolvi','ovrlpy_correction']
+signal_integrity_thresholds = [0.5,0.7]
+correction_methods = ['resolvi'] + [f'ovrlpy_correction_{signal_integrity_threshold=}' for signal_integrity_threshold in signal_integrity_thresholds]
 normalisations = ['lognorm']
 layers = ['data','scale_data']
 min_counts = 20
@@ -23,7 +24,7 @@ raw_corrected_counts = True
 out_files_panel = []
 
 for correction_method in correction_methods:
-    for segmentation in (segmentations := (results_dir / correction_method).iterdir()):
+    for segmentation in (segmentations := xenium_dir.iterdir()):
         if segmentation.stem == 'proseg_v1':
             continue
         for condition in (conditions := segmentation.iterdir()): 
@@ -34,16 +35,19 @@ for correction_method in correction_methods:
                         name = '/'.join(k)
                         rule_name = '/'.join(k)#+(layer,))
 
-                        out_file = results_dir / f'{correction_method}_embed_panel/{name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet' 
+                        panel_path = results_dir / f'{correction_method}/{name}'
+                                                                                        # {layer}_
+                        out_file = results_dir / f'{correction_method}_embed_panel/{name}/umap_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet' 
                         out_files_panel.append(out_file)
 
                         rule:
                             name: f'{correction_method}_embed_panel/{rule_name}'
                             input:
-                                panel=panel,
+                                count_correction_is_done=results_dir / f"{correction_method}.done"
                             output:
                                 out_file=out_file,
                             params:
+                                panel=panel_path,
                                 normalisation=normalisation,
                                 layer=layer,
                                 n_comps=n_comps,
@@ -70,7 +74,7 @@ for correction_method in correction_methods:
                                 mkdir -p "$(dirname {output.out_file})"
 
                                 python workflow/scripts/xenium/embed_panel_corrected_counts.py \
-                                    --panel {input.panel} \
+                                    --panel {params.panel} \
                                     --out_file {output.out_file} \
                                     --normalisation_method {params.normalisation} \
                                     --layer {params.layer} \
@@ -91,7 +95,7 @@ for correction_method in correction_methods:
 
 out_files_condition = []
 for correction_method in correction_methods:
-    for segmentation in (segmentations := (results_dir / correction_method).iterdir()):
+    for segmentation in (segmentations := xenium_dir.iterdir()):
         if segmentation.stem == 'proseg_v1':
             continue
         for condition in (conditions := segmentation.iterdir()): 
@@ -101,16 +105,19 @@ for correction_method in correction_methods:
                     name = '/'.join(k)
                     rule_name = '/'.join(k)#+(layer,))
 
+                    condition_path = results_dir / f'{correction_method}/{name}'
+
                     out_file = results_dir / f'{correction_method}_embed_condition/{name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet' 
                     out_files_condition.append(out_file)
 
                     rule:
                         name: f'{correction_method}_embed_condition/{rule_name}'
                         input:
-                            condition=condition,
+                            count_correction_is_done=results_dir / f"{correction_method}.done"
                         output:
                             out_file=out_file,
                         params:
+                            condition=condition_path,
                             normalisation=normalisation,
                             layer=layer,
                             n_comps=n_comps,
@@ -136,7 +143,7 @@ for correction_method in correction_methods:
                             mkdir -p "$(dirname {output.out_file})"
 
                             python workflow/scripts/xenium/embed_condition_corrected_counts.py \
-                                --condition {input.condition} \
+                                --condition {params.condition} \
                                 --out_file {output.out_file} \
                                 --normalisation_method {params.normalisation} \
                                 --layer {params.layer} \

@@ -43,7 +43,7 @@ if color == "sample":
 elif color == "panel":
     palette = pd.read_csv(panel_palette, index_col=0).iloc[:, 0]
 else:
-    palette = pd.read_csv(cell_type_palette).set_index(color)[f"cols_{color}"].drop_duplicates()
+    palette = pd.read_csv(cell_type_palette)[[color, f"cols_{color}"]].drop_duplicates().set_index(color).squeeze()
 
 
 # vars
