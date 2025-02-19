@@ -15,7 +15,7 @@ import preprocessing
 import readwrite
 
 # params
-parser = argparse.ArgumentParser(description="Embed panel of Xenium samples.")
+parser = argparse.ArgumentParser(description="Run RESOLVI on a Xenium sample.")
 parser.add_argument("--path", type=Path, help="Path to the xenium sample file.")
 parser.add_argument(
     "--out_file_resolvi_corrected_counts",
@@ -27,24 +27,36 @@ parser.add_argument(
     type=str,
     help="Path to resolvi proportions parquet file.",
 )
+parser.add_argument("--out_dir_resolvi_model", type=str, help="output directory with RESOLVI model weights")
 parser.add_argument("--min_counts", type=int, help="QC parameter from pipeline config")
 parser.add_argument("--min_features", type=int, help="QC parameter from pipeline config")
 parser.add_argument("--max_counts", type=float, help="QC parameter from pipeline config")
 parser.add_argument("--max_features", type=float, help="QC parameter from pipeline config")
 parser.add_argument("--min_cells", type=int, help="QC parameter from pipeline config")
 parser.add_argument("--num_samples", type=int, help="Number of samples for RESOLVI generative model.")
+parser.add_argument("--batch_size", type=int, help="batch size parameter")
+parser.add_argument("--macro_batch_size", type=int, help="macro_batch_size parameter")
+parser.add_argument("--cell_type_labels", type=str, help="optional cell_type_labels for semi-supervised mode")
+parser.add_argument("--mixture_k", type=int, help="mixture_k parameter for unsupervised RESOLVI")
+
 args = parser.parse_args()
 
 # Access the arguments
 path = args.path
 out_file_resolvi_corrected_counts = args.out_file_resolvi_corrected_counts
 out_file_resolvi_proportions = args.out_file_resolvi_proportions
+out_dir_resolvi_model = args.out_dir_resolvi_model
 min_counts = args.min_counts
 min_features = args.min_features
 max_counts = args.max_counts
 max_features = args.max_features
 min_cells = args.min_cells
 num_samples = args.num_samples
+batch_size = args.batch_size
+macro_batch_size = args.macro_batch_size
+cell_type_labels = args.cell_type_labels
+mixture_k = args.mixture_k
+
 
 # read counts
 adata = readwrite.read_xenium_sample(
@@ -67,6 +79,15 @@ adata = readwrite.read_xenium_sample(
 adata.X.data = adata.X.data.astype(np.float32).round()
 adata.obs_names = adata.obs_names.astype(str)
 
+if cell_type_labels is not None:
+    labels_key = "labels_key"
+    semisupervised = True
+    adata.obs[labels_key] = pd.read_parquet(cell_type_labels).iloc[:, 0]
+else:
+    labels_key = None
+    semisupervised = False
+
+
 # preprocess (QC filters only)
 # resolvi requires at least 5 counts in each cell
 preprocessing.preprocess(
@@ -86,8 +107,10 @@ preprocessing.preprocess(
 )
 
 
-scvi.external.RESOLVI.setup_anndata(adata, labels_key=None, layer=None, prepare_data_kwargs={"spatial_rep": "spatial"})
-resolvi = scvi.external.RESOLVI(adata, semisupervised=False)
+scvi.external.RESOLVI.setup_anndata(
+    adata, labels_key=labels_key, layer=None, prepare_data_kwargs={"spatial_rep": "spatial"}
+)
+resolvi = scvi.external.RESOLVI(adata, mixture_k=mixture_k, semisupervised=semisupervised)
 resolvi.train(max_epochs=50)
 
 samples_corr = resolvi.sample_posterior(
@@ -95,6 +118,8 @@ samples_corr = resolvi.sample_posterior(
     return_sites=["px_rate"],
     summary_fun={"post_donor_q50": np.median},
     num_samples=num_samples,
+    batch_size=batch_size,
+    macro_batch_size=macro_batch_size,
     summary_frequency=100,
 )
 samples_corr = pd.DataFrame(samples_corr).T
@@ -104,6 +129,8 @@ samples = resolvi.sample_posterior(
     return_sites=["mixture_proportions"],
     summary_fun={"post_donor_means": np.mean},
     num_samples=num_samples,
+    batch_size=batch_size,
+    macro_batch_size=macro_batch_size,
     summary_frequency=100,
 )
 samples_proportions = pd.DataFrame(samples).T
@@ -123,5 +150,5 @@ samples_proportions = pd.DataFrame(
 
 adata_out = ad.AnnData(samples_corr)
 readwrite.write_10X_h5(adata_out, out_file_resolvi_corrected_counts)
-# samples_corr.to_parquet(out_file_resolvi_corrected)
 samples_proportions.to_parquet(out_file_resolvi_proportions)
+resolvi.save(out_dir_resolvi_model)

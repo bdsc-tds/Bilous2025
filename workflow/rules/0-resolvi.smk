@@ -12,7 +12,10 @@ max_features = float("inf")
 min_cells = 5
 
 # params
-num_samples = 100
+num_samples = 30
+batch_size = 1000
+macro_batch_size = 50000
+mixture_k = 50
 
 out_files = []
 for segmentation in (segmentations := xenium_dir.iterdir()):
@@ -35,6 +38,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
 
                         out_file_resolvi_corrected_counts = results_dir / f'resolvi/{name}/corrected_counts.h5'
                         out_file_resolvi_proportions = results_dir/ f'resolvi/{name}/proportions.parquet'
+                        out_dir_resolvi_model = results_dir / f'resolvi/{name}/model/'
                         out_files.extend([out_file_resolvi_corrected_counts,out_file_resolvi_proportions])
 
                         rule:
@@ -44,6 +48,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                             output:
                                 out_file_resolvi_corrected_counts=out_file_resolvi_corrected_counts,
                                 out_file_resolvi_proportions=out_file_resolvi_proportions,
+                                out_dir_resolvi_model=out_dir_resolvi_model,
                             params:
                                 min_counts=min_counts,
                                 min_features=min_features,
@@ -51,10 +56,13 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 max_features=max_features,
                                 min_cells=min_cells,
                                 num_samples=num_samples,
+                                batch_size=batch_size,
+                                macro_batch_size=macro_batch_size,
+                                mixture_k=mixture_k,
                             threads: 1
                             resources:
-                                mem='400GB',# if panel.stem == '5k' else '10GB',
-                                runtime='12h',
+                                mem='80GB',# if panel.stem == '5k' else '10GB',
+                                runtime='8h',
                                 slurm_partition = "gpu",
                                 slurm_extra = '--gres=gpu:1',
                             conda:
@@ -67,13 +75,17 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 --path {input.path} \
                                 --out_file_resolvi_corrected_counts {output.out_file_resolvi_corrected_counts} \
                                 --out_file_resolvi_proportions {output.out_file_resolvi_proportions} \
+                                --out_dir_resolvi_model {params.out_dir_resolvi_model} \
                                 --min_counts {params.min_counts} \
                                 --min_features {params.min_features} \
                                 --max_counts {params.max_counts} \
                                 --max_features {params.max_features} \
                                 --min_cells {params.min_cells} \
                                 --num_samples {params.num_samples} \
-
+                                --batch_size {params.batch_size} \
+                                --macro_batch_size {params.macro_batch_size} \
+                                --mixture_k {params.mixture_k} \
+                                
                                 echo "DONE"
                                 """
 

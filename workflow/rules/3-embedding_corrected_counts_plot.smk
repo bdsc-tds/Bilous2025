@@ -54,7 +54,7 @@ for correction_method in correction_methods:
                                     if color == 'sample' and (reference != references[0] or method != methods[0]):
                                         continue
                                                                                                                                                                     # _{layer}
-                                    out_file = figures_dir / f"{correction_method}_embed_panel_plot/{name}/umap_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}_{reference}_{method}_{color}.{extension}"
+                                    out_file = figures_dir / f"{correction_method}_embed_panel/{name}/umap_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}_{reference}_{method}_{color}.{extension}"
                                     out_files_panel.append(out_file)
 
                                     rule:
@@ -129,7 +129,7 @@ for correction_method in correction_methods:
 #                             out_files_condition.append(out_file)
 
 #                             rule:
-#                                 name: f'{correction_method}_embed_condition_plot/{name}/umap_{reference}_{method}_{level}'
+#                                 name: f'{correction_method}_embed_condition/{name}/umap_{reference}_{method}_{level}'
 #                                 input:
 #                                     condition=condition,
 #                                     embed_file=embed_file,

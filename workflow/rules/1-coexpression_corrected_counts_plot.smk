@@ -43,8 +43,8 @@ for correction_method in correction_methods:
                     min_cond_coex_str = f'{min_cond_coex=}' if isinstance(min_cond_coex,float) else min_cond_coex
 
                     panel_coexpression_corrected_counts = coexpression_corrected_counts_dir / name
-                    out_file_plot_sample = figures_dir / f'{correction_method}_coexpression_plot_panel/{name}/coexpression_{method}_{target_count=}_{min_cond_coex_str}_sample.{extension}'
-                    out_file_plot_panel = figures_dir / f'{correction_method}_coexpression_plot_panel/{name}/coexpression_{method}_{target_count=}_{min_cond_coex_str}_panel.{extension}'
+                    out_file_plot_sample = figures_dir / f'{correction_method}_coexpression_panel/{name}/coexpression_{method}_{target_count=}_{min_cond_coex_str}_sample.{extension}'
+                    out_file_plot_panel = figures_dir / f'{correction_method}_coexpression_panel/{name}/coexpression_{method}_{target_count=}_{min_cond_coex_str}_panel.{extension}'
                     out_file_gene_pairs = results_dir / f'{correction_method}_coexpression_gene_pairs/{name}/coexpression_gene_pairs_{method}_{target_count=}_{min_cond_coex_str}.parquet'
                     out_files_panel.extend([out_file_plot_sample,out_file_plot_panel,out_file_gene_pairs])
 
@@ -127,7 +127,7 @@ for correction_method in correction_methods:
 
             min_cond_coex_str = f'{min_cond_coex=}' if isinstance(min_cond_coex,float) else min_cond_coex
 
-            out_file_plot = figures_dir / f'{correction_method}_coexpression_plot_conditions/coexpression_{method}_{target_count=}_{min_cond_coex_str}_conditions.{extension}'
+            out_file_plot = figures_dir / f'{correction_method}_coexpression_conditions/coexpression_{method}_{target_count=}_{min_cond_coex_str}_conditions.{extension}'
             out_file_gene_pairs = results_dir / f'{correction_method}_coexpression_conditions_gene_pairs/coexpression_gene_pairs_{method}_{target_count=}_{min_cond_coex_str}.parquet'
             out_files_conditions.extend([out_file_plot_sample,out_file_plot_panel,out_file_gene_pairs])
 
@@ -143,7 +143,7 @@ for correction_method in correction_methods:
                 runtime = '10m'
 
             rule:
-                name: f'{correction_method}_coexpression_plot_conditions/coexpression_{method}_{target_count=}'
+                name: f'{correction_method}_coexpression_conditions/coexpression_{method}_{target_count=}'
                 input:
                     coexpression_corrected_counts_is_done=results_dir / f"{correction_method}_coexpression.done",
                 output:

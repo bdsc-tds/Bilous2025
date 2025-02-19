@@ -18,11 +18,11 @@ cell_type_palette = palette_dir / 'col_palette_cell_types.csv'
 panel_palette = palette_dir / 'col_palette_panel.csv'
 sample_palette = palette_dir / 'col_palette_sample.csv'
 
-normalisation = ['lognorm']
+normalisation = ['lognorm','sctransform']
 layers = ['data','scale_data']
 references = ['matched_reference_combo','external_reference']
 methods = ['rctd_class_aware']
-colors = ['sample']#['Level1','Level2','Level3','Level4','panel','sample',] # condition and sample as color to plot added here in addition to levels
+colors = ['sample','Level2']#['Level1','Level2','Level3','Level4','panel','sample',] # condition and sample as color to plot added here in addition to levels
 extension = 'png'
 
 out_files_panel = []
@@ -43,7 +43,7 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                                 name = '/'.join(k)
                                 embed_file = results_dir / f'embed_panel/{name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet'
 
-                                # no need to plot panel for panel level UMAPs
+                                # no need to plot panel for panel color UMAPs
                                 if color == 'panel':
                                     continue
                                 
@@ -51,11 +51,11 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                                 if color == 'sample' and (reference != references[0] or method != methods[0]):
                                     continue
 
-                                out_file = figures_dir / f"embed_panel/{name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}_{reference}_{method}.{extension}"
+                                out_file = figures_dir / f"embed_panel/{name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}_{reference}_{method}_{color}.{extension}"
                                 out_files_panel.append(out_file)
 
                                 rule:
-                                    name: f'embed_panel_plot/{name}/umap_{layer}_{reference}_{method}'
+                                    name: f'embed_panel_plot/{name}/umap_{layer}_{reference}_{method}_{color}'
                                     input:
                                         panel=panel,
                                         embed_file=embed_file,
@@ -117,17 +117,17 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
 
                     for reference in references:
                         for method in methods:
-                            for level in levels:
+                            for color in colors:
                                 
                                 # no need to plot sample coloring for every param combination
-                                if level == 'sample' and reference != references[0] and method != methods[0]:
+                                if color == 'sample' and reference != references[0] and method != methods[0]:
                                     continue
 
-                                out_file = figures_dir / f"embed_condition/{name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}_{reference}_{method}_{level}.{extension}"
+                                out_file = figures_dir / f"embed_condition/{name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}_{reference}_{method}_{color}.{extension}"
                                 out_files_condition.append(out_file)
 
                                 rule:
-                                    name: f'embed_condition_plot/{name}/umap_{layer}_{reference}_{method}_{level}'
+                                    name: f'embed_condition_plot/{name}/umap_{layer}_{reference}_{method}_{color}'
                                     input:
                                         condition=condition,
                                         embed_file=embed_file,
@@ -137,7 +137,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                         cell_type_annotation_dir=cell_type_annotation_dir,
                                         reference=reference,
                                         method=method,
-                                        level=level,
+                                        color=color,
                                         cell_type_palette=cell_type_palette,
                                         panel_palette=panel_palette,
                                         sample_palette=sample_palette,
@@ -159,7 +159,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                         --cell_type_annotation_dir {params.cell_type_annotation_dir} \
                                         --reference {params.reference} \
                                         --method {params.method} \
-                                        --level {params.level} \
+                                        --color {params.color} \
                                         --out_file {output.out_file} \
                                         --cell_type_palette {params.cell_type_palette} \
                                         --panel_palette {params.panel_palette} \

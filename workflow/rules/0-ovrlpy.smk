@@ -52,7 +52,7 @@ for segmentation in xenium_dir.iterdir():
                                 proseg_format='--proseg_format' if segmentation.stem=='proseg' else '',
                             threads: 1
                             resources:
-                                mem='600GB',
+                                mem='1000GB',
                                 runtime='10h',
                             conda:
                                 "spatial"
@@ -120,7 +120,7 @@ for signal_integrity_threshold in signal_integrity_thresholds:
                                     proseg_format='--proseg_format' if segmentation.stem=='proseg' else '',
                                 threads: 1
                                 resources:
-                                    mem='40GB' if panel.stem == '5k' else '30GB',
+                                    mem='80GB',
                                     runtime='20m',
                                 conda:
                                     "spatial"
