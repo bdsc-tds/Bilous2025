@@ -15,6 +15,7 @@ include: "rules/1-embedding_plot.smk"
 
 include: "rules/0-ovrlpy.smk"
 include: "rules/0-resolvi.smk"
+include: "rules/0-resolvi_supervised.smk"
 include: "rules/1-coexpression_corrected_counts.smk"
 include: "rules/1-coexpression_corrected_counts_plot.smk"
 include: "rules/2-embedding_corrected_counts.smk"
@@ -39,16 +40,19 @@ rule all:
         # rules.embed_panel_all.input,
         # rules.embed_condition_all.input,
         # #
-        rules.embed_panel_corrected_counts_all.input,
+        # rules.embed_panel_corrected_counts_all.input,
         # rules.embed_condition_corrected_counts_all.input,
         # #
-        rules.embed_panel_plot_all.input,
+        # rules.embed_panel_plot_all.input,
         # rules.embed_condition_plot_all.input,
         # #
-        rules.embed_panel_corrected_counts_plot_all.input,
+        # rules.embed_panel_corrected_counts_plot_all.input,
         # rules.embed_condition_corrected_counts_plot_all.input,
         # #
-        rules.resolvi_all.input,
+        rules.resolvi_training_all.input,
+        rules.resolvi_training_supervised_all.input,
+        rules.resolvi_inference_all.input,
+        rules.resolvi_inference_supervised_all.input,
         # #
-        rules.ovrlpy_all.input,
-        rules.ovrlpy_correction_all.input,
+        # rules.ovrlpy_all.input,
+        # rules.ovrlpy_correction_all.input,

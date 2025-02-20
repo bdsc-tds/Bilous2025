@@ -53,7 +53,7 @@ for segmentation in xenium_dir.iterdir():
                             threads: 1
                             resources:
                                 mem='1000GB',
-                                runtime='10h',
+                                runtime='20h',
                             conda:
                                 "spatial"
                             shell:

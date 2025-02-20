@@ -14,8 +14,7 @@ min_cells = 5
 
 # params
 num_samples = 30
-batch_size = 1000
-macro_batch_size = 50000
+batch_size = 100_000
 mixture_k = 50
 
 # params supervised
@@ -52,7 +51,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                     out_files.append(out_dir_resolvi_model)
 
                                     rule:
-                                        name: f'resolvi/{name}'
+                                        name: f'resolvi_training_supervised/{name}'
                                         input:
                                             path=path,
                                         output:
@@ -64,6 +63,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                             max_features=max_features,
                                             min_cells=min_cells,
                                             mixture_k=mixture_k,
+                                            cell_type_labels=cell_type_labels,
                                         threads: 1
                                         resources:
                                             mem='80GB',# if panel.stem == '5k' else '10GB',
@@ -87,6 +87,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                             --max_features {params.max_features} \
                                             --min_cells {params.min_cells} \
                                             --mixture_k {params.mixture_k} \
+                                            --cell_type_labels {params.cell_type_labels} 
                                             
                                             echo "DONE"
                                             """
@@ -111,7 +112,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 
                                 cell_type_labels = cell_type_annotation_dir / name / f"{normalisation_method}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet"
 
-                                k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,f'{mixture_k}',reference,method,level,f'{num_samples=}_{batch_size=}_{macro_batch_size=}')
+                                k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,f'{mixture_k}',reference,method,level,f'{num_samples=}_{batch_size=}')
                                 name = '/'.join(k)
 
                                 if path.exists():
@@ -122,7 +123,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                     out_files.extend([out_file_resolvi_corrected_counts,out_file_resolvi_proportions])
 
                                     rule:
-                                        name: f'resolvi_inference/{name}'
+                                        name: f'resolvi_inference_supervised/{name}'
                                         input:
                                             path=path,
                                             dir_resolvi_model=out_dir_resolvi_model,
@@ -137,7 +138,6 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                             min_cells=min_cells,
                                             num_samples=num_samples,
                                             batch_size=batch_size,
-                                            macro_batch_size=macro_batch_size,
                                             mixture_k=mixture_k,
                                         threads: 1
                                         resources:
@@ -163,17 +163,16 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                             --min_cells {params.min_cells} \
                                             --num_samples {params.num_samples} \
                                             --batch_size {params.batch_size} \
-                                            --macro_batch_size {params.macro_batch_size} \
                                             
                                             echo "DONE"
                                             """
 
 
-rule resolvi_training_all:
+rule resolvi_training_supervised_all:
     input:
         out_files_training
 
-rule resolvi_inference_all:
+rule resolvi_inference_supervised_all:
     input:
         out_files_inference
     output:

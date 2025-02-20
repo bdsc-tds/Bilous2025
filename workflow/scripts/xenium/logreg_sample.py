@@ -1,11 +1,14 @@
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+
 import dask
 
 dask.config.set({"dataframe.query-planning": False})
 
-import anndata as ad
 import numpy as np
 import pandas as pd
-import scvi
+import squidpy as sq
 import argparse
 import os
 import sys
@@ -17,31 +20,23 @@ import readwrite
 
 # Set up argument parser
 def parse_args():
-    parser = argparse.ArgumentParser(description="Embed panel of Xenium samples.")
+    parser = argparse.ArgumentParser(description="Run RESOLVI on a Xenium sample.")
     parser.add_argument("--path", type=str, help="Path to the xenium sample file.")
-    parser.add_argument("--dir_resolvi_model", type=str, help="directory with saved RESOLVI model weights")
-    parser.add_argument(
-        "--out_file_resolvi_corrected_counts",
-        type=str,
-        help="Path to resolvi corrected counts parquet file.",
-    )
-    parser.add_argument(
-        "--out_file_resolvi_proportions",
-        type=str,
-        help="Path to resolvi proportions parquet file.",
-    )
+    parser.add_argument("--out_dir_resolvi_model", type=str, help="output directory with RESOLVI model weights")
     parser.add_argument("--min_counts", type=int, help="QC parameter from pipeline config")
     parser.add_argument("--min_features", type=int, help="QC parameter from pipeline config")
     parser.add_argument("--max_counts", type=float, help="QC parameter from pipeline config")
     parser.add_argument("--max_features", type=float, help="QC parameter from pipeline config")
     parser.add_argument("--min_cells", type=int, help="QC parameter from pipeline config")
     parser.add_argument(
-        "--num_samples",
+        "--max_iter",
         type=int,
-        help="Number of samples for RESOLVI generative model.",
+        default=50,
+        help="Maximum number of iterations to train the model.",
     )
-    parser.add_argument("--batch_size", type=int, help="batch size parameter")
     parser.add_argument("--cell_type_labels", type=str, help="optional cell_type_labels for semi-supervised mode")
+    parser.add_argument("--cti", type=int, help="cell type i")
+    parser.add_argument("--ctj", type=int, help="cell type j")
 
     ret = parser.parse_args()
     if not os.path.isdir(ret.path):
@@ -85,13 +80,8 @@ if __name__ == "__main__":
     adata.X.data = adata.X.data.astype(np.float32).round()
     adata.obs_names = adata.obs_names.astype(str)
 
-    if args.cell_type_labels is not None:
-        labels_key = "labels_key"
-        semisupervised = True
-        adata.obs[labels_key] = pd.read_parquet(args.cell_type_labels).iloc[:, 0]
-    else:
-        labels_key = None
-        semisupervised = False
+    labels_key = "labels_key"
+    adata.obs[labels_key] = pd.read_parquet(args.cell_type_labels).iloc[:, 0]
 
     # preprocess (QC filters only)
     # resolvi requires at least 5 counts in each cell
@@ -111,45 +101,28 @@ if __name__ == "__main__":
         backend="cpu",
     )
 
-    resolvi = scvi.external.RESOLVI.load(args.dir_resolvi_model, adata=adata)
+    # Filter for neutrophils
+    adata_cti = adata[adata.obs[labels_key] == args.cti]
+    
 
-    samples_corr = resolvi.sample_posterior(
-        model=resolvi.module.model_corrected,
-        return_sites=["obs"],
-        return_observed=True,
-        summary_fun={"post_sample_q50": np.median},
-        num_samples=args.num_samples,
-        batch_size=args.batch_size,
-        summary_frequency=100,
-    )
-    samples_corr = pd.DataFrame(samples_corr).T
+    # Assume 'has_malignant_neighbor' is an annotation in adata.obs
+    X = adata_cti.X  # Gene expression matrix
+    y = adata_cti.obs["has_malignant_neighbor"]
 
-    samples = resolvi.sample_posterior(
-        model=resolvi.module.model_residuals,
-        return_sites=["mixture_proportions"],
-        summary_fun={"post_sample_means": np.mean},
-        num_samples=args.num_samples,
-        batch_size=args.batch_size,
-        summary_frequency=100,
-    )
-    samples_proportions = pd.DataFrame(samples).T
+    # Split data
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    ### save
-    samples_corr = pd.DataFrame(
-        samples_corr.loc["post_sample_q50", "px_rate"],
-        index=adata.obs_names,
-        columns=adata.var_names,
-    )
-    samples_proportions = pd.DataFrame(
-        samples_proportions.loc["post_sample_means", "mixture_proportions"],
-        index=adata.obs_names,
-        columns=["true_proportion", "diffusion_proportion", "background_proportion"],
-    )
+    # Train logistic regression model
+    model = LogisticRegression(max_iter=1000)
+    model.fit(X_train, y_train)
 
-    adata_out = ad.AnnData(samples_corr)
-    readwrite.write_10X_h5(adata_out, args.out_file_resolvi_corrected_counts)
-    samples_proportions.to_parquet(args.out_file_resolvi_proportions)
-    resolvi.save(args.out_dir_resolvi_model)
+    # Predict and evaluate
+    y_pred = model.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+
+    # Inspect top informative genes
+    importance = model.coef_[0]
+    top_genes = neutrophils.var.index[importance.argsort()[-7:][::-1]]
 
     if args.l is not None:
         _log.close()

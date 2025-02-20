@@ -93,9 +93,7 @@ def merge_adata(*adata_list, **kwargs):
             df = getattr(_adata, attr)
             dup_mask = df.columns.duplicated()
             if dup_mask.any():
-                print(
-                    f"Deleting duplicated keys `{list(df.columns[dup_mask].unique())}` from `adata.{attr}`."
-                )
+                print(f"Deleting duplicated keys `{list(df.columns[dup_mask].unique())}` from `adata.{attr}`.")
                 setattr(_adata, attr, df.loc[:, ~dup_mask])
 
     return sc.AnnData.concatenate(*adata_list, **kwargs)
@@ -283,9 +281,7 @@ def prepare_adatas_hvg_split(ads, path=None, label="dataset_merge_id", overwrite
     """
 
     # Get common genes across all AnnData objects
-    common_genes = list(
-        set.intersection(*map(set, [a.var_names for a in ads.values()]))
-    )
+    common_genes = list(set.intersection(*map(set, [a.var_names for a in ads.values()])))
     assert len(common_genes) > 0
 
     # Concatenate AnnData objects and save as ad_all
@@ -352,9 +348,7 @@ def prepare_adatas_hvg(ads, path=None, label="dataset_merge_id"):
     """
 
     # Find common genes across all AnnData objects
-    common_genes = list(
-        set.intersection(*map(set, [a.var_names for a in ads.values()]))
-    )
+    common_genes = list(set.intersection(*map(set, [a.var_names for a in ads.values()])))
     assert len(common_genes) > 0
 
     # Concatenate AnnData objects and save as ad_all
@@ -372,9 +366,7 @@ def prepare_adatas_hvg(ads, path=None, label="dataset_merge_id"):
         for k in ads.keys():
             ad = ads[k][:, common_genes]
             sc.pp.highly_variable_genes(ad, flavor="seurat_v3", n_top_genes=2000)
-            hvgs_batch.append(
-                ad.var["highly_variable"][ad.var["highly_variable"]].index
-            )
+            hvgs_batch.append(ad.var["highly_variable"][ad.var["highly_variable"]].index)
 
         # Create joint HVG and save
         if hvg_mode == "union":
@@ -437,9 +429,7 @@ def embed_adata_cellxgene_scvi(
 
     scvi.model.SCVI.prepare_query_anndata(adata_, model_filename)
     if cxg_scvi_retrain:
-        model = scvi.model.SCVI.load_query_data(
-            adata_, model_filename, freeze_dropout=True
-        )
+        model = scvi.model.SCVI.load_query_data(adata_, model_filename, freeze_dropout=True)
         model.train(max_epochs=200, plan_kwargs=dict(weight_decay=0.0))
     else:
         model = scvi.model.SCVI.load_query_data(adata_, model_filename)
@@ -509,9 +499,7 @@ def integrate(
         adata.layers["X"] = adata.X
         adata.X = adata.layers["counts"]
     else:
-        print(
-            'WARNING: adata.layers["counts"] does not exist. Using adata.X with assumption it contains raw counts'
-        )
+        print('WARNING: adata.layers["counts"] does not exist. Using adata.X with assumption it contains raw counts')
 
     LATENT_KEY = f"X_{mode}"
     MDE_KEY = f"{LATENT_KEY}_mde"
@@ -539,14 +527,10 @@ def integrate(
     elif mode == "scanorama":
         sc.external.pp.scanorama_integrate(adata, key=integration_key, basis="X_pca")
     elif mode == "harmony":
-        sc.external.pp.harmony_integrate(
-            adata, key=integration_key, basis="X_pca", adjusted_basis=LATENT_KEY
-        )
+        sc.external.pp.harmony_integrate(adata, key=integration_key, basis="X_pca", adjusted_basis=LATENT_KEY)
     elif mode == "scvi":
         sca.models.SCVI.setup_anndata(adata, batch_key=integration_key)
-        model = sca.models.SCVI(
-            adata, n_hidden=128, n_layers=2, n_latent=n_latent, gene_likelihood="nb"
-        )
+        model = sca.models.SCVI(adata, n_hidden=128, n_layers=2, n_latent=n_latent, gene_likelihood="nb")
         model.train()
         if model_save_path is not None:
             model.save(model_save_path, overwrite=True)
@@ -568,23 +552,17 @@ def integrate(
         adata.obsm[LATENT_KEY] = model.get_latent()
 
     elif mode == "cxg_scvi":
-        adata.obsm[LATENT_KEY] = embed_adata_cellxgene_scvi(
-            adata, cxg_scvi_retrain=False
-        )
+        adata.obsm[LATENT_KEY] = embed_adata_cellxgene_scvi(adata, cxg_scvi_retrain=False)
 
     elif mode == "cxg_scvi_retrain":
-        adata.obsm[LATENT_KEY] = embed_adata_cellxgene_scvi(
-            adata, cxg_scvi_retrain=True
-        )
+        adata.obsm[LATENT_KEY] = embed_adata_cellxgene_scvi(adata, cxg_scvi_retrain=True)
 
     if "mde" in compute_embeddings:
         adata.obsm[MDE_KEY] = scvi.model.mde(adata.obsm[LATENT_KEY])
     if "umap" in compute_embeddings:
         rsc.get.anndata_to_GPU(adata)
         rsc.pp.neighbors(adata, metric="cosine", use_rep=LATENT_KEY)
-        adata.obsm[UMAP_KEY] = rsc.tl.umap(adata, copy=True, min_dist=0.2).obsm[
-            "X_umap"
-        ]
+        adata.obsm[UMAP_KEY] = rsc.tl.umap(adata, copy=True, min_dist=0.2).obsm["X_umap"]
         rsc.get.anndata_to_CPU(adata)
 
     if "counts" in adata.layers:
@@ -632,15 +610,10 @@ def preprocess_and_integrate(
 
         # Loop over integration modes
         for mode in modes:
-            LATENT_KEY = (
-                f"X_mode={mode}_hvg_mode={hvg_mode}_n_latent={n_latent}_scale={scale}"
-            )
+            LATENT_KEY = f"X_mode={mode}_hvg_mode={hvg_mode}_n_latent={n_latent}_scale={scale}"
             print(LATENT_KEY)
 
-            if not overwrite or (
-                output_dir is not None
-                and os.path.exists(f"{output_dir}/{name}_{LATENT_KEY}.csv")
-            ):
+            if not overwrite or (output_dir is not None and os.path.exists(f"{output_dir}/{name}_{LATENT_KEY}.csv")):
                 print("\t\tAlready computed", mode, "skipping...")
                 continue
             else:
@@ -676,9 +649,7 @@ def preprocess_and_integrate(
                     pd.DataFrame(obsm[LATENT_KEY], index=ad_joint.obs_names).to_csv(
                         f"{output_dir}/{name}_{LATENT_KEY}.csv",
                     )
-                    print(
-                        "\t\tSaved output at", f"{output_dir}/{name}_{LATENT_KEY}.csv"
-                    )
+                    print("\t\tSaved output at", f"{output_dir}/{name}_{LATENT_KEY}.csv")
 
         del ad_joint
         return obsm
@@ -705,6 +676,7 @@ def transfer_labels_scarches(
         tuple: A tuple containing the transferred labels and their uncertainties.
     """
     import scarches as sca
+
     if knn_model is None:
         knn_model = sca.utils.weighted_knn_trainer(
             train_adata=ad_ref,
@@ -768,30 +740,22 @@ def transfer_labels(
                     GPUKNeighborsClassifier = None
 
                 if GPUKNeighborsClassifier is None:
-                    print(
-                        "Failed to import cuml.neighbors.KNeighborsClassifier... Using CPU instead of GPU"
-                    )
+                    print("Failed to import cuml.neighbors.KNeighborsClassifier... Using CPU instead of GPU")
             else:
                 GPUKNeighborsClassifier = None
 
         if use_gpu and GPUKNeighborsClassifier is not None:
             print("Only uniform weighing strategy is supported for GPU.")
-            knn_model = GPUKNeighborsClassifier(
-                n_neighbors=n_neighbors, weights="uniform"
-            )
+            knn_model = GPUKNeighborsClassifier(n_neighbors=n_neighbors, weights="uniform")
 
-            le = sklearn.preprocessing.LabelEncoder().fit(
-                ad_ref.obs[label_keys].values.flat
-            )
+            le = sklearn.preprocessing.LabelEncoder().fit(ad_ref.obs[label_keys].values.flat)
             encoded_labels = ad_ref.obs[label_keys].apply(le.transform)
 
             # Fit the model on the reference data embedding and labels
             knn_model.fit(ad_ref.obsm[latent_key], encoded_labels)
 
         else:
-            knn_model = sklearn.neighbors.KNeighborsClassifier(
-                n_neighbors=n_neighbors, weights=weights, n_jobs=n_jobs
-            )
+            knn_model = sklearn.neighbors.KNeighborsClassifier(n_neighbors=n_neighbors, weights=weights, n_jobs=n_jobs)
 
             # Fit the model on the reference data embedding and labels
             knn_model.fit(ad_ref.obsm[latent_key], ad_ref.obs[label_keys])
@@ -802,16 +766,12 @@ def transfer_labels(
         pred_probability = knn_model.predict_proba(ad_query.obsm[latent_key])
 
         if "cuml" in str(type(knn_model)):
-            le = sklearn.preprocessing.LabelEncoder().fit(
-                ad_ref.obs[label_keys].values.flat
-            )
+            le = sklearn.preprocessing.LabelEncoder().fit(ad_ref.obs[label_keys].values.flat)
             pred_labels = np.apply_along_axis(le.inverse_transform, 0, pred_labels)
 
         # Calculate prediction uncertainty
         if isinstance(label_keys, list) and len(label_keys) > 1:
-            pred_uncertainty = [
-                1 - np.max(probas, axis=1) for probas in pred_probability
-            ]
+            pred_uncertainty = [1 - np.max(probas, axis=1) for probas in pred_probability]
         else:
             pred_uncertainty = 1 - np.max(pred_probability, axis=1)
 
@@ -929,9 +889,7 @@ def plot_confusion_matrix(
         return df_confusion_counts, df_confusion
 
 
-def _compute_nmi_ari_cluster_labels(
-    adata, labels: np.ndarray, resolution: float = 1.0
-) -> tuple[float, float]:
+def _compute_nmi_ari_cluster_labels(adata, labels: np.ndarray, resolution: float = 1.0) -> tuple[float, float]:
     if f"leiden_{resolution}" not in adata.obs:
         sc.tl.leiden(
             adata,
@@ -988,14 +946,9 @@ def leiden_best_nmi_ari(
     try:
         from joblib import Parallel, delayed
 
-        out = Parallel(n_jobs=n_jobs)(
-            delayed(_compute_nmi_ari_cluster_labels)(adata, labels, r)
-            for r in resolutions
-        )
+        out = Parallel(n_jobs=n_jobs)(delayed(_compute_nmi_ari_cluster_labels)(adata, labels, r) for r in resolutions)
     except ImportError:
-        warnings.warn(
-            "Using for loop over clustering resolutions. `pip install joblib` for parallelization."
-        )
+        warnings.warn("Using for loop over clustering resolutions. `pip install joblib` for parallelization.")
         out = [_compute_nmi_ari_cluster_labels(adata, labels, r) for r in resolutions]
 
     nmi_ari = np.array(out)
@@ -1031,9 +984,7 @@ def plot_transfer_labels(adata, UMAP_KEY, BATCH_KEY, CT_KEYS):
         color_palette = dict(zip(u_ct, color_palette))
 
         # Plot each batch
-        fig, axes = plt.subplots(
-            1, len(u_batches), figsize=(25, 7), sharex=True, sharey=True
-        )
+        fig, axes = plt.subplots(1, len(u_batches), figsize=(25, 7), sharex=True, sharey=True)
         for i, batch in enumerate(u_batches):
             ad_batch = adata[adata.obs[BATCH_KEY] == batch]
             ax = axes[i]
@@ -1063,9 +1014,7 @@ def plot_transfer_labels(adata, UMAP_KEY, BATCH_KEY, CT_KEYS):
 
             # Add legend
             handles = [
-                Line2D(
-                    [0], [0], marker="o", color="w", markerfacecolor=color, label=label
-                )
+                Line2D([0], [0], marker="o", color="w", markerfacecolor=color, label=label)
                 for label, color in color_palette.items()
             ]
             plt.legend(
@@ -1107,9 +1056,9 @@ def pseudobulk(ad, key):
     return ad_states
 
 
-def subdonor(adata, obs_key, n_obs, random_state=0, copy=True):
+def subsample(adata, obs_key, n_obs, random_state=0, copy=True):
     """
-    Subdonor each class to same cell numbers (N). Classes are given by obs_key pointing to categorical in adata.obs.
+    subsample each class to same cell numbers (N). Classes are given by obs_key pointing to categorical in adata.obs.
     """
     rs = np.random.RandomState(random_state)
     counts = adata.obs[obs_key].value_counts()
