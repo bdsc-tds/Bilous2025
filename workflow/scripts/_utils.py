@@ -111,7 +111,7 @@ def logit_pvalue(model, x):
     return p
 
 
-def get_marker_rank_significance(rnk, gene_set, top_n):
+def get_marker_rank_significance(rnk, gene_set, top_n=None):
     """
     Calculate the significance of marker ranks using pre-ranked GSEA and hypergeometric test.
     rnk must contain all features, its length is assumed to be the total number N for hypergoemetric testing
@@ -120,7 +120,7 @@ def get_marker_rank_significance(rnk, gene_set, top_n):
     - rnk (pd.Series): index with feature names and values representing feature scores with decreasing ranks.
     - adata (AnnData): Anndata object containing the gene expression data.
     - gene_set (list): List of genes to test for enrichment.
-    - top_n (int): Number of top-ranked genes to consider for the hypergeometric test.
+    - top_n (optional, int): Number of top-ranked genes to consider for the hypergeometric test.
 
     Returns:
     - markers_rank_significance (pd.DataFrame): DataFrame containing the significance results.
@@ -134,12 +134,13 @@ def get_marker_rank_significance(rnk, gene_set, top_n):
     ).res2d
 
     # Calculate marker rank significance from hypergeometric test
-    N = len(rnk)  # Total genes in ranked list
-    K = len(gene_set)  # Genes in the pathway/set of interest
-    x = np.isin(rnk.index[:top_n], gene_set).sum()  # Overlapping genes in top n
+    if top_n is None:
+        N = len(rnk)  # Total genes in ranked list
+        K = len(gene_set)  # Genes in the pathway/set of interest
+        x = np.isin(rnk.index[:top_n], gene_set).sum()  # Overlapping genes in top n
 
-    # Add hypergeometric p-value to the results
-    markers_rank_significance["hypergeometric_pvalue"] = scipy.stats.hypergeom.sf(x - 1, N, K, top_n)
+        # Add hypergeometric p-value to the results
+        markers_rank_significance["hypergeometric_pvalue"] = scipy.stats.hypergeom.sf(x - 1, N, K, top_n)
 
     return markers_rank_significance
 

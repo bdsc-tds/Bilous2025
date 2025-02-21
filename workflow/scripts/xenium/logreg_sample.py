@@ -2,12 +2,13 @@ import dask
 
 dask.config.set({"dataframe.query-planning": False})
 
-# import liana
+import liana
 import scanpy as sc
 import pandas as pd
 import sys
 import argparse
 import os
+from sklearn.preprocessing import StandardScaler
 from pathlib import Path
 
 sys.path.append("../../../workflow/scripts/")
@@ -42,6 +43,9 @@ def parse_args():
     parser.add_argument("--n_permutations", type=int, help="n° of permutations for logreg random prediction baseline")
     parser.add_argument("--n_repeats", type=int, help="n° of repeats for logreg feature importances by permutations")
     parser.add_argument("--top_n", type=int, help="n° of top genes to evaluate for hypergeometric test")
+    parser.add_argument(
+        "--top_n_lr", type=int, help="n° of top ligand-receptor pairs to evaluate for liana hypergeometric test"
+    )
     parser.add_argument("--cti", type=str, help="cell type i (potentially corrupted by cell type j)")
     parser.add_argument("--ctj", type=str, help="cell type j (potentially corrupting cell type i)")
     parser.add_argument("--scoring", type=str, help="sklearn scoring metric to use for logreg")
@@ -170,26 +174,32 @@ if __name__ == "__main__":
     ###
     ### CELL-CELL COMMUNICATION TEST: check communication between cti with ctj neighbor
     ###
-    # adata = adata[adata.obs[f'has_{ctj}_neighbor']]
-    # lrdata = liana.mt.bivariate(
-    #     adata,
-    #     connectivity_key = f'{obsm}_connectivities',
-    #     resource_name='consensus', # NOTE: uses HUMAN gene symbols!
-    #     local_name='cosine', # Name of the function
-    #     global_name='morans',
-    #     n_perms=30, # Number of permutations to calculate a p-value
-    #     mask_negatives=True, # Whether to mask LowLow/NegativeNegative interactions
-    #     add_categories=True, # Whether to add local categories to the results
-    #     nz_prop=0.0, # Minimum expr. proportion for ligands/receptors and their subunits
-    #     use_raw=False,
-    #     verbose=True
-    #     )
+    adata_cti_ctj = adata[adata.obs[label_key].isin([cti, ctj])]
+    lrdata = liana.mt.bivariate(
+        adata_cti_ctj,
+        connectivity_key=f"{obsm}_connectivities",
+        resource_name="consensus",  # NOTE: uses HUMAN gene symbols!
+        local_name="cosine",  # Name of the function
+        global_name=None,
+        n_perms=30,  # Number of permutations to calculate a p-value
+        mask_negatives=True,  # Whether to mask LowLow/NegativeNegative interactions
+        add_categories=True,  # Whether to add local categories to the results
+        nz_prop=0.0,  # Minimum expr. proportion for ligands/receptors and their subunits
+        use_raw=False,
+        verbose=True,
+    )
 
-    # # get significance from gsea and hypergeometric test
-    # df_markers_rank_significance_diffexpr = _utils.get_marker_rank_significance(
-    #     rnk=df_diffexpr.set_index('names')['logfoldchanges'],
-    #     gene_set=ctj_marker_genes,
-    #     top_n = top_n)
+    lrdata_cti_has_ctj_neighbor = lrdata[(lrdata.obs[label_key] == cti) & lrdata.obs[f"has_{ctj}_neighbor"]]
+    lrdata_cti_has_ctj_neighbor.var["mean_cti_has_ctj_neighbor"] = lrdata_cti_has_ctj_neighbor.X.mean(0).A1
+    lrdata_cti_has_ctj_neighbor.var["std_cti"] = (
+        StandardScaler(with_mean=False).fit(lrdata_cti_has_ctj_neighbor.X).scale_
+    )  # std for sparse matrix
+
+    # get significance from gsea and hypergeometric test
+    ctj_marker_lr = [lr for lr in lrdata_cti_has_ctj_neighbor.var_names if any([g in lr for g in ctj_marker_genes])]
+    df_markers_rank_significance_diffexpr = _utils.get_marker_rank_significance(
+        rnk=lrdata_cti_has_ctj_neighbor.var["mean_cti_has_ctj_neighbor"], gene_set=ctj_marker_lr, top_n=args.top_n_lr
+    )
 
     ###
     ### SAVE OUTPUTS
