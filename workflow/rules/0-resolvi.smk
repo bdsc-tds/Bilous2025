@@ -36,7 +36,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                     if path.exists():
 
                         out_dir_resolvi_model = results_dir / f'resolvi/{name}/model/'
-                        out_files.append(out_dir_resolvi_model)
+                        out_files_training.append(out_dir_resolvi_model)
 
                         rule:
                             name: f'resolvi/{name}'
@@ -101,7 +101,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                         out_file_resolvi_corrected_counts = results_dir / f'resolvi/{name}/corrected_counts.h5'
                         out_file_resolvi_proportions = results_dir/ f'resolvi/{name}/proportions.parquet'
                         out_dir_resolvi_model = results_dir / f'resolvi/{name}/model/'
-                        out_files.extend([out_file_resolvi_corrected_counts,out_file_resolvi_proportions])
+                        out_files_inference.extend([out_file_resolvi_corrected_counts,out_file_resolvi_proportions])
 
                         rule:
                             name: f'resolvi_inference/{name}'

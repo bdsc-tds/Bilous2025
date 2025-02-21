@@ -11,8 +11,10 @@ import spatialdata
 import spatialdata_io
 import warnings
 import anndata as ad
+import scanpy as sc
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+from collections import defaultdict
 
 from types import MappingProxyType
 from spatialdata.models import (
@@ -842,3 +844,125 @@ def get_gene_panel_info(path):
         gene_panel_info.at[i, "source_name"] = g["source"]["identity"]["name"]
         gene_panel_info.at[i, "source_version"] = g["source"]["identity"].get("version")
     return gene_panel_info
+
+
+def _df_split(df):
+    """
+    Utility function for read_anndata_folder to parse a dataframe into separate .obsm and .varm field
+    Splits a DataFrame into multiple DataFrames based on a common prefix in the column names.
+
+    Given a DataFrame with columns like 'gene1', 'gene2', 'control1', 'control2', etc., this function
+    will split the DataFrame into two DataFrames, one with the 'gene' columns and one with the 'control'
+    columns.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame to split.
+
+    Returns
+    -------
+    dfs : dict
+        A dictionary where the keys are the prefixes and the values are the DataFrames.
+    """
+
+    def _split_text_from_numbers(s):
+        head = s.rstrip("0123456789")
+        tail = s[len(head) :]
+        return head, tail
+
+    columns = df.columns
+    columns_split = [_split_text_from_numbers(col) for col in columns]
+
+    # Group columns by prefix
+    column_groups = defaultdict(list)
+    for prefix, suffix in columns_split:
+        column_groups[prefix].append((prefix, suffix))
+
+    # Create DataFrames
+    dfs = defaultdict(pd.DataFrame)
+    for prefix, columns in column_groups.items():
+        # Sort columns by suffix
+        columns.sort(key=lambda x: int(x[1]))
+        columns = ["".join(c) for c in columns]
+        # Create a DataFrame with sorted columns
+        dfs[prefix][columns] = df[columns]
+
+    return dfs
+
+
+def write_anndata_folder(adata, adata_dir):
+    """
+    Writes an AnnData object to a folder as a series of csv files and .h5 files for X and layers.
+
+    Parameters
+    ----------
+    adata : anndata.AnnData
+        The AnnData object to write.
+    adata_dir : str
+        The path to the folder where the AnnData object will be written.
+
+    Notes
+    -----
+    This function writes `adata.obs`, `adata.var`, `adata.uns` and `adata.X` to separate csv files.
+    `adata.layers` are written as separate .h5 files in the same folder.
+    """
+    adata = adata.copy()
+    del adata.uns
+    adata.write_csvs(adata_dir)
+    write_10X_h5(adata, f"{adata_dir}/X.h5")
+
+    for layer in adata.layers:
+        adata.X = adata.layers["pvals"]
+        write_10X_h5(adata, f"{adata_dir}/{layer}.h5")
+
+
+def read_anndata_folder(adata_dir):
+    """
+    Reads an anndata folder saved with write_anndata_folder and returns an AnnData object.
+
+    Parameters
+    ----------
+    adata_dir : str
+        The path to the anndata folder.
+
+    Returns
+    -------
+    adata : anndata.AnnData
+        The AnnData object.
+    """
+
+    # read X
+    adata = sc.read_10x_h5(f"{adata_dir}/X.h5")
+
+    # read layers
+    for f in Path(adata_dir).glob("*.h5"):
+        if f.name == "X.h5":
+            continue
+        adata.layers[f.stem] = sc.read_10x_h5(f).X
+
+    # read obs, obsm, var, varm
+    for attr in ["obs", "obsm", "var", "varm"]:
+        if attr in ["obs", "var"]:
+            try:
+                df = pd.read_csv(f"{adata_dir}/{attr}.csv", index_col=0)
+                setattr(adata, attr, df)
+            except pd.errors.EmptyDataError:
+                pass
+        elif attr == "obsm":
+            try:
+                df = pd.read_csv(f"{adata_dir}/{attr}.csv")
+                dfs = _df_split(df)
+                for k, v in dfs.items():
+                    adata.obsm[k] = v.values
+            except pd.errors.EmptyDataError:
+                pass
+        elif attr == "varm":
+            try:
+                df = pd.read_csv(f"{adata_dir}/{attr}.csv")
+                dfs = _df_split(df)
+                for k, v in dfs.items():
+                    adata.varm[k] = v
+            except pd.errors.EmptyDataError:
+                pass
+    return adata
