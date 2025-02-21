@@ -2,16 +2,13 @@ import dask
 
 dask.config.set({"dataframe.query-planning": False})
 
+# import liana
 import scanpy as sc
-import scipy
-import numpy as np
 import pandas as pd
-import os
 import sys
 import argparse
-import json
+import os
 from pathlib import Path
-
 
 sys.path.append("../../../workflow/scripts/")
 import _utils
@@ -21,26 +18,38 @@ import readwrite
 # Set up argument parser
 def parse_args():
     parser = argparse.ArgumentParser(description="Run RESOLVI on a Xenium sample.")
-    parser.add_argument("--path", type=str, help="Path to the xenium sample file.")
-    parser.add_argument("--out_dir_resolvi_model", type=str, help="output directory with RESOLVI model weights")
-    parser.add_argument("--cell_type_labels", type=str, help="optional cell_type_labels for semi-supervised mode")
-    parser.add_argument("--cti", type=int, help="cell type i")
-    parser.add_argument("--ctj", type=int, help="cell type j")
-    parser.add_argument("--sample_xeniumdir", type=str, help="")
+    parser.add_argument("--sample_dir", type=str, help="")
     parser.add_argument("--sample_counts", type=str, help="")
     parser.add_argument("--sample_idx", type=str, help="")
     parser.add_argument("--cell_type_labels", type=str, help="")
-    parser.add_argument("--out_file_permutation_summary", type=str, help="")
-    parser.add_argument("--out_file_importances", type=str, help="")
-    parser.add_argument("--out_file_importances_markers_rank_significance", type=str, help="")
-    parser.add_argument("--n_neighbors", type=str, help="")
-    parser.add_argument("--n_permutations", type=str, help="")
-    parser.add_argument("--n_repeats", type=str, help="")
-    parser.add_argument("--top_n", type=str, help="")
-    parser.add_argument("--cti", type=str, help="")
-    parser.add_argument("--ctj", type=str, help="")
-    parser.add_argument("--scoring", type=str, help="")
-    parser.add_argument("--markers", type=str, help="")
+    parser.add_argument(
+        "--out_file_df_permutations_logreg", type=str, help="path to the logreg permutation output file"
+    )
+    parser.add_argument("--out_file_df_importances_logreg", type=str, help="path to the logref importances output file")
+    parser.add_argument("--out_file_df_diffexpr", type=str, help="path to the differential expression output file")
+    parser.add_argument(
+        "--out_file_df_markers_rank_significance_logreg",
+        type=str,
+        help="path to the logreg rank significance output file",
+    )
+    parser.add_argument(
+        "--out_file_df_markers_rank_significance_diffexpr",
+        type=str,
+        help="path the differential expression rank significance output file",
+    )
+    parser.add_argument("--out_dir_liana_lrdata", type=str, help="path to the liana lrdata results dir output")
+    parser.add_argument("--n_neighbors", type=int, help="n° of neighbors to use to define the spatial graph")
+    parser.add_argument("--n_permutations", type=int, help="n° of permutations for logreg random prediction baseline")
+    parser.add_argument("--n_repeats", type=int, help="n° of repeats for logreg feature importances by permutations")
+    parser.add_argument("--top_n", type=int, help="n° of top genes to evaluate for hypergeometric test")
+    parser.add_argument("--cti", type=str, help="cell type i (potentially corrupted by cell type j)")
+    parser.add_argument("--ctj", type=str, help="cell type j (potentially corrupting cell type i)")
+    parser.add_argument("--scoring", type=str, help="sklearn scoring metric to use for logreg")
+    parser.add_argument(
+        "--markers",
+        type=str,
+        help="'diffexpr' to use empirical markers by diffexpr test, or a path to a df with cell_type and marker genes columns",
+    )
 
     ret = parser.parse_args()
     if not os.path.isdir(ret.path):
@@ -61,6 +70,9 @@ if __name__ == "__main__":
         sys.stdout = _log
         sys.stderr = _log
 
+    ####
+    #### READ DATA
+    ####
     # read raw data to get spatial coordinates
     adata = readwrite.read_xenium_sample(
         args.sample_dir,
@@ -77,7 +89,7 @@ if __name__ == "__main__":
         anndata=True,
     )
 
-    # read normalised data
+    # read normalised data, filter cells
     X_normalised = pd.read_parquet(args.sample_counts)
     X_normalised.index = pd.read_parquet(args.sample_idx).iloc[:, 0]
     adata = adata[X_normalised.index]
@@ -89,7 +101,13 @@ if __name__ == "__main__":
     adata.obs[label_key] = adata.obs[label_key].replace(r" of .+", "", regex=True)
 
     # define target (cell type j presence in kNN)
-    knnlabels = general_utils.get_knn_labels(adata, n_neighbors=args.n_neighbors, label_key=label_key, obsm="spatial")
+    obsm = "spatial"
+    knnlabels, knndis, knnidx, knn_graph = _utils.get_knn_labels(
+        adata, n_neighbors=args.n_neighbors, label_key=label_key, obsm=obsm, return_sparse_neighbors=True
+    )
+
+    adata.obsp[f"{args.obsm}_connectivities"] = knn_graph
+    adata.obs[f"count_{args.ctj}_neighbor"] = knnlabels[args.ctj]
     adata.obs[f"has_{args.ctj}_neighbor"] = knnlabels[args.ctj] > 0
 
     # read markers
@@ -100,6 +118,7 @@ if __name__ == "__main__":
         df_markers = pd.read_json(args.markers)["canonical"].explode().reset_index()
         df_markers.columns = ["cell_type", "gene"]
         ctj_marker_genes = df_markers[df_markers["cell_type"] == args.ctj]["gene"].tolist()
+        ctj_marker_genes = [g for g in ctj_marker_genes if g in adata.var_names]
 
     assert len(ctj_marker_genes), f"{args.ctj} not found in marker list or in DE list"
 
@@ -107,75 +126,85 @@ if __name__ == "__main__":
     if args.cti is None:
         adata_cti = adata
     else:
-        adata_cti = adata[adata.obs[label_key] == args.cti]
+        adata_cti = adata[adata.obs[label_key] == cti]
 
-    # Split data
-    X = adata_cti.X
-    y = adata_cti.obs[f"has_{args.ctj}_neighbor"]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=0)
+    ####
+    #### LOGISTIC REGRESSION TEST: predict ctj in kNN based on cti expression
+    ####
 
-    # Init logistic regression model
-    model = LogisticRegression()
-
-    # Empirical p-value calculation using permutation test
-    score, permutation_scores, p_value = permutation_test_score(
-        model, X_train, y_train, scoring=args.scoring, n_permutations=args.n_permutations, n_jobs=-1
-    )
-
-    permutation_summary = pd.DataFrame(
-        [[score, permutation_scores.mean(), permutation_scores.std(), p_value]],
-        columns=[
-            f"{args.scoring}_score",
-            f"permutation_mean_{args.scoring}_score",
-            f"permutation_std_{args.scoring}_score",
-            "p_value",
-        ],
-    )
-    permutation_summary["effect_size"] = (
-        permutation_summary[f"{args.scoring}_score"] - permutation_summary[f"permutation_mean_{args.scoring}_score"]
-    ) / permutation_summary["permutation_std_f1_score"]
-
-    # Feature importances from permutations
-    model.fit(X_train, y_train)
-    importances = permutation_importance(
-        model,
-        pd.DataFrame.sparse.from_spmatrix(X_test),
-        y_test,
+    # train logreg model
+    df_permutations_logreg, df_importances_logreg = _utils.logreg(
+        X=adata_cti.X,
+        y=adata_cti.obs[f"has_{args.ctj}_neighbor"],
+        feature_names=adata.var_names,
         scoring=args.scoring,
+        test_size=0.2,
+        n_permutations=args.n_permutations,
         n_repeats=args.n_repeats,
-        n_jobs=-1,
+        random_state=0,
     )
 
-    # Feature importances from model coefs
-    # cv_results = cross_validate(model,X,y,return_estimator=True, scoring=scoring, n_jobs=-1)
-    # importances = np.std(X, axis=0) * np.vstack([m.coef_[0] for m in cv_results['estimator']])
+    # get significance from gsea and hypergeometric test
+    df_markers_rank_significance_logreg = _utils.get_marker_rank_significance(
+        rnk=df_importances_logreg["importances_mean"], gene_set=ctj_marker_genes, top_n=args.top_n
+    )
 
-    # coef pvalues from formula
-    # importances['pvalues'] = general_utils.logit_pvalue(model,X_train.toarray())[1:]
+    ###
+    ### DIFF EXPR TEST: check DE genes between cti with ctj neighbor or not
+    ###
+    idx_no_ctj_neighbor = adata_cti.obs[f"count_{args.ctj}_neighbor"] == 0
+    if sum(idx_no_ctj_neighbor) < 30:  # arbitrary threshold to consider there's enough cells for DE
+        raise ValueError("Not enough cells without ctj neighbors")
 
-    # convert importances to df
-    importances.pop("importances")
-    importances = pd.DataFrame(importances, index=adata_cti.var_names).sort_values("importances_mean", ascending=False)
+    adata_cti.obs[f"has_{args.ctj}_neighbor_str"] = adata_cti.obs[f"has_{args.ctj}_neighbor"].astype(str)
+    sc.tl.rank_genes_groups(
+        adata_cti, groupby=f"has_{args.ctj}_neighbor_str", groups=["True"], reference="False", method="wilcoxon"
+    )
+    df_diffexpr = sc.get.rank_genes_groups_df(adata_cti, group="True").sort_values("pvals_adj")
 
-    # ctj marker rank significance from prerank
-    markers_rank_significance = gseapy.prerank(
-        rnk=importances["importances_mean"],
-        gene_sets=[{"markers": ctj_marker_genes}],
-        min_size=0,
-    ).results
+    # get significance from gsea and hypergeometric test
+    df_markers_rank_significance_diffexpr = _utils.get_marker_rank_significance(
+        rnk=df_diffexpr.set_index("names")["logfoldchanges"], gene_set=ctj_marker_genes, top_n=args.top_n
+    )
 
-    # ctj marker rank significance from hypergeometric test
-    N = len(importances)  # Total genes in ranked list
-    K = len(ctj_marker_genes)  # Genes in the pathway/set of interest
-    n = args.top_n  # Top ranked genes
-    x = np.isin(importances.index[:n], ctj_marker_genes).sum()  # Overlapping genes in top n
-    markers_rank_significance["hypergeometric_pvalue"] = scipy.stats.hypergeom.sf(x - 1, N, K, n)
+    ###
+    ### CELL-CELL COMMUNICATION TEST: check communication between cti with ctj neighbor
+    ###
+    # adata = adata[adata.obs[f'has_{ctj}_neighbor']]
+    # lrdata = liana.mt.bivariate(
+    #     adata,
+    #     connectivity_key = f'{obsm}_connectivities',
+    #     resource_name='consensus', # NOTE: uses HUMAN gene symbols!
+    #     local_name='cosine', # Name of the function
+    #     global_name='morans',
+    #     n_perms=30, # Number of permutations to calculate a p-value
+    #     mask_negatives=True, # Whether to mask LowLow/NegativeNegative interactions
+    #     add_categories=True, # Whether to add local categories to the results
+    #     nz_prop=0.0, # Minimum expr. proportion for ligands/receptors and their subunits
+    #     use_raw=False,
+    #     verbose=True
+    #     )
 
-    # Save
-    permutation_summary.to_parquet(args.out_file_permutation_summary)
-    importances.to_frame().to_parquet(args.out_file_importances)
-    with open(args.out_file_importances_markers_rank_significance, "w") as f:
-        json.dump(markers_rank_significance, f)
+    # # get significance from gsea and hypergeometric test
+    # df_markers_rank_significance_diffexpr = _utils.get_marker_rank_significance(
+    #     rnk=df_diffexpr.set_index('names')['logfoldchanges'],
+    #     gene_set=ctj_marker_genes,
+    #     top_n = top_n)
+
+    ###
+    ### SAVE OUTPUTS
+    ###
+    # logreg
+    df_permutations_logreg.to_parquet(args.out_file_df_permutations_logreg)
+    df_importances_logreg.to_parquet(args.out_file_df_importances_logreg)
+    df_markers_rank_significance_logreg.to_parquet(args.out_file_df_markers_rank_significance_logreg)
+
+    # diffexpr
+    df_diffexpr.to_parquet(args.out_file_df_diffexpr)
+    df_markers_rank_significance_diffexpr.to_parquet(args.out_file_df_markers_rank_significance_diffexpr)
+
+    # liana
+    # readwrite.write_anndata_folder(lrdata, args.out_dir_liana_lrdata)
 
     if args.l is not None:
         _log.close()
