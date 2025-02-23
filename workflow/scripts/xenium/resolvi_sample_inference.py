@@ -42,12 +42,16 @@ def parse_args():
     )
     parser.add_argument("--batch_size", type=int, help="batch size parameter")
     parser.add_argument("--cell_type_labels", type=str, help="optional cell_type_labels for semi-supervised mode")
+    parser.add_argument(
+        "-l",
+        type=str,
+        default=None,
+        help="path to the log file",
+    )
 
     ret = parser.parse_args()
     if not os.path.isdir(ret.path):
         raise RuntimeError(f"Error! Input directory does not exist: {ret.path}")
-    if ret.max_epochs <= 0:
-        ret.max_epochs = 50
 
     return ret
 
@@ -136,7 +140,7 @@ if __name__ == "__main__":
 
     ### save
     samples_corr = pd.DataFrame(
-        samples_corr.loc["post_sample_q50", "px_rate"],
+        samples_corr.loc["post_sample_q50", "obs"],
         index=adata.obs_names,
         columns=adata.var_names,
     )

@@ -30,21 +30,23 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                     else:
                         path = sample / "normalised_results/outs"
                     
-                    k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,f'{mixture_k}')
+                    k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,f'{mixture_k=}')
                     name = '/'.join(k)
 
                     if path.exists():
 
                         out_dir_resolvi_model = results_dir / f'resolvi/{name}/model/'
-                        out_files_training.append(out_dir_resolvi_model)
+                        out_file_resolvi_model = out_dir_resolvi_model / 'model.pt'
+                        out_files_training.append(out_file_resolvi_model)
 
                         rule:
                             name: f'resolvi/{name}'
                             input:
                                 path=path,
                             output:
-                                out_dir_resolvi_model=out_dir_resolvi_model,
+                                out_file_resolvi_model = out_file_resolvi_model
                             params:
+                                out_dir_resolvi_model=out_dir_resolvi_model,
                                 min_counts=min_counts,
                                 min_features=min_features,
                                 max_counts=max_counts,
@@ -54,19 +56,17 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                             threads: 1
                             resources:
                                 mem='80GB',# if panel.stem == '5k' else '10GB',
-                                runtime='8h',
+                                runtime='6h',
                                 slurm_partition = "gpu",
                                 slurm_extra = '--gres=gpu:1',
                             conda:
                                 "spatial"
                             shell:
                                 """
-                                mkdir -p "$(dirname {output.out_dir_resolvi_model})"
+                                mkdir -p "$(dirname {params.out_dir_resolvi_model})"
 
                                 python workflow/scripts/xenium/resolvi_sample_training.py \
                                 --path {input.path} \
-                                --out_file_resolvi_corrected_counts {output.out_file_resolvi_corrected_counts} \
-                                --out_file_resolvi_proportions {output.out_file_resolvi_proportions} \
                                 --out_dir_resolvi_model {params.out_dir_resolvi_model} \
                                 --min_counts {params.min_counts} \
                                 --min_features {params.min_features} \
@@ -93,25 +93,28 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                     else:
                         path = sample / "normalised_results/outs"
                     
-                    k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,f'{mixture_k}/{num_samples=}_{batch_size=}')
+                    k_model = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,f'{mixture_k=}')
+                    k = k_model + (f'{num_samples=}_{batch_size=}',)
+                    name_model = '/'.join(k_model)
                     name = '/'.join(k)
 
                     if path.exists():
 
+                        dir_resolvi_model = results_dir / f'resolvi/{name_model}/model/'
                         out_file_resolvi_corrected_counts = results_dir / f'resolvi/{name}/corrected_counts.h5'
                         out_file_resolvi_proportions = results_dir/ f'resolvi/{name}/proportions.parquet'
-                        out_dir_resolvi_model = results_dir / f'resolvi/{name}/model/'
                         out_files_inference.extend([out_file_resolvi_corrected_counts,out_file_resolvi_proportions])
 
                         rule:
                             name: f'resolvi_inference/{name}'
                             input:
                                 path=path,
-                                dir_resolvi_model=out_dir_resolvi_model,
+                                file_resolvi_model = dir_resolvi_model / 'model.pt'
                             output:
                                 out_file_resolvi_corrected_counts=out_file_resolvi_corrected_counts,
                                 out_file_resolvi_proportions=out_file_resolvi_proportions,
                             params:
+                                dir_resolvi_model=dir_resolvi_model,
                                 min_counts=min_counts,
                                 min_features=min_features,
                                 max_counts=max_counts,
@@ -123,7 +126,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                             threads: 1
                             resources:
                                 mem='80GB',# if panel.stem == '5k' else '10GB',
-                                runtime='8h',
+                                runtime='6h',
                                 slurm_partition = "gpu",
                                 slurm_extra = '--gres=gpu:1',
                             conda:
@@ -134,7 +137,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
 
                                 python workflow/scripts/xenium/resolvi_sample_inference.py \
                                 --path {input.path} \
-                                --dir_resolvi_model {input.out_dir_resolvi_model} \
+                                --dir_resolvi_model {params.dir_resolvi_model} \
                                 --out_file_resolvi_corrected_counts {output.out_file_resolvi_corrected_counts} \
                                 --out_file_resolvi_proportions {output.out_file_resolvi_proportions} \
                                 --min_counts {params.min_counts} \

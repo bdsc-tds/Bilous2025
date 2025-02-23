@@ -32,6 +32,12 @@ def parse_args():
     )
     parser.add_argument("--cell_type_labels", type=str, help="optional cell_type_labels for semi-supervised mode")
     parser.add_argument("--mixture_k", type=int, help="mixture_k parameter for unsupervised RESOLVI")
+    parser.add_argument(
+        "-l",
+        type=str,
+        default=None,
+        help="path to the log file",
+    )
 
     ret = parser.parse_args()
     if not os.path.isdir(ret.path):
@@ -106,7 +112,7 @@ if __name__ == "__main__":
     )
     resolvi = scvi.external.RESOLVI(adata, mixture_k=args.mixture_k, semisupervised=semisupervised)
     resolvi.train(max_epochs=args.max_epochs)
-    resolvi.save(args.out_dir_resolvi_model)
+    resolvi.save(args.out_dir_resolvi_model, overwrite=True)
 
     if args.l is not None:
         _log.close()
