@@ -153,7 +153,6 @@ if __name__ == "__main__":
     adata_out = ad.AnnData(samples_corr)
     readwrite.write_10X_h5(adata_out, args.out_file_resolvi_corrected_counts)
     samples_proportions.to_parquet(args.out_file_resolvi_proportions)
-    resolvi.save(args.out_dir_resolvi_model)
 
     if args.l is not None:
         _log.close()
