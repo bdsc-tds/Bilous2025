@@ -13,6 +13,7 @@ min_dist = 0.3
 metric = 'cosine'
 s=0.5
 alpha=0.5
+dpi = 100
 
 cell_type_palette = palette_dir / 'col_palette_cell_types_combo.csv'
 panel_palette = palette_dir / 'col_palette_panel.csv'
@@ -72,6 +73,7 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                                         sample_palette=sample_palette,
                                         s=s,
                                         alpha=alpha,
+                                        dpi=dpi,
                                     threads: 1
                                     resources:
                                         mem='30GB',
@@ -96,6 +98,7 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                                         --sample_palette {params.sample_palette} \
                                         --s {params.s} \
                                         --alpha {params.alpha} \
+                                        --dpi {params.dpi} \
                                         
                                         echo "DONE"
                                         """

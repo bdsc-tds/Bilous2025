@@ -22,6 +22,7 @@ parser.add_argument("--panel_palette", type=Path, help="Path to palette csv file
 parser.add_argument("--sample_palette", type=Path, help="Path to palette csv file")
 parser.add_argument("--s", type=float, help="scatter point size")
 parser.add_argument("--alpha", type=float, help="scatter alpha (transparency)")
+parser.add_argument("--dpi", type=int, help="dpi of saved plot")
 args = parser.parse_args()
 
 # Access the arguments
@@ -38,6 +39,7 @@ panel_palette = args.panel_palette
 sample_palette = args.sample_palette
 s = args.s
 alpha = args.alpha
+dpi = args.dpi
 
 if color == "sample":
     palette = pd.read_csv(sample_palette, index_col=0).iloc[:, 0]
@@ -142,5 +144,5 @@ f.legend(
     frameon=False,
 )
 plt.tight_layout(rect=[0, 0, 0.85, 0.95])
-plt.savefig(out_file, dpi=300, bbox_inches="tight")
+plt.savefig(out_file, dpi=dpi, bbox_inches="tight")
 plt.close()

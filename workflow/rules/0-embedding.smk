@@ -56,7 +56,7 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                         resources:
                             mem='100GB' if panel.stem == '5k' else '50GB',
                             # runtime='30m' if panel.stem == '5k' else '20m',
-                            runtime='4h' if panel.stem == '5k' else '3h',
+                            runtime='8h' if panel.stem == '5k' else '3h',
                             # slurm_partition = "gpu",
                             # slurm_extra = '--gres=gpu:1',
                         conda:

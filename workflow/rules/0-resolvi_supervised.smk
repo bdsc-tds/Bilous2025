@@ -42,12 +42,12 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 
                                 cell_type_labels = cell_type_annotation_dir / name / f"{normalisation_method}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet"
 
-                                k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,f'{mixture_k=}',normalisation_method,reference,method,level)
+                                k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,normalisation_method,reference,method,level,f'{mixture_k=}')
                                 name = '/'.join(k)
 
                                 if path.exists():
 
-                                    out_dir_resolvi_model = results_dir / f'resolvi/{name}/model/'
+                                    out_dir_resolvi_model = results_dir / f'resolvi_supervised/{name}/model/'
                                     out_file_resolvi_model=out_dir_resolvi_model / 'model.pt'
                                     out_files_training.append(out_file_resolvi_model)
 
@@ -112,16 +112,16 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 
                                 cell_type_labels = cell_type_annotation_dir / name / f"{normalisation_method}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet"
 
-                                k_model = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,f'{mixture_k=}')
-                                k = k_model + (normalisation_method,reference,method,level,f'{num_samples=}',)
+                                k_model = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,normalisation_method,reference,method,level,f'{mixture_k=}')
+                                k = k_model + (f'{num_samples=}',)
                                 name_model = '/'.join(k_model)
                                 name = '/'.join(k)
 
                                 if path.exists():
 
-                                    dir_resolvi_model = results_dir / f'resolvi/{name}/model/'
-                                    out_file_resolvi_corrected_counts = results_dir / f'resolvi/{name}/corrected_counts.h5'
-                                    out_file_resolvi_proportions = results_dir/ f'resolvi/{name}/proportions.parquet'
+                                    dir_resolvi_model = results_dir / f'resolvi_supervised/{name_model}/model/'
+                                    out_file_resolvi_corrected_counts = results_dir / f'resolvi_supervised/{name}/corrected_counts.h5'
+                                    out_file_resolvi_proportions = results_dir/ f'resolvi_supervised/{name}/proportions.parquet'
                                     out_files_training.extend([out_file_resolvi_corrected_counts,out_file_resolvi_proportions])
 
                                     rule:

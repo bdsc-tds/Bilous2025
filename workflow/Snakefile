@@ -51,10 +51,10 @@ rule all:
         # rules.embed_panel_corrected_counts_plot_all.input,
         # rules.embed_condition_corrected_counts_plot_all.input,
         # #
-        # rules.resolvi_training_all.input,
-        # rules.resolvi_training_supervised_all.input,
-        # rules.resolvi_inference_all.input,
-        # rules.resolvi_inference_supervised_all.input,
+        rules.resolvi_training_all.input,
+        rules.resolvi_training_supervised_all.input,
+        rules.resolvi_inference_all.input,
+        rules.resolvi_inference_supervised_all.input,
         # #
         # rules.ovrlpy_all.input,
         # rules.ovrlpy_correction_all.input,
