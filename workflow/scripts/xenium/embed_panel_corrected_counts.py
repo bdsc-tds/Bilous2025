@@ -28,6 +28,8 @@ parser.add_argument("--min_features", type=int, help="QC parameter from pipeline
 parser.add_argument("--max_counts", type=float, help="QC parameter from pipeline config")
 parser.add_argument("--max_features", type=float, help="QC parameter from pipeline config")
 parser.add_argument("--min_cells", type=int, help="QC parameter from pipeline config")
+parser.add_argument("--num_samples", type=int, help="RESOLVI parameter from pipeline config")
+parser.add_argument("--mixture_k", type=int, help="RESOLVI parameter from pipeline config")
 parser.add_argument(
     "--raw_corrected_counts", action="store_true", help="load raw corrected counts .h5 instead of normalised counts"
 )
@@ -48,6 +50,8 @@ min_features = args.min_features
 max_counts = args.max_counts
 max_features = args.max_features
 min_cells = args.min_cells
+num_samples = args.num_samples
+mixture_k = args.mixture_k
 raw_corrected_counts = args.raw_corrected_counts
 
 # correction_method = panel.parents[2].stem
@@ -60,7 +64,10 @@ if raw_corrected_counts:
     for donor in (donors := panel.iterdir()):
         for sample in (samples := donor.iterdir()):
             k = (segmentation, condition, panel.stem, donor.stem, sample.stem)
-            sample_path = sample / "corrected_counts.h5"
+            if "resolvi" in sample.stem:
+                sample_path = sample / f"{mixture_k=}/{num_samples=}/corrected_counts.h5"
+            else:
+                sample_path = sample / "corrected_counts.h5"
             ads[k] = sc.read_10x_h5(sample_path)
     is_raw = True
 

@@ -5,13 +5,12 @@ dask.config.set({"dataframe.query-planning": False})
 import liana
 import scanpy as sc
 import pandas as pd
-import sys
 import argparse
 import os
 from sklearn.preprocessing import StandardScaler
-from pathlib import Path
+import sys
 
-sys.path.append("../../../workflow/scripts/")
+sys.path.append("workflow/scripts/")
 import _utils
 import readwrite
 
@@ -20,9 +19,9 @@ import readwrite
 def parse_args():
     parser = argparse.ArgumentParser(description="Run RESOLVI on a Xenium sample.")
     parser.add_argument("--sample_dir", type=str, help="")
-    parser.add_argument("--sample_counts", type=str, help="")
+    parser.add_argument("--sample_normalised_counts", type=str, help="")
     parser.add_argument("--sample_idx", type=str, help="")
-    parser.add_argument("--cell_type_labels", type=str, help="")
+    parser.add_argument("--sample_annotation", type=str, help="")
     parser.add_argument(
         "--out_file_df_permutations_logreg", type=str, help="path to the logreg permutation output file"
     )
@@ -94,14 +93,14 @@ if __name__ == "__main__":
     )
 
     # read normalised data, filter cells
-    X_normalised = pd.read_parquet(args.sample_counts)
+    X_normalised = pd.read_parquet(args.sample_normalised_counts)
     X_normalised.index = pd.read_parquet(args.sample_idx).iloc[:, 0]
     adata = adata[X_normalised.index]
     adata.X = X_normalised
 
     # read labels
     label_key = "label_key"
-    adata.obs[label_key] = pd.read_parquet(args.cell_type_labels).set_index("cell_id").iloc[:, 0]
+    adata.obs[label_key] = pd.read_parquet(args.sample_annotation).set_index("cell_id").iloc[:, 0]
     adata.obs[label_key] = adata.obs[label_key].replace(r" of .+", "", regex=True)
 
     # define target (cell type j presence in kNN)
@@ -130,7 +129,7 @@ if __name__ == "__main__":
     if args.cti is None:
         adata_cti = adata
     else:
-        adata_cti = adata[adata.obs[label_key] == cti]
+        adata_cti = adata[adata.obs[label_key] == args.cti]
 
     ####
     #### LOGISTIC REGRESSION TEST: predict ctj in kNN based on cti expression
@@ -174,7 +173,7 @@ if __name__ == "__main__":
     ###
     ### CELL-CELL COMMUNICATION TEST: check communication between cti with ctj neighbor
     ###
-    adata_cti_ctj = adata[adata.obs[label_key].isin([cti, ctj])]
+    adata_cti_ctj = adata[adata.obs[label_key].isin([args.cti, args.ctj])]
     lrdata = liana.mt.bivariate(
         adata_cti_ctj,
         connectivity_key=f"{obsm}_connectivities",
@@ -189,16 +188,16 @@ if __name__ == "__main__":
         verbose=True,
     )
 
-    lrdata_cti_has_ctj_neighbor = lrdata[(lrdata.obs[label_key] == cti) & lrdata.obs[f"has_{ctj}_neighbor"]]
-    lrdata_cti_has_ctj_neighbor.var["mean_cti_has_ctj_neighbor"] = lrdata_cti_has_ctj_neighbor.X.mean(0).A1
-    lrdata_cti_has_ctj_neighbor.var["std_cti"] = (
+    lrdata_cti_has_ctj_neighbor = lrdata[(lrdata.obs[label_key] == args.cti) & lrdata.obs[f"has_{args.ctj}_neighbor"]]
+    lrdata.var["mean_cti_has_ctj_neighbor"] = lrdata_cti_has_ctj_neighbor.X.mean(0).A1
+    lrdata.var["std_cti"] = (
         StandardScaler(with_mean=False).fit(lrdata_cti_has_ctj_neighbor.X).scale_
     )  # std for sparse matrix
 
     # get significance from gsea and hypergeometric test
-    ctj_marker_lr = [lr for lr in lrdata_cti_has_ctj_neighbor.var_names if any([g in lr for g in ctj_marker_genes])]
+    ctj_marker_lr = [lr for lr in lrdata.var_names if any([g in lr for g in ctj_marker_genes])]
     df_markers_rank_significance_diffexpr = _utils.get_marker_rank_significance(
-        rnk=lrdata_cti_has_ctj_neighbor.var["mean_cti_has_ctj_neighbor"], gene_set=ctj_marker_lr, top_n=args.top_n_lr
+        rnk=lrdata.var["mean_cti_has_ctj_neighbor"], gene_set=ctj_marker_lr, top_n=args.top_n_lr
     )
 
     ###
@@ -214,7 +213,7 @@ if __name__ == "__main__":
     df_markers_rank_significance_diffexpr.to_parquet(args.out_file_df_markers_rank_significance_diffexpr)
 
     # liana
-    # readwrite.write_anndata_folder(lrdata, args.out_dir_liana_lrdata)
+    readwrite.write_anndata_folder(lrdata, args.out_dir_liana_lrdata)
 
     if args.l is not None:
         _log.close()

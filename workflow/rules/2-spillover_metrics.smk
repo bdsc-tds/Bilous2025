@@ -1,0 +1,129 @@
+from pathlib import Path
+import yaml
+
+# cfg paths
+xenium_dir = Path(config['xenium_processed_data_dir'])
+xenium_std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
+xenium_cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
+results_dir = Path(config['results_dir'])
+
+# Params
+normalisations = ['lognorm',]
+layers = ['data',]
+references = ['matched_reference_combo']
+methods = ['rctd_class_aware']
+levels = ['Level2']
+
+n_neighbors = 10
+n_permutations = 30
+n_repeats = 5
+top_n = 20
+top_n_lr = 10
+cti = "macrophage"
+ctj = "malignant cell"
+scoring = 'f1'
+markers = 'diffexpr' #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/cellmarker_cell_types_markers.json'
+
+
+out_files = []
+for segmentation in (segmentations := xenium_dir.iterdir()):
+    for condition in (conditions := segmentation.iterdir()): 
+        for panel in (panels := condition.iterdir()):
+            for donor in (donors := panel.iterdir()):
+                for sample in (samples := donor.iterdir()):
+                    for normalisation in normalisations:
+                        for layer in layers:
+                            for reference in references:
+                                for method in methods:
+                                    for level in levels:
+                                        k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,normalisation,layer,reference,method,level)
+                                        name = '/'.join(k)
+
+                                        sample_normalised_counts = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/{layer}.parquet'
+                                        sample_idx = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/cells.parquet'
+                                        sample_annotation = xenium_cell_type_annotation_dir / f'{name}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet'
+
+                                        if not sample_annotation_dir.exists():
+                                            continue
+                                            
+                                        out_file_df_permutations = sample_dir / 'permutation_summary.parquet'
+                                        out_file_df_importances = sample_dir / 'importances.parquet'
+                                        out_file_df_diffexpr = sample_dir / 'diffexpr.parquet'
+                                        out_file_df_markers_rank_significance_logreg = sample_dir / 'markers_rank_significance_logreg.json'
+                                        out_file_df_markers_rank_significance_diffexpr = sample_dir / 'markers_rank_significance_diffexpr.json'
+                                        out_dir_liana_lrdata = sample_dir / 'liana_lrdata_folder'
+
+                                        out_files.extend([
+                                            out_file_df_permutations,
+                                            out_file_df_importances,
+                                            out_file_df_diffexpr,
+                                            out_file_df_markers_rank_significance_logreg,
+                                            out_file_df_markers_rank_significance_diffexpr,
+                                            out_dir_liana_lrdata])
+
+                                        rule:
+                                            name: f'spillover_metrics/{name}_{layer}'
+                                            input:
+                                                sample_dir=sample_dir,
+                                                sample_normalised_counts=sample_normalised_counts,
+                                                sample_idx=sample_idx,
+                                                sample_annotation=sample_annotation,
+                                            output:
+                                                out_file_df_permutations_logreg=out_file_df_permutations_logreg,
+                                                out_file_df_importances_logreg=out_file_df_importances_logreg,
+                                                out_file_df_diffexpr=out_file_df_diffexpr,
+                                                out_file_df_markers_rank_significance_logreg=out_file_df_markers_rank_significance_logreg,
+                                                out_file_df_markers_rank_significance_diffexpr=out_file_df_markers_rank_significance_diffexpr,
+                                                out_dir_liana_lrdata=out_dir_liana_lrdata,
+                                            params:
+                                                n_neighbors=n_neighbors,
+                                                n_permutations=n_permutations,
+                                                n_repeats=n_repeats,
+                                                top_n=top_n,
+                                                top_n_lr=top_n_lr,
+                                                cti=cti,
+                                                ctj=ctj,
+                                                scoring=scoring,
+                                                markers=markers,
+                                            threads: 1
+                                            resources:
+                                                mem='30GB',
+                                                runtime='15m',
+                                            conda:
+                                                "spatial"
+                                            shell:
+                                                """
+                                                mkdir -p "$(dirname {output.out_file_df_permutations_logreg})"
+
+                                                python workflow/scripts/xenium/spillover_metrics_sample.py \
+                                                    --sample_dir {input.sample_dir} \
+                                                    --sample_normalised_counts {input.sample_normalised_counts} \
+                                                    --sample_idx {input.sample_idx} \
+                                                    --sample_annotation {input.sample_annotation} \
+                                                    --out_file_df_permutations_logreg {output.out_file_df_permutations_logreg} \
+                                                    --out_file_df_importances_logreg {output.out_file_df_importances_logreg} \
+                                                    --out_file_df_diffexpr {output.out_file_df_diffexpr} \
+                                                    --out_file_df_markers_rank_significance_logreg {output.out_file_df_markers_rank_significance_logreg} \
+                                                    --out_file_df_markers_rank_significance_diffexpr {output.out_file_df_markers_rank_significance_diffexpr} \
+                                                    --out_dir_liana_lrdata {output.out_dir_liana_lrdata} \
+                                                    --n_neighbors {params.n_neighbors} \
+                                                    --n_permutations {params.n_permutations} \
+                                                    --n_repeats {params.n_repeats} \
+                                                    --top_n {params.top_n} \
+                                                    --top_n_lr {params.top_n_lr} \
+                                                    --cti {params.cti} \
+                                                    --ctj {params.ctj} \
+                                                    --scoring {params.scoring} \
+                                                    --markers {params.markers} \
+
+                                                echo "DONE"
+                                                """
+
+
+rule spillover_metrics_all:
+    input:
+        out_files
+    output:
+        touch(results_dir / "spillover_metrics.done")
+
+

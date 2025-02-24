@@ -4,7 +4,7 @@ results_dir = Path(config['results_dir'])
 std_seurat_analysis_dir = Path(config['std_seurat_analysis_dir'])
 
 # stricter params than pipeline config
-normalisations = ['lognorm']
+normalisations = ['lognorm','sctransform']
 layers = ['data','scale_data']
 min_counts = 20
 min_features = 10

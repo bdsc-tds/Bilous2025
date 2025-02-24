@@ -13,7 +13,7 @@ min_cells = 5
 
 # params
 num_samples = 30
-batch_size = 100_000
+batch_size = 1000
 mixture_k = 50
 
 out_files_training = []
@@ -94,7 +94,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                         path = sample / "normalised_results/outs"
                     
                     k_model = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,f'{mixture_k=}')
-                    k = k_model + (f'{num_samples=}_{batch_size=}',)
+                    k = k_model + (f'{num_samples=}',)
                     name_model = '/'.join(k_model)
                     name = '/'.join(k)
 

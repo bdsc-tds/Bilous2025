@@ -113,7 +113,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 cell_type_labels = cell_type_annotation_dir / name / f"{normalisation_method}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet"
 
                                 k_model = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,f'{mixture_k=}')
-                                k = k_model + (normalisation_method,reference,method,level,f'{num_samples=}_{batch_size=}',)
+                                k = k_model + (normalisation_method,reference,method,level,f'{num_samples=}',)
                                 name_model = '/'.join(k_model)
                                 name = '/'.join(k)
 
