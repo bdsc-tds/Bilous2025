@@ -7,6 +7,7 @@ figures_dir = Path(config['figures_dir'])
 palette_dir = Path(config['xenium_metadata_dir'])
 
 # Params
+metric = 'euclidean'
 segmentation_palette = palette_dir / 'col_palette_segmentation.csv'
 normalisations = ['lognorm','sctransform']
 layers = ['data','scale_data']
@@ -31,11 +32,11 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 name = '/'.join(k)
 
                                 panel_silhouette = results_dir / f'silhouette/{name}'
-                                out_file = figures_dir / f'silhouette_plot_panel/{name}/silhouette_{layer}_{reference}_{method}_{level}.{extension}'
+                                out_file = figures_dir / f'silhouette_plot_panel/{name}/silhouette_{layer}_{metric}_{reference}_{method}_{level}.{extension}'
                                 out_files_panel.append(out_file)
 
                                 rule:
-                                    name: f'silhouette_plot_panel/{name}/silhouette_{layer}_{reference}_{method}_{level}'
+                                    name: f'silhouette_plot_panel/{name}/silhouette_{layer}_{metric}_{reference}_{method}_{level}'
                                     input:
                                         silhouette_is_done=results_dir / "silhouette.done",                            
                                     output:
@@ -48,6 +49,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                         reference=reference,
                                         method=method,
                                         level=level,
+                                        metric=metric,
                                     threads: 1
                                     resources:
                                         mem='5GB',
@@ -67,6 +69,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                         --reference {params.reference} \
                                         --method {params.method} \
                                         --level {params.level} \
+                                        --metric {params.metric} \
 
                                         echo "DONE"
                                         """
@@ -89,11 +92,11 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                         name = '/'.join(k)
                         condition_silhouette = results_dir / f'silhouette/{name}'
 
-                        out_file = figures_dir / f'silhouette_plot_condition/{name}/silhouette_{layer}_{reference}_{method}_{level}.{extension}'
+                        out_file = figures_dir / f'silhouette_plot_condition/{name}/silhouette_{layer}_{metric}_{reference}_{method}_{level}.{extension}'
                         out_files_condition.append(out_file)
 
                         rule:
-                            name: f'silhouette_plot_condition/{name}/silhouette_{layer}_{reference}_{method}_{level}'
+                            name: f'silhouette_plot_condition/{name}/silhouette_{layer}_{metric}_{reference}_{method}_{level}'
                             input:
                                 condition=condition_silhouette,
                             output:
@@ -105,6 +108,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 reference=reference,
                                 method=method,
                                 level=level,
+                                metric=metric,
                             threads: 1
                             resources:
                                 mem='5GB',
@@ -124,6 +128,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 --reference {params.reference} \
                                 --method {params.method} \
                                 --level {params.level} \
+                                --metric {params.metric} \
 
                                 echo "DONE"
                                 """

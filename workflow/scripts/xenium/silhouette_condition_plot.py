@@ -19,7 +19,7 @@ parser.add_argument("--reference", type=Path, help="reference annotation paramet
 parser.add_argument("--method", type=Path, help="method annotation parameter")
 parser.add_argument("--level", type=Path, help="level annotation parameter")
 parser.add_argument("--dpi", type=int, help="dpi of saved plot")
-parser.add_argument("--metric", type=int, help="distance metric used to compute silhouettes")
+parser.add_argument("--metric", type=str, help="distance metric used to compute silhouettes")
 
 args = parser.parse_args()
 

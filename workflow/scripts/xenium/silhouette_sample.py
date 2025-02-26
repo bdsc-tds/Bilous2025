@@ -12,7 +12,7 @@ parser.add_argument("--sample_idx", type=str, help="Path to the sample index fil
 parser.add_argument("--sample_annotation_dir", type=Path, help="Path to the sample cell type annotation directory.")
 parser.add_argument("--out_file", type=str, help="Path to the output file.")
 parser.add_argument("--max_sample_size", type=int, help="Max number of samples to compute distance matrix")
-parser.add_argument("--metric", type=int, help="Metric to compute distance matrix")
+parser.add_argument("--metric", type=str, help="Metric to compute distance matrix")
 
 args = parser.parse_args()
 

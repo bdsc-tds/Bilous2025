@@ -6,6 +6,7 @@ xenium_dir = Path(config['xenium_processed_data_dir'])
 xenium_std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
 xenium_cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
 results_dir = Path(config['results_dir'])
+palette_dir = Path(config['xenium_metadata_dir'])
 
 # Params
 normalisations = ['lognorm',]
@@ -19,14 +20,13 @@ n_permutations = 30
 n_repeats = 5
 top_n = 20
 top_n_lr = 10
-cti = "macrophage"
-ctj = "malignant cell"
 scoring = 'f1'
 markers = 'diffexpr' #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/cellmarker_cell_types_markers.json'
 
+# cell_type_palette = pd.read_csv(palette_dir / 'col_palette_cell_types_combo.csv')
 
 out_files = []
-for segmentation in (segmentations := xenium_dir.iterdir()):
+for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
             for donor in (donors := panel.iterdir()):
@@ -36,22 +36,22 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                             for reference in references:
                                 for method in methods:
                                     for level in levels:
-                                        k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,normalisation,layer,reference,method,level)
+                                        k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,normalisation)
                                         name = '/'.join(k)
 
-                                        sample_normalised_counts = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/{layer}.parquet'
-                                        sample_idx = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/cells.parquet'
+                                        sample_normalised_counts = xenium_std_seurat_analysis_dir / f'{name}/normalised_counts/{layer}.parquet'
+                                        sample_idx = xenium_std_seurat_analysis_dir / f'{name}/normalised_counts/cells.parquet'
                                         sample_annotation = xenium_cell_type_annotation_dir / f'{name}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet'
 
                                         if not sample_annotation_dir.exists():
                                             continue
                                             
-                                        out_file_df_permutations_logreg = sample / 'permutations_logreg.parquet'
-                                        out_file_df_importances_logreg = sample / 'importances_logreg.parquet'
-                                        out_file_df_diffexpr = sample / 'diffexpr.parquet'
-                                        out_file_df_markers_rank_significance_logreg = sample / 'markers_rank_significance_logreg.json'
-                                        out_file_df_markers_rank_significance_diffexpr = sample / 'markers_rank_significance_diffexpr.json'
-                                        out_dir_liana_lrdata = sample / 'liana_lrdata_folder'
+                                        out_file_df_permutations_logreg = results_dir / f'contamination_metrics/{name}/{layer}_permutations_logreg.parquet'
+                                        out_file_df_importances_logreg = results_dir / f'contamination_metrics/{name}/{layer}_importances_logreg.parquet'
+                                        out_file_df_diffexpr = results_dir / f'contamination_metrics/{name}/{layer}_diffexpr.parquet'
+                                        out_file_df_markers_rank_significance_logreg = results_dir / f'contamination_metrics/{name}/{layer}_markers_rank_significance_logreg.json'
+                                        out_file_df_markers_rank_significance_diffexpr = results_dir / f'contamination_metrics/{name}/{layer}_markers_rank_significance_diffexpr.json'
+                                        out_dir_liana_lrdata = results_dir / f'contamination_metrics/{name}/{layer}_liana_lrdata_folder'
 
                                         out_files.extend([
                                             out_file_df_permutations_logreg,
@@ -62,7 +62,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                             out_dir_liana_lrdata])
 
                                         rule:
-                                            name: f'spillover_metrics/{name}_{layer}'
+                                            name: f'contamination_metrics/{name}/{layer}'
                                             input:
                                                 sample=sample,
                                                 sample_normalised_counts=sample_normalised_counts,
@@ -95,7 +95,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                                 """
                                                 mkdir -p "$(dirname {output.out_file_df_permutations_logreg})"
 
-                                                python workflow/scripts/xenium/spillover_metrics_sample.py \
+                                                python workflow/scripts/xenium/contamination_metrics_sample.py \
                                                     --sample {input.sample} \
                                                     --sample_normalised_counts {input.sample_normalised_counts} \
                                                     --sample_idx {input.sample_idx} \

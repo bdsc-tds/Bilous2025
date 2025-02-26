@@ -11,6 +11,7 @@ xenium_cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir']
 results_dir = Path(config['results_dir'])
 
 # Params
+metric = 'euclidean'
 normalisations = ['lognorm','sctransform']
 layers = ['data','scale_data']
 max_sample_size = 50_000
@@ -48,7 +49,8 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                 output:
                                     out_file=out_file,
                                 params:
-                                    max_sample_size=max_sample_size
+                                    max_sample_size=max_sample_size,
+                                    metric=metric,
                                 threads: 1
                                 resources:
                                     mem='30GB',
@@ -64,7 +66,8 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                     --sample_idx {input.sample_idx} \
                                     --sample_annotation_dir {input.sample_annotation_dir} \
                                     --out_file {output.out_file} \
-                                    --max_sample_size {params.max_sample_size}
+                                    --max_sample_size {params.max_sample_size} \
+                                    --metric {params.metric}
 
                                     echo "DONE"
                                     """

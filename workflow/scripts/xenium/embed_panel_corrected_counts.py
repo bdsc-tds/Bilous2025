@@ -64,7 +64,7 @@ if raw_corrected_counts:
     for donor in (donors := panel.iterdir()):
         for sample in (samples := donor.iterdir()):
             k = (segmentation, condition, panel.stem, donor.stem, sample.stem)
-            if "resolvi" in sample.stem:
+            if "resolvi" in sample.as_posix():
                 sample_path = sample / f"{mixture_k=}/{num_samples=}/corrected_counts.h5"
             else:
                 sample_path = sample / "corrected_counts.h5"

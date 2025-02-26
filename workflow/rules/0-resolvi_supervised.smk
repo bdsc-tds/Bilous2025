@@ -181,4 +181,4 @@ rule resolvi_inference_supervised_all:
     input:
         out_files_inference
     output:
-        touch(results_dir / "resolvi.done")
+        touch(results_dir / "resolvi_supervised.done")

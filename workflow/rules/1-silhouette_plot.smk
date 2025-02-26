@@ -50,6 +50,7 @@ for condition in (conditions := segmentation.iterdir()):
                                     method=method,
                                     level=level,
                                     dpi=dpi,
+                                    metric=metric,
                                 threads: 1
                                 resources:
                                     mem='5GB',
@@ -71,7 +72,8 @@ for condition in (conditions := segmentation.iterdir()):
                                     --reference {params.reference} \
                                     --method {params.method} \
                                     --level {params.level} \
-                                    --dpi {params.dpi}
+                                    --dpi {params.dpi} \
+                                    --metric {params.metric} \
 
                                     echo "DONE"
                                     """
@@ -111,6 +113,7 @@ for condition in (conditions := list(segmentation.iterdir())+[Path('all')]):
                                     method=method,
                                     level=level,
                                     dpi=dpi,
+                                    metric=metric,
                                 threads: 1
                                 resources:
                                     mem='5GB',
@@ -131,7 +134,8 @@ for condition in (conditions := list(segmentation.iterdir())+[Path('all')]):
                                     --reference {params.reference} \
                                     --method {params.method} \
                                     --level {params.level} \
-                                    --dpi {params.dpi}
+                                    --dpi {params.dpi} \
+                                    --metric {params.metric} \
 
                                     echo "DONE"
                                     """
