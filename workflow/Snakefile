@@ -35,9 +35,9 @@ rule all:
         # rules.coexpression_corrected_counts_plot_panel_all.input,
         # rules.coexpression_corrected_counts_plot_conditions_all.input,
         # #
-        # rules.silhouette_all.input,
-        # rules.silhouette_plot_panel_all.input,
-        # rules.silhouette_plot_condition_all.input,
+        rules.silhouette_all.input,
+        rules.silhouette_plot_panel_all.input,
+        rules.silhouette_plot_condition_all.input,
         # #
         # rules.embed_panel_all.input,
         # rules.embed_condition_all.input,
@@ -45,16 +45,16 @@ rule all:
         # rules.embed_panel_corrected_counts_all.input,
         # rules.embed_condition_corrected_counts_all.input,
         # #
-        rules.embed_panel_plot_all.input,
+        # rules.embed_panel_plot_all.input,
         # rules.embed_condition_plot_all.input,
         # #
         # rules.embed_panel_corrected_counts_plot_all.input,
         # rules.embed_condition_corrected_counts_plot_all.input,
         # #
-        rules.resolvi_training_all.input,
-        rules.resolvi_training_supervised_all.input,
-        rules.resolvi_inference_all.input,
-        rules.resolvi_inference_supervised_all.input,
+        # rules.resolvi_training_all.input,
+        # rules.resolvi_training_supervised_all.input,
+        # rules.resolvi_inference_all.input,
+        # rules.resolvi_inference_supervised_all.input,
         # #
         # rules.ovrlpy_all.input,
         # rules.ovrlpy_correction_all.input,

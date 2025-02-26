@@ -18,7 +18,7 @@ import readwrite
 # Set up argument parser
 def parse_args():
     parser = argparse.ArgumentParser(description="Run RESOLVI on a Xenium sample.")
-    parser.add_argument("--sample_dir", type=str, help="")
+    parser.add_argument("--sample", type=str, help="")
     parser.add_argument("--sample_normalised_counts", type=str, help="")
     parser.add_argument("--sample_idx", type=str, help="")
     parser.add_argument("--sample_annotation", type=str, help="")
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     ####
     # read raw data to get spatial coordinates
     adata = readwrite.read_xenium_sample(
-        args.sample_dir,
+        args.sample,
         cells_as_circles=False,
         cells_boundaries=False,
         cells_boundaries_layers=False,

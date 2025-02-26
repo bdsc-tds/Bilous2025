@@ -10,8 +10,9 @@ results_dir = Path(config['results_dir'])
 normalisations = ['lognorm','sctransform']
 layers = ['data','scale_data']
 max_sample_size = 50_000
-out_files = []
+metric = 'cosine'
 
+out_files = []
 for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
@@ -22,19 +23,21 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
 
                             k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,normalisation)
                             name = '/'.join(k)
+                            name_annot = '/'.join(k[:-1]+('lognorm',))
+
 
                             sample_pca = sample / f'{normalisation}/preprocessed/pca.parquet'
                             sample_idx = sample / f'{normalisation}/preprocessed/cells.parquet'
-                            sample_annotation_dir = xenium_cell_type_annotation_dir / f'{name}/reference_based'
+                            sample_annotation_dir = xenium_cell_type_annotation_dir / f'{name_annot}/reference_based'
 
                             if not sample_annotation_dir.exists():
                                 continue
                                 
-                            out_file = results_dir / f'silhouette/{name}/silhouette_{layer}.parquet'
+                            out_file = results_dir / f'silhouette/{name}/silhouette_{layer}_{metric}.parquet'
                             out_files.append(out_file)
 
                             rule:
-                                name: f'silhouette/{name}_{layer}'
+                                name: f'silhouette/{name}_{layer}_{metric}'
                                 input:
                                     sample_pca=sample_pca,
                                     sample_idx=sample_idx,
@@ -46,7 +49,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                 threads: 1
                                 resources:
                                     mem='30GB',
-                                    runtime='15m',
+                                    runtime='30m',
                                 conda:
                                     "spatial"
                                 shell:

@@ -46,16 +46,16 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                         if not sample_annotation_dir.exists():
                                             continue
                                             
-                                        out_file_df_permutations = sample_dir / 'permutation_summary.parquet'
-                                        out_file_df_importances = sample_dir / 'importances.parquet'
-                                        out_file_df_diffexpr = sample_dir / 'diffexpr.parquet'
-                                        out_file_df_markers_rank_significance_logreg = sample_dir / 'markers_rank_significance_logreg.json'
-                                        out_file_df_markers_rank_significance_diffexpr = sample_dir / 'markers_rank_significance_diffexpr.json'
-                                        out_dir_liana_lrdata = sample_dir / 'liana_lrdata_folder'
+                                        out_file_df_permutations_logreg = sample / 'permutations_logreg.parquet'
+                                        out_file_df_importances_logreg = sample / 'importances_logreg.parquet'
+                                        out_file_df_diffexpr = sample / 'diffexpr.parquet'
+                                        out_file_df_markers_rank_significance_logreg = sample / 'markers_rank_significance_logreg.json'
+                                        out_file_df_markers_rank_significance_diffexpr = sample / 'markers_rank_significance_diffexpr.json'
+                                        out_dir_liana_lrdata = sample / 'liana_lrdata_folder'
 
                                         out_files.extend([
-                                            out_file_df_permutations,
-                                            out_file_df_importances,
+                                            out_file_df_permutations_logreg,
+                                            out_file_df_importances_logreg,
                                             out_file_df_diffexpr,
                                             out_file_df_markers_rank_significance_logreg,
                                             out_file_df_markers_rank_significance_diffexpr,
@@ -64,7 +64,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                         rule:
                                             name: f'spillover_metrics/{name}_{layer}'
                                             input:
-                                                sample_dir=sample_dir,
+                                                sample=sample,
                                                 sample_normalised_counts=sample_normalised_counts,
                                                 sample_idx=sample_idx,
                                                 sample_annotation=sample_annotation,
@@ -96,7 +96,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                                 mkdir -p "$(dirname {output.out_file_df_permutations_logreg})"
 
                                                 python workflow/scripts/xenium/spillover_metrics_sample.py \
-                                                    --sample_dir {input.sample_dir} \
+                                                    --sample {input.sample} \
                                                     --sample_normalised_counts {input.sample_normalised_counts} \
                                                     --sample_idx {input.sample_idx} \
                                                     --sample_annotation {input.sample_annotation} \

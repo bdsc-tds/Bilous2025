@@ -3,7 +3,7 @@ from pathlib import Path
 # cfg paths
 xenium_dir = Path(config['xenium_processed_data_dir'])
 results_dir = Path(config['results_dir'])
-cell_type_annotation_dir = Path(config['cell_type_annotation_dir'])
+cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
 
 # params from pipeline config
 min_counts = 10
@@ -19,6 +19,7 @@ mixture_k = 50
 
 # params supervised
 normalisation_method = 'lognorm'
+mode = 'reference_based'
 references = ['matched_reference_combo']
 methods = ['rctd_class_aware']
 levels = ['Level2']
@@ -40,15 +41,16 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 else:
                                     path = sample / "normalised_results/outs"
                                 
-                                cell_type_labels = cell_type_annotation_dir / name / f"{normalisation_method}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet"
 
-                                k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,normalisation_method,reference,method,level,f'{mixture_k=}')
+                                k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,normalisation_method,mode,reference,method,level,f'{mixture_k=}')
                                 name = '/'.join(k)
+                                name_labels = '/'.join(k[:-1])
+                                cell_type_labels = cell_type_annotation_dir / name_labels / f"single_cell/labels.parquet"
 
                                 if path.exists():
 
                                     out_dir_resolvi_model = results_dir / f'resolvi_supervised/{name}/model/'
-                                    out_file_resolvi_model=out_dir_resolvi_model / 'model.pt'
+                                    out_file_resolvi_model = out_dir_resolvi_model / 'model.pt'
                                     out_files_training.append(out_file_resolvi_model)
 
                                     rule:
@@ -69,7 +71,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                         threads: 1
                                         resources:
                                             mem='80GB',# if panel.stem == '5k' else '10GB',
-                                            runtime='1h',
+                                            runtime='3h',
                                             slurm_partition = "gpu",
                                             slurm_extra = '--gres=gpu:1',
                                         conda:
@@ -112,7 +114,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 
                                 cell_type_labels = cell_type_annotation_dir / name / f"{normalisation_method}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet"
 
-                                k_model = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,normalisation_method,reference,method,level,f'{mixture_k=}')
+                                k_model = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,normalisation_method,mode,reference,method,level,f'{mixture_k=}')
                                 k = k_model + (f'{num_samples=}',)
                                 name_model = '/'.join(k_model)
                                 name = '/'.join(k)
@@ -144,8 +146,8 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                             mixture_k=mixture_k,
                                         threads: 1
                                         resources:
-                                            mem='80GB',# if panel.stem == '5k' else '10GB',
-                                            runtime='8h',
+                                            mem='200GB',# if panel.stem == '5k' else '10GB',
+                                            runtime='6h',
                                             slurm_partition = "gpu",
                                             slurm_extra = '--gres=gpu:1',
                                         conda:

@@ -56,7 +56,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                             threads: 1
                             resources:
                                 mem='80GB',# if panel.stem == '5k' else '10GB',
-                                runtime='6h',
+                                runtime='3h',
                                 slurm_partition = "gpu",
                                 slurm_extra = '--gres=gpu:1',
                             conda:
@@ -125,7 +125,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 mixture_k=mixture_k,
                             threads: 1
                             resources:
-                                mem='80GB',# if panel.stem == '5k' else '10GB',
+                                mem='200GB',# if panel.stem == '5k' else '10GB',
                                 runtime='6h',
                                 slurm_partition = "gpu",
                                 slurm_extra = '--gres=gpu:1',

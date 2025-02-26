@@ -81,7 +81,19 @@ log_scale = args.log_scale
 # vars
 xenium_levels = ["segmentation", "condition", "panel", "donor", "sample"]
 hue = "segmentation"
-hue_order = ["10x_mm_0um", "10x_mm_5um", "10x_mm_15um", "10x_0um", "10x_5um", "10x_15um", "baysor", "proseg", "segger"]
+hue_order = [
+    "10x_mm_0um",
+    "10x_mm_5um",
+    "10x_mm_15um",
+    "10x_0um",
+    "10x_5um",
+    "10x_15um",
+    "baysor",
+    "proseg_expected",
+    "proseg_mode",
+    "segger",
+]
+
 
 
 # Read coexpression results

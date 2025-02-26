@@ -12,6 +12,7 @@ parser.add_argument("--sample_idx", type=str, help="Path to the sample index fil
 parser.add_argument("--sample_annotation_dir", type=Path, help="Path to the sample cell type annotation directory.")
 parser.add_argument("--out_file", type=str, help="Path to the output file.")
 parser.add_argument("--max_sample_size", type=int, help="Max number of samples to compute distance matrix")
+parser.add_argument("--metric", type=int, help="Metric to compute distance matrix")
 
 args = parser.parse_args()
 
@@ -21,6 +22,7 @@ sample_idx = args.sample_idx
 sample_annotation_dir = args.sample_annotation_dir
 out_file = args.out_file
 max_sample_size = args.max_sample_size
+metric = args.metric
 seed = 0
 
 # read counts
@@ -45,15 +47,10 @@ annotations.columns = [col for col in annotations.columns]
 adata = adata[annotations.index]
 adata.obs = adata.obs.join(annotations)
 
-# preprocess data
-# sc.pp.normalize_total(adata)
-# sc.pp.log1p(adata)
-# sc.pp.pca(adata)
-
-# precompute distances on subdonor
+# precompute distances on subsample
 sample_size = min(max_sample_size, len(adata))
 indices = np.random.default_rng(seed).permutation(len(adata))[:sample_size]
-D = sklearn.metrics.pairwise_distances(adata.X[indices], metric="euclidean")
+D = sklearn.metrics.pairwise_distances(adata.X[indices], metric=metric)
 
 # compute silhouettes
 CT_KEYS = annotations.columns

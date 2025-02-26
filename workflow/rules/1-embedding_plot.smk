@@ -4,7 +4,7 @@ std_seurat_analysis_dir = Path(config['std_seurat_analysis_dir'])
 results_dir = Path(config['results_dir'])
 figures_dir = Path(config['figures_dir'])
 palette_dir = Path(config['xenium_metadata_dir'])
-cell_type_annotation_dir = Path(config['cell_type_annotation_dir'])
+cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
 
 # Params
 n_comps = 50
