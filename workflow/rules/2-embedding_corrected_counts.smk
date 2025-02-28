@@ -1,7 +1,7 @@
 # cfg paths
 xenium_dir = Path(config['xenium_processed_data_dir'])
 results_dir = Path(config['results_dir'])
-corrected_counts_dir = Path(config['std_seurat_analysis_dir'])
+xenium_std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
 
 # stricter params than pipeline config
 signal_integrity_thresholds = [0.5,0.7]
@@ -28,9 +28,7 @@ mixture_k = 50
 out_files_panel = []
 
 for correction_method in correction_methods:
-    for segmentation in (segmentations := xenium_dir.iterdir()):
-        if segmentation.stem == 'proseg_v1':
-            continue
+    for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
         for condition in (conditions := segmentation.iterdir()): 
             for panel in (panels := condition.iterdir()):
                 # for normalisation in normalisations: 

@@ -58,6 +58,9 @@ condition = panel.parents[0]
 obs = pd.read_parquet(embed_file)
 obs["cell_id"] = obs.index
 
+if "proseg" in segmentation.stem:
+    obs["cell_id"] = "proseg-" + obs["cell_id"].astype(str)
+
 
 if color == "sample":
     # plot sample as color, no need to load annotations
@@ -87,6 +90,9 @@ else:
             )
             # if annot_file.exists():
             annot[k][reference, method, color] = pd.read_parquet(annot_file).set_index("cell_id").iloc[:, 0]
+            print(annot[k][reference, method, color])
+            print(k, reference, method, color)
+            print(annot_file)
 
     # merge annotations
     df_annot = {}

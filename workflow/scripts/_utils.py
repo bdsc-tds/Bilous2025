@@ -6,6 +6,7 @@ import gseapy
 from sklearn.model_selection import train_test_split, permutation_test_score, cross_validate
 from sklearn.linear_model import LogisticRegression
 from sklearn.inspection import permutation_importance
+from sklearn.preprocessing import StandardScaler
 
 
 def get_knn_labels(
@@ -126,6 +127,25 @@ def get_marker_rank_significance(rnk, gene_set, top_n=None):
     - markers_rank_significance (pd.DataFrame): DataFrame containing the significance results.
     """
 
+    if np.all(rnk == 0.0):
+        print("Warning: all zero importance vector. Returning empty dataframe.")
+        return pd.DataFrame(
+            np.nan,
+            index=[0],
+            columns=[
+                "Name",
+                "Term",
+                "ES",
+                "NES",
+                "NOM p-val",
+                "FDR q-val",
+                "FWER p-val",
+                "Tag %",
+                "Gene %",
+                "Lead_genes",
+                "hypergeometric_pvalue",
+            ],
+        )
     # Calculate marker rank significance from pre-ranked GSEA
     markers_rank_significance = gseapy.prerank(
         rnk=rnk,
@@ -134,7 +154,7 @@ def get_marker_rank_significance(rnk, gene_set, top_n=None):
     ).res2d
 
     # Calculate marker rank significance from hypergeometric test
-    if top_n is None:
+    if top_n is not None:
         N = len(rnk)  # Total genes in ranked list
         K = len(gene_set)  # Genes in the pathway/set of interest
         x = np.isin(rnk.index[:top_n], gene_set).sum()  # Overlapping genes in top n
@@ -153,7 +173,9 @@ def logreg(
     test_size=0.2,
     n_permutations=30,
     n_repeats=5,
+    max_iter=1000,
     random_state=0,
+    importance_mode="coef",
 ):
     """
     Perform logistic regression with permutation test and compute feature importances.
@@ -168,22 +190,19 @@ def logreg(
     - n_permutations (int): Number of permutations for the permutation test.
     - n_repeats (int): Number of repeats for the permutation importance calculation.
     - random_state (int): Random seed for reproducibility.
+    - importance_mode (str): Mode for feature importance calculation ('permutation' or 'coef').
 
     Returns:
     - df_permutations (pd.DataFrame): Summary of permutation test results.
     - df_importances (pd.DataFrame): Feature importances from permutation importance.
     """
-    # Prepare data
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, stratify=y, random_state=random_state
-    )
 
     # Initialize logistic regression model
-    model = LogisticRegression()
+    model = LogisticRegression(max_iter=max_iter)
 
     # Empirical p-value calculation using permutation test
     score, perm_scores, p_value = permutation_test_score(
-        model, X_train, y_train, scoring=scoring, n_permutations=n_permutations, n_jobs=-1
+        model, X, y, scoring=scoring, n_permutations=n_permutations, n_jobs=-1, verbose=1
     )
 
     # Summarize permutation test results
@@ -196,20 +215,31 @@ def logreg(
     ) / df_permutations[f"perm_std{scoring}_score"]
 
     # Fit the model and compute feature importances from permutations
-    model.fit(X_train, y_train)
-    importances = permutation_importance(
-        model, pd.DataFrame.sparse.from_spmatrix(X_test), y_test, scoring=scoring, n_repeats=n_repeats, n_jobs=-1
-    )
 
-    # Feature importances from model coefs
-    # cv_results = cross_validate(model,X,y,return_estimator=True, scoring=scoring, n_jobs=-1)
-    # importances = np.std(X, axis=0) * np.vstack([m.coef_[0] for m in cv_results['estimator']])
+    if importance_mode == "permutation":
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=test_size, stratify=y, random_state=random_state
+        )
+        model.fit(X_train, y_train)
+        importances = permutation_importance(
+            model, pd.DataFrame.sparse.from_spmatrix(X_test), y_test, scoring=scoring, n_repeats=n_repeats, n_jobs=-1
+        )
+        importances.pop("importances")
+        df_importances = pd.DataFrame(importances, index=feature_names).sort_values("importances_mean", ascending=False)
 
-    # coef pvalues from formula
-    # importances['pvalues'] = general_utils.logit_pvalue(model,X_train.toarray())[1:]
+    elif importance_mode == "coef":
+        model.fit(X, y)
+        # Feature importances from model coefs
+        # cv_results = cross_validate(model,X,y,return_estimator=True, scoring=scoring, n_jobs=-1)
+        # importances = np.std(X, axis=0) * np.vstack([m.coef_[0] for m in cv_results["estimator"]])
+        importances = StandardScaler(with_mean=False).fit(X).scale_ * model.coef_[0]
+        df_importances = pd.DataFrame(importances, index=feature_names, columns=["importances"]).sort_values(
+            "importances", ascending=False
+        )
 
-    # Convert importances to DataFrame
-    importances.pop("importances")
-    df_importances = pd.DataFrame(importances, index=feature_names).sort_values("importances_mean", ascending=False)
+        # coef pvalues from formula
+        # df_importances["pvalues"] = logit_pvalue(model, X.toarray())[1:]
+    else:
+        raise ValueError("Importance mode must be 'permutation' or 'coef'")
 
     return df_permutations, df_importances

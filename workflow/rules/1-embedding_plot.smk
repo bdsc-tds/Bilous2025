@@ -1,6 +1,6 @@
 # cfg paths
 xenium_dir = Path(config['xenium_processed_data_dir'])
-std_seurat_analysis_dir = Path(config['std_seurat_analysis_dir'])
+std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
 results_dir = Path(config['results_dir'])
 figures_dir = Path(config['figures_dir'])
 palette_dir = Path(config['xenium_metadata_dir'])
@@ -29,8 +29,6 @@ extension = 'png'
 out_files_panel = []
 
 for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
-    if segmentation.stem == 'proseg_v1':
-        continue
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
             for normalisation in normalisations:

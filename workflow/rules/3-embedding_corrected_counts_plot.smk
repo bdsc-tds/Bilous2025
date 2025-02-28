@@ -1,10 +1,10 @@
 # cfg paths
 xenium_dir = Path(config['xenium_processed_data_dir'])
-std_seurat_analysis_dir = Path(config['std_seurat_analysis_dir'])
+xenium_std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
+xenium_cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
 results_dir = Path(config['results_dir'])
 figures_dir = Path(config['figures_dir'])
 palette_dir = Path(config['xenium_metadata_dir'])
-cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
 
 # Params
 n_comps = 50
@@ -30,9 +30,7 @@ extension = 'png'
 out_files_panel = []
 
 for correction_method in correction_methods:
-    for segmentation in (segmentations := xenium_dir.iterdir()):
-        if segmentation.stem == 'proseg_v1':
-            continue
+    for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
         for condition in (conditions := segmentation.iterdir()): 
             for panel in (panels := condition.iterdir()):
                 # for normalisation in normalisations:
@@ -65,7 +63,7 @@ for correction_method in correction_methods:
                                         output:
                                             out_file=out_file,
                                         params:
-                                            cell_type_annotation_dir=cell_type_annotation_dir,
+                                            cell_type_annotation_dir=xenium_cell_type_annotation_dir,
                                             normalisation=normalisation,
                                             reference=reference,
                                             method=method,
@@ -136,7 +134,7 @@ for correction_method in correction_methods:
 #                                 output:
 #                                     out_file=out_file,
 #                                 params:
-#                                     cell_type_annotation_dir=cell_type_annotation_dir,
+#                                     cell_type_annotation_dir=xenium_cell_type_annotation_dir,
 #                                     reference=reference,
 #                                     method=method,
 #                                     level=level,

@@ -24,27 +24,15 @@ def parse_args():
         "--out_file_df_permutations_logreg", type=str, help="path to the logreg permutation output file"
     )
     parser.add_argument("--out_file_df_importances_logreg", type=str, help="path to the logref importances output file")
-    parser.add_argument("--out_file_df_diffexpr", type=str, help="path to the differential expression output file")
     parser.add_argument(
         "--out_file_df_markers_rank_significance_logreg",
         type=str,
         help="path to the logreg rank significance output file",
     )
-    parser.add_argument(
-        "--out_file_df_markers_rank_significance_diffexpr",
-        type=str,
-        help="path the differential expression rank significance output file",
-    )
-    # parser.add_argument("--out_dir_liana_lrdata", type=str, help="path to the liana lrdata results dir output")
     parser.add_argument("--n_neighbors", type=int, help="n° of neighbors to use to define the spatial graph")
     parser.add_argument("--n_permutations", type=int, help="n° of permutations for logreg random prediction baseline")
     parser.add_argument("--n_repeats", type=int, help="n° of repeats for logreg feature importances by permutations")
     parser.add_argument("--top_n", type=int, help="n° of top genes to evaluate for hypergeometric test")
-    parser.add_argument(
-        "--top_n_lr", type=int, help="n° of top ligand-receptor pairs to evaluate for liana hypergeometric test"
-    )
-    # parser.add_argument("--cti", type=str, help="cell type i (potentially corrupted by cell type j)")
-    # parser.add_argument("--ctj", type=str, help="cell type j (potentially corrupting cell type i)")
     parser.add_argument("--scoring", type=str, help="sklearn scoring metric to use for logreg")
     parser.add_argument(
         "--markers",
@@ -52,10 +40,13 @@ def parse_args():
         help="'diffexpr' to use empirical markers by diffexpr test, or a path to a df with cell_type and marker genes columns",
     )
 
+    parser.add_argument(
+        "-l",
+        type=str,
+        default=None,
+        help="path to the log file",
+    )
     ret = parser.parse_args()
-    if not os.path.isdir(ret.path):
-        raise RuntimeError(f"Error! Input directory does not exist: {ret.path}")
-
     return ret
 
 
@@ -89,8 +80,8 @@ if __name__ == "__main__":
         aligned_images=False,
         anndata=True,
     )
-    if "proseg_expected" in args.sample_normalised_counts.as_posix():
-        if "raw_results" not in args.sample_dir.as_posix():
+    if "proseg_expected" in args.sample_normalised_counts:
+        if "raw_results" not in args.sample_dir:
             raise ValueError("raw results folder needed for proseg expected counts")
         adata.obs_names = "proseg-" + adata.obs_names.astype(str)
 
@@ -122,15 +113,13 @@ if __name__ == "__main__":
         adata, n_neighbors=args.n_neighbors, label_key=label_key, obsm=obsm, return_sparse_neighbors=True
     )
 
-    adata.obsp[f"{args.obsm}_connectivities"] = knn_graph
+    adata.obsp[f"{obsm}_connectivities"] = knn_graph
     u_cell_types = adata.obs[label_key].unique()
 
     # iterate over cell types permutations (cell type i with cell type j presence in kNN)
     df_permutations_logreg = {}
     df_importances_logreg = {}
-    df_diffexpr = {}
     df_markers_rank_significance_logreg = {}
-    df_markers_rank_significance_diffexpr = {}
     df_markers_rank_significance_lrdata = {}
 
     for ctj in u_cell_types:
@@ -154,16 +143,6 @@ if __name__ == "__main__":
             print(cti, ctj)
 
             adata.obs[f"has_{ctj}_neighbor"] = knnlabels[ctj] > 0
-
-            # read markers
-            if args.markers == "diffexpr":
-                sc.tl.rank_genes_groups(adata, groupby=label_key, groups=[ctj], reference="rest", method="wilcoxon")
-                ctj_marker_genes = sc.get.rank_genes_groups_df(adata, group=ctj)[: args.top_n]
-            else:
-                ctj_marker_genes = df_markers[df_markers["cell_type"] == ctj]["gene"].tolist()
-                ctj_marker_genes = [g for g in ctj_marker_genes if g in adata.var_names]
-
-            assert len(ctj_marker_genes), f"{ctj} not found in marker list or in DE list"
 
             # Filter for cti
             adata_cti = adata[adata.obs[label_key] == cti]
@@ -195,22 +174,6 @@ if __name__ == "__main__":
                 rnk=df_importances_logreg[cti, ctj]["importances"], gene_set=ctj_marker_genes, top_n=args.top_n
             )
 
-            ###
-            ### DIFF EXPR TEST: check DE genes between cti with ctj neighbor or not
-            ###
-            adata_cti.obs[f"has_{ctj}_neighbor_str"] = adata_cti.obs[f"has_{ctj}_neighbor"].astype(str)
-            sc.tl.rank_genes_groups(
-                adata_cti, groupby=f"has_{ctj}_neighbor_str", groups=["True"], reference="False", method="wilcoxon"
-            )
-            df_diffexpr[cti, ctj] = sc.get.rank_genes_groups_df(adata_cti, group="True").sort_values("pvals_adj")
-
-            # get significance from gsea and hypergeometric test
-            df_markers_rank_significance_diffexpr[cti, ctj] = _utils.get_marker_rank_significance(
-                rnk=df_diffexpr[cti, ctj].set_index("names")["logfoldchanges"],
-                gene_set=ctj_marker_genes,
-                top_n=args.top_n,
-            )
-
     ###
     ### CONCAT AND SAVE OUTPUTS
     ###
@@ -218,10 +181,6 @@ if __name__ == "__main__":
     pd.concat(df_permutations_logreg).to_parquet(args.out_file_df_permutations_logreg)
     pd.concat(df_importances_logreg).to_parquet(args.out_file_df_importances_logreg)
     pd.concat(df_markers_rank_significance_logreg).to_parquet(args.out_file_df_markers_rank_significance_logreg)
-
-    # diffexpr
-    pd.concat(df_diffexpr).to_parquet(args.out_file_df_diffexpr)
-    pd.concat(df_markers_rank_significance_diffexpr).to_parquet(args.out_file_df_markers_rank_significance_diffexpr)
 
     if args.l is not None:
         _log.close()

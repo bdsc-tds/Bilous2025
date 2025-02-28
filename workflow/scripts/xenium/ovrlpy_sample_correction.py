@@ -101,6 +101,14 @@ else:
 coordinate_df = coordinate_df.query("qv >= 20")  # remove low qv molecules
 coordinate_df["gene"] = coordinate_df["gene"].astype("category")
 
+
+# prevent ovrlpy bug when rounding to pixels
+x_int, y_int = coordinate_df[["x", "y"]].max() == coordinate_df[["x", "y"]].max().astype(int)
+if x_int:
+    coordinate_df["x"] = coordinate_df["x"] + 1e-10
+if y_int:
+    coordinate_df["y"] = coordinate_df["y"] + 1e-10
+
 transcript_info = pd.read_parquet(sample_transcript_info)
 coordinate_df = coordinate_df.join(transcript_info)
 

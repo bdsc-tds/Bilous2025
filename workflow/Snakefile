@@ -5,7 +5,7 @@ include: "rules/1-coexpression_scrnaseq_references.smk"
 
 include: "rules/0-coexpression.smk"
 include: "rules/0-coexpression_cross_panel.smk"
-include: "rules/1-coexpression_plot.smk"
+# include: "rules/1-coexpression_plot.smk"
 
 include: "rules/0-silhouette.smk"
 include: "rules/1-silhouette_plot.smk"
@@ -21,7 +21,8 @@ include: "rules/1-coexpression_corrected_counts_plot.smk"
 include: "rules/2-embedding_corrected_counts.smk"
 include: "rules/3-embedding_corrected_counts_plot.smk"
 
-include: "rules/2-spillover_metrics.smk"
+include: "rules/2-contamination_metrics_diffexpr.smk"
+include: "rules/2-contamination_metrics_logreg.smk"
 
 rule all:
     input:
@@ -59,4 +60,5 @@ rule all:
         # rules.ovrlpy_all.input,
         # rules.ovrlpy_correction_all.input,
         # #
-        rules.spillover_metrics_all.input,
+        # rules.contamination_metrics_diffexpr_all.input,
+        rules.contamination_metrics_logreg_all.input,

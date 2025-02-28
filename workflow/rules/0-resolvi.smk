@@ -2,6 +2,7 @@ from pathlib import Path
 
 # cfg paths
 xenium_dir = Path(config['xenium_processed_data_dir'])
+xenium_std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
 results_dir = Path(config['results_dir'])
 
 # params from pipeline config
@@ -17,19 +18,18 @@ batch_size = 1000
 mixture_k = 50
 
 out_files_training = []
-for segmentation in (segmentations := xenium_dir.iterdir()):
-    if segmentation.stem == 'proseg_v1':
-        continue
+for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
             for donor in (donors := panel.iterdir()):
                 for sample in (samples := donor.iterdir()):
-
-                    if segmentation.stem == 'proseg':
-                        path = sample / 'raw_results'
-                    else:
-                        path = sample / "normalised_results/outs"
                     
+                    name_sample =  '/'.join((segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,))
+                    if segmentation.stem == 'proseg_expected':
+                        path = xenium_dir / f'{name_sample}/raw_results'
+                    else:
+                        path = xenium_dir / f'{name_sample}/normalised_results/outs'
+
                     k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,f'{mixture_k=}')
                     name = '/'.join(k)
 
