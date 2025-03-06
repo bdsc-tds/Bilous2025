@@ -19,7 +19,7 @@ batch_size = 100_000
 mixture_k = 50
 
 # params supervised
-normalisation_method = 'lognorm'
+normalisation = 'lognorm'
 mode = 'reference_based'
 references = ['matched_reference_combo']
 methods = ['rctd_class_aware']
@@ -42,7 +42,8 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                     path = xenium_dir / f'{name_sample}/normalised_results/outs'
                                 
 
-                                k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,normalisation_method,mode,reference,method,level,f'{mixture_k=}')
+                                k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,
+                                     normalisation,mode,reference,method,level,f'{mixture_k=}')
                                 name = '/'.join(k)
                                 name_labels = '/'.join(k[:-1])
                                 cell_type_labels = cell_type_annotation_dir / name_labels / f"single_cell/labels.parquet"
@@ -96,9 +97,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
 
 
 out_files_inference = []
-for segmentation in (segmentations := xenium_dir.iterdir()):
-    if segmentation.stem == 'proseg_v1':
-        continue
+for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
             for donor in (donors := panel.iterdir()):
@@ -106,15 +105,18 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                     for reference in references:
                         for method in methods:
                             for level in levels:
-
-                                if segmentation.stem == 'proseg':
-                                    path = sample / 'raw_results'
-                                else:
-                                    path = sample / "normalised_results/outs"
                                 
-                                cell_type_labels = cell_type_annotation_dir / name / f"{normalisation_method}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet"
+                                k_sample = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,)
+                                name_sample =  '/'.join(k_sample)
+                                if segmentation.stem == 'proseg_expected':
+                                    path = xenium_dir / f'{name_sample}/raw_results'
+                                else:
+                                    path = xenium_dir / f'{name_sample}/normalised_results/outs'
 
-                                k_model = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,normalisation_method,mode,reference,method,level,f'{mixture_k=}')
+                                
+                                cell_type_labels = cell_type_annotation_dir / name / f"{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet"
+
+                                k_model = k_sample+(normalisation,mode,reference,method,level,f'{mixture_k=}',)
                                 k = k_model + (f'{num_samples=}',)
                                 name_model = '/'.join(k_model)
                                 name = '/'.join(k)
@@ -144,6 +146,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                             num_samples=num_samples,
                                             batch_size=batch_size,
                                             mixture_k=mixture_k,
+                                            cell_type_labels=cell_type_labels,
                                         threads: 1
                                         resources:
                                             mem='200GB',# if panel.stem == '5k' else '10GB',
@@ -168,6 +171,8 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                             --min_cells {params.min_cells} \
                                             --num_samples {params.num_samples} \
                                             --batch_size {params.batch_size} \
+                                            --cell_type_labels {params.cell_type_labels} 
+
                                             
                                             echo "DONE"
                                             """

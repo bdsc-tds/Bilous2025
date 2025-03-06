@@ -14,7 +14,7 @@ metric = 'cosine'
 s=0.5
 alpha=0.5
 
-cell_type_palette = palette_dir / 'col_palette_cell_types.csv'
+cell_type_palette = palette_dir / 'col_palette_cell_types_combo.csv'
 panel_palette = palette_dir / 'col_palette_panel.csv'
 sample_palette = palette_dir / 'col_palette_sample.csv'
 

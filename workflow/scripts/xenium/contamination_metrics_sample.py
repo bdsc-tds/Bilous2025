@@ -6,6 +6,7 @@ import scanpy as sc
 import pandas as pd
 import argparse
 import os
+import numpy as np
 import sys
 
 sys.path.append("workflow/scripts/")
@@ -202,11 +203,15 @@ if __name__ == "__main__":
             sc.tl.rank_genes_groups(
                 adata_cti, groupby=f"has_{ctj}_neighbor_str", groups=["True"], reference="False", method="wilcoxon"
             )
-            df_diffexpr[cti, ctj] = sc.get.rank_genes_groups_df(adata_cti, group="True").sort_values("pvals_adj")
+            df_diffexpr[cti, ctj] = sc.get.rank_genes_groups_df(adata_cti, group="True")
+            df_diffexpr[cti, ctj]["rank_score"] = (
+                -np.log10(df_diffexpr[cti, ctj]["pvals_adj"]) * df_diffexpr[cti, ctj]["logfoldchanges"]
+            )
+            df_diffexpr[cti, ctj] = df_diffexpr[cti, ctj].sort_values("rank_score", ascending=False)
 
             # get significance from gsea and hypergeometric test
             df_markers_rank_significance_diffexpr[cti, ctj] = _utils.get_marker_rank_significance(
-                rnk=df_diffexpr[cti, ctj].set_index("names")["logfoldchanges"],
+                rnk=df_diffexpr[cti, ctj].set_index("names")["rank_score"],
                 gene_set=ctj_marker_genes,
                 top_n=args.top_n,
             )

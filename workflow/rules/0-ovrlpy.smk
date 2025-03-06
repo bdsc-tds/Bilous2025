@@ -55,7 +55,7 @@ for segmentation in xenium_dir.iterdir():
                             proseg_format='--proseg_format' if segmentation.stem=='proseg' else '',
                         threads: 1
                         resources:
-                            mem='600GB',
+                            mem='800GB',
                             runtime='12h',
                         conda:
                             "spatial"

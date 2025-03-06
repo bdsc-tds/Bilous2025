@@ -80,20 +80,20 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
 
 
 out_files_inference = []
-for segmentation in (segmentations := xenium_dir.iterdir()):
-    if segmentation.stem == 'proseg_v1':
-        continue
+for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
             for donor in (donors := panel.iterdir()):
                 for sample in (samples := donor.iterdir()):
-
-                    if segmentation.stem == 'proseg':
-                        path = sample / 'raw_results'
-                    else:
-                        path = sample / "normalised_results/outs"
                     
-                    k_model = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,f'{mixture_k=}')
+                    k_sample = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,)
+                    name_sample =  '/'.join(k_sample)
+                    if segmentation.stem == 'proseg_expected':
+                        path = xenium_dir / f'{name_sample}/raw_results'
+                    else:
+                        path = xenium_dir / f'{name_sample}/normalised_results/outs'
+                    
+                    k_model = k_sample+(f'{mixture_k=}',)
                     k = k_model + (f'{num_samples=}',)
                     name_model = '/'.join(k_model)
                     name = '/'.join(k)

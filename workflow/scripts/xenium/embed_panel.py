@@ -27,6 +27,7 @@ parser.add_argument("--min_features", type=int, help="QC parameter from pipeline
 parser.add_argument("--max_counts", type=float, help="QC parameter from pipeline config")
 parser.add_argument("--max_features", type=float, help="QC parameter from pipeline config")
 parser.add_argument("--min_cells", type=int, help="QC parameter from pipeline config")
+parser.add_argument("--genes", type=str, nargs="*", default=[], help="Restrict data to these genes for the UMAP.")
 
 args = parser.parse_args()
 
@@ -44,6 +45,7 @@ min_features = args.min_features
 max_counts = args.max_counts
 max_features = args.max_features
 min_cells = args.min_cells
+genes = args.genes
 
 
 segmentation = panel.parents[1].stem
@@ -80,6 +82,17 @@ for k in ads.keys():
     for i, lvl in enumerate(xenium_levels):
         ads[k].obs[lvl] = k[i]
 ad_merge = sc.concat(ads)
+
+# subset to genes
+if len(genes):
+    genes_found = [
+        g
+        for g in genes
+        if (g in ad_merge.var_names) or (g.replace("-", ".") in ad_merge.var_names)  # possible seurat renaming
+    ]
+
+    print(f"Found {len(genes_found)} out of {len(genes)} genes.")
+    ad_merge = ad_merge[:, genes_found].copy()
 
 # preprocess
 preprocessing.preprocess(

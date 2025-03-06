@@ -58,10 +58,6 @@ condition = panel.parents[0]
 obs = pd.read_parquet(embed_file)
 obs["cell_id"] = obs.index
 
-if "proseg" in segmentation.stem:
-    obs["cell_id"] = "proseg-" + obs["cell_id"].astype(str)
-
-
 if color == "sample":
     # plot sample as color, no need to load annotations
     df = obs
