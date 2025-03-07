@@ -16,7 +16,7 @@ import preprocessing
 parser = argparse.ArgumentParser(description="Embed panel of Xenium donors.")
 parser.add_argument("--condition", type=Path, help="Path to the panel file.")
 parser.add_argument("--out_file", type=str, help="Path to the output file.")
-parser.add_argument("--normalisation_method", type=str, help="Normalisation method")
+parser.add_argument("--normalisation", type=str, help="Normalisation method")
 parser.add_argument("--layer", type=str, help="Name of saved layer of the seurat object, data or scale_data")
 parser.add_argument("--n_comps", type=int, help="Number of components.")
 parser.add_argument("--n_neighbors", type=int, help="Number of neighbors.")
@@ -34,7 +34,7 @@ args = parser.parse_args()
 # Access the arguments
 condition = args.condition
 out_file = args.out_file
-normalisation_method = args.normalisation_method
+normalisation = args.normalisation
 layer = args.layer
 n_comps = args.n_comps
 n_neighbors = args.n_neighbors
@@ -56,8 +56,8 @@ for panel in (panels := condition.iterdir()):
             print(sample)
 
             k = (segmentation, condition.stem, panel.stem, donor.stem, sample.stem)
-            sample_counts_path = sample / f"{normalisation_method}/normalised_counts/{layer}.parquet"
-            sample_idx_path = sample / f"{normalisation_method}/normalised_counts/cells.parquet"
+            sample_counts_path = sample / f"{normalisation}/normalised_counts/{layer}.parquet"
+            sample_idx_path = sample / f"{normalisation}/normalised_counts/cells.parquet"
 
             ads[k] = sc.AnnData(pd.read_parquet(sample_counts_path))
             if layer != "scale_data":  # no need to sparsify scale_data which is dense

@@ -114,13 +114,14 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                     path = xenium_dir / f'{name_sample}/normalised_results/outs'
 
                                 
-                                cell_type_labels = cell_type_annotation_dir / name / f"{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet"
-
                                 k_model = k_sample+(normalisation,mode,reference,method,level,f'{mixture_k=}',)
                                 k = k_model + (f'{num_samples=}',)
                                 name_model = '/'.join(k_model)
+                                name_labels = '/'.join(k[:-1])
                                 name = '/'.join(k)
 
+                                cell_type_labels = cell_type_annotation_dir / name_labels / f"single_cell/labels.parquet"
+                                
                                 if path.exists():
 
                                     dir_resolvi_model = results_dir / f'resolvi_supervised/{name_model}/model/'

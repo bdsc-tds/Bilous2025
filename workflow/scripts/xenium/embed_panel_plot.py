@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser(description="Plot panel of Xenium donors.")
 parser.add_argument("--panel", type=Path, help="Path to the panel file.")
 parser.add_argument("--embed_file", type=str, help="Path to the embedding file.")
 parser.add_argument("--cell_type_annotation_dir", type=Path, help="Path to the cell_type_annotation_dir.")
-parser.add_argument("--normalisation_method", type=str, help="normalisation_method method")
+parser.add_argument("--normalisation", type=str, help="normalisation method")
 parser.add_argument("--reference", type=str, help="annotation reference")
 parser.add_argument("--method", type=str, help="annotation method")
 parser.add_argument("--color", type=str, help="annotation color")
@@ -29,7 +29,7 @@ args = parser.parse_args()
 panel = args.panel
 embed_file = args.embed_file
 cell_type_annotation_dir = args.cell_type_annotation_dir
-normalisation_method = "lognorm"  # fix this for now, even for sctransfrom args.normalisation_method
+normalisation = "lognorm"  # fix this for now, even for sctransfrom args.normalisation
 reference = args.reference
 method = args.method
 color = args.color
@@ -82,13 +82,10 @@ else:
             annot_file = (
                 cell_type_annotation_dir
                 / name
-                / f"{normalisation_method}/reference_based/{reference}/{method}/{color}/single_cell/labels.parquet"
+                / f"{normalisation}/reference_based/{reference}/{method}/{color}/single_cell/labels.parquet"
             )
             # if annot_file.exists():
             annot[k][reference, method, color] = pd.read_parquet(annot_file).set_index("cell_id").iloc[:, 0]
-            print(annot[k][reference, method, color])
-            print(k, reference, method, color)
-            print(annot_file)
 
     # merge annotations
     df_annot = {}

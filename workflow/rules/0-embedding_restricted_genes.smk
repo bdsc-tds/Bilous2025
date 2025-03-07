@@ -72,7 +72,7 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                             python workflow/scripts/xenium/embed_panel.py \
                                 --panel {input.panel} \
                                 --out_file {output.out_file} \
-                                --normalisation_method {params.normalisation} \
+                                --normalisation {params.normalisation} \
                                 --layer {params.layer} \
                                 --n_comps {params.n_comps} \
                                 --n_neighbors {params.n_neighbors} \
