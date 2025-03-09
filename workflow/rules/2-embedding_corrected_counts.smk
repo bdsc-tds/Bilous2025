@@ -8,11 +8,11 @@ signal_integrity_thresholds = [0.5,0.7]
 correction_methods = ['resolvi'] + [f'ovrlpy_correction_{signal_integrity_threshold=}' for signal_integrity_threshold in signal_integrity_thresholds]
 normalisations = ['lognorm']
 layers = ['data','scale_data']
-min_counts = 20
-min_features = 10
+min_counts = 10
+min_features = 5
 max_counts = float("inf")
 max_features = float("inf")
-min_cells = 20
+min_cells = 5
 
 # Params
 n_comps = 50

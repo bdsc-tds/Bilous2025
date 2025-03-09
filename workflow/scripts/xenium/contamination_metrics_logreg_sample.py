@@ -41,7 +41,7 @@ def parse_args():
     )
     parser.add_argument(
         "--max_n_cells",
-        type=str,
+        type=int,
         help="max_n_cells to use",
     )
     parser.add_argument(
@@ -103,8 +103,8 @@ if __name__ == "__main__":
     adata = adata[adata.obs[label_key].notna()]  # remove NaN annotation
 
     # subsample very large samples
-    if len(adata) > max_n_cells:
-        sc.pp.subsample(adata,n_obs=max_n_cells)
+    if len(adata) > args.max_n_cells:
+        sc.pp.subsample(adata,n_obs=args.max_n_cells)
 
     # read markers if needed
     if args.markers != "diffexpr":

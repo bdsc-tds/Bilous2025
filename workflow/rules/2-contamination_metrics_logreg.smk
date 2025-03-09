@@ -58,9 +58,9 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                         sample_idx = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/cells.parquet'
                                         sample_annotation = xenium_cell_type_annotation_dir / f'{name}/{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet'
 
-                                        out_file_df_permutations_logreg = results_dir / f'contamination_metrics/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_permutations_logreg.parquet'
-                                        out_file_df_importances_logreg = results_dir / f'contamination_metrics/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_importances_logreg.parquet'
-                                        out_file_df_markers_rank_significance_logreg = results_dir / f'contamination_metrics/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_markers_rank_significance_logreg.json'
+                                        out_file_df_permutations_logreg = results_dir / f'contamination_metrics_logreg/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_permutations_logreg.parquet'
+                                        out_file_df_importances_logreg = results_dir / f'contamination_metrics_logreg/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_importances_logreg.parquet'
+                                        out_file_df_markers_rank_significance_logreg = results_dir / f'contamination_metrics_logreg/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_markers_rank_significance_logreg.json'
 
                                         out_files.extend([
                                             out_file_df_permutations_logreg,
@@ -111,7 +111,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                                     --top_n {params.top_n} \
                                                     --scoring {params.scoring} \
                                                     --markers {params.markers} \
-                                                    --max_n_cells {params.max_n_cells}
+                                                    --max_n_cells {params.max_n_cells} \
 
                                                 echo "DONE"
                                                 """

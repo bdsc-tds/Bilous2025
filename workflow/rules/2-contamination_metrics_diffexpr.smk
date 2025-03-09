@@ -30,7 +30,6 @@ markers = 'diffexpr' #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/da
 # cell_types_palette = pd.read_csv(palette_dir / 'col_palette_cell_types_combo.csv')
 
 out_files = []
-i = 0
 for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
     if segmentation.stem in ['proseg_mode','proseg_expected']:
         continue
@@ -58,8 +57,8 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                         sample_idx = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/cells.parquet'
                                         sample_annotation = xenium_cell_type_annotation_dir / f'{name}/{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet'
 
-                                        out_file_df_diffexpr = results_dir / f'contamination_metrics/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_diffexpr.parquet'
-                                        out_file_df_markers_rank_significance_diffexpr = results_dir / f'contamination_metrics/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_markers_rank_significance_diffexpr.parquet'
+                                        out_file_df_diffexpr = results_dir / f'contamination_metrics_diffexpr/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_diffexpr.parquet'
+                                        out_file_df_markers_rank_significance_diffexpr = results_dir / f'contamination_metrics_diffexpr/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_markers_rank_significance_diffexpr.parquet'
 
                                         out_files.extend([
                                             out_file_df_diffexpr,
@@ -107,17 +106,6 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
 
                                                 echo "DONE"
                                                 """
-                                        i+=1
-                                        break
-                                    break
-                                break
-                            break
-                        break
-                    break
-                break
-            break
-        break
-    break   
 
 
 rule contamination_metrics_diffexpr_all:

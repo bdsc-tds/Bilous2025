@@ -6,17 +6,17 @@ std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
 # stricter params than pipeline config
 normalisations = ['lognorm','sctransform']
 layers = ['data','scale_data']
-min_counts = 20
-min_features = 10
+min_counts = 10
+min_features = 5
 max_counts = float("inf")
 max_features = float("inf")
-min_cells = 20
+min_cells = 5
 
 # Params
-n_comps = 50
-n_neighbors = 50
+n_comps = 20
+n_neighbors = 25
 min_dist = 0.3
-metric = 'cosine'
+metric = 'euclidean'
 
 out_files_panel = []
 
