@@ -136,4 +136,4 @@ bm.benchmark()
 # df_results[CT_KEY] = bm.get_results(min_max_scale=False).iloc[0]
 
 # save results
-bm.get_results(min_max_scale=False).to_parquet(out_file)
+bm.get_results(min_max_scale=False).iloc[[0]].to_parquet(out_file)

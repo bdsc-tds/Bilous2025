@@ -25,6 +25,7 @@ top_n = 20
 top_n_lr = 10
 scoring = 'f1'
 markers = 'diffexpr' #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/cellmarker_cell_types_markers.json'
+max_n_cells = 500_000
 
 # needed to get unique cell types names for each level
 # cell_types_palette = pd.read_csv(palette_dir / 'col_palette_cell_types_combo.csv')
@@ -85,6 +86,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                                 top_n=top_n,
                                                 scoring=scoring,
                                                 markers=markers,
+                                                max_n_cells=max_n_cells,
                                             threads: 1
                                             resources:
                                                 mem='30GB',
@@ -109,6 +111,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                                     --top_n {params.top_n} \
                                                     --scoring {params.scoring} \
                                                     --markers {params.markers} \
+                                                    --max_n_cells {params.max_n_cells}
 
                                                 echo "DONE"
                                                 """

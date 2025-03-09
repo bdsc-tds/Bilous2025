@@ -6,7 +6,7 @@ cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
 
 # Params
 n_comps = 50
-max_n_cells = 1_000_000
+max_n_cells = 100_000
 
 normalisations = ['lognorm','sctransform']
 layers = ['data','scale_data']

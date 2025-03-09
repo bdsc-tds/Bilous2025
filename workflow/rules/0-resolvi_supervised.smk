@@ -15,7 +15,7 @@ min_cells = 5
 
 # params
 num_samples = 30
-batch_size = 100_000
+batch_size = 1000
 mixture_k = 50
 
 # params supervised
@@ -117,7 +117,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                 k_model = k_sample+(normalisation,mode,reference,method,level,f'{mixture_k=}',)
                                 k = k_model + (f'{num_samples=}',)
                                 name_model = '/'.join(k_model)
-                                name_labels = '/'.join(k[:-1])
+                                name_labels = '/'.join(k_model[:-1])
                                 name = '/'.join(k)
 
                                 cell_type_labels = cell_type_annotation_dir / name_labels / f"single_cell/labels.parquet"

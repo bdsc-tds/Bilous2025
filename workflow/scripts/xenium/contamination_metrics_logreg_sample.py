@@ -39,7 +39,11 @@ def parse_args():
         type=str,
         help="'diffexpr' to use empirical markers by diffexpr test, or a path to a df with cell_type and marker genes columns",
     )
-
+    parser.add_argument(
+        "--max_n_cells",
+        type=str,
+        help="max_n_cells to use",
+    )
     parser.add_argument(
         "-l",
         type=str,
@@ -97,6 +101,10 @@ if __name__ == "__main__":
     adata.obs[label_key] = pd.read_parquet(args.sample_annotation).set_index("cell_id").iloc[:, 0]
     adata.obs[label_key] = adata.obs[label_key].replace(r" of .+", "", regex=True)
     adata = adata[adata.obs[label_key].notna()]  # remove NaN annotation
+
+    # subsample very large samples
+    if len(adata) > max_n_cells:
+        sc.pp.subsample(adata,n_obs=max_n_cells)
 
     # read markers if needed
     if args.markers != "diffexpr":
