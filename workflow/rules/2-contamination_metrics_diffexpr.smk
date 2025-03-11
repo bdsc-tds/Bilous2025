@@ -16,7 +16,7 @@ normalisations = ['lognorm',]
 layers = ['data',]
 references = ['matched_reference_combo']
 methods = ['rctd_class_aware']
-levels = ['Level2']
+levels = ['Level2.1']
 
 n_neighbors = 10
 n_permutations = 30
@@ -57,10 +57,12 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                         sample_idx = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/cells.parquet'
                                         sample_annotation = xenium_cell_type_annotation_dir / f'{name}/{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet'
 
+                                        out_file_df_ctj_marker_genes = results_dir /  f'contamination_metrics_diffexpr/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
                                         out_file_df_diffexpr = results_dir / f'contamination_metrics_diffexpr/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_diffexpr.parquet'
                                         out_file_df_markers_rank_significance_diffexpr = results_dir / f'contamination_metrics_diffexpr/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_markers_rank_significance_diffexpr.parquet'
 
                                         out_files.extend([
+                                            out_file_df_ctj_marker_genes,
                                             out_file_df_diffexpr,
                                             out_file_df_markers_rank_significance_diffexpr,
                                             ])
@@ -73,6 +75,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                                 sample_idx=sample_idx,
                                                 sample_annotation=sample_annotation,
                                             output:
+                                                out_file_df_ctj_marker_genes=out_file_df_ctj_marker_genes,
                                                 out_file_df_diffexpr=out_file_df_diffexpr,
                                                 out_file_df_markers_rank_significance_diffexpr=out_file_df_markers_rank_significance_diffexpr,
                                             params:
@@ -97,6 +100,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                                     --sample_normalised_counts {input.sample_normalised_counts} \
                                                     --sample_idx {input.sample_idx} \
                                                     --sample_annotation {input.sample_annotation} \
+                                                    --out_file_df_ctj_marker_genes {output.out_file_df_ctj_marker_genes} \
                                                     --out_file_df_diffexpr {output.out_file_df_diffexpr} \
                                                     --out_file_df_markers_rank_significance_diffexpr {output.out_file_df_markers_rank_significance_diffexpr} \
                                                     --n_neighbors {params.n_neighbors} \

@@ -16,7 +16,7 @@ normalisations = ['lognorm',]
 layers = ['data',]
 references = ['matched_reference_combo']
 methods = ['rctd_class_aware']
-levels = ['Level2']
+levels = ['Level2.1']
 
 n_neighbors = 10
 n_permutations = 30

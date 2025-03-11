@@ -101,10 +101,13 @@ if __name__ == "__main__":
     adata.obs[label_key] = pd.read_parquet(args.sample_annotation).set_index("cell_id").iloc[:, 0]
     adata.obs[label_key] = adata.obs[label_key].replace(r" of .+", "", regex=True)
     adata = adata[adata.obs[label_key].notna()]  # remove NaN annotation
+    adata.obs.loc[adata.obs[label_key].str.contains("malignant"), label_key] = (
+        "malignant cell"  # for Level2.1, simplify all to malignant
+    )
 
     # subsample very large samples
     if len(adata) > args.max_n_cells:
-        sc.pp.subsample(adata,n_obs=args.max_n_cells)
+        sc.pp.subsample(adata, n_obs=args.max_n_cells)
 
     # read markers if needed
     if args.markers != "diffexpr":

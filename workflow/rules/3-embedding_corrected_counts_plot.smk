@@ -19,7 +19,7 @@ panel_palette = palette_dir / 'col_palette_panel.csv'
 sample_palette = palette_dir / 'col_palette_sample.csv'
 
 signal_integrity_thresholds = [0.5,0.7]
-correction_methods = ['resolvi'] + [f'ovrlpy_correction_{signal_integrity_threshold=}' for signal_integrity_threshold in signal_integrity_thresholds]
+correction_methods = ['resolvi','resolvi_supervised'] + [f'ovrlpy_correction_{signal_integrity_threshold=}' for signal_integrity_threshold in signal_integrity_thresholds]
 normalisations = ['lognorm','sctransform']
 layers = ['data','scale_data']
 references = ['matched_reference_combo','external_reference']
@@ -38,6 +38,9 @@ for correction_method in correction_methods:
                         for reference in references:
                             for method in methods:
                                 for color in colors:
+
+                                    if color == 'Level2.1' and reference == 'external_reference':
+                                        continue
 
                                     # input embedding file (doesn't depend on ref,method or color loops but more readable to have here)
                                     k = (segmentation.stem,condition.stem,panel.stem)#,normalisation)

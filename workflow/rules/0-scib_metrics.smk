@@ -12,7 +12,7 @@ normalisations = ['lognorm','sctransform']
 layers = ['data','scale_data']
 references = ['matched_reference_combo']#,'external_reference']
 methods = ['rctd_class_aware']
-levels = ['Level2'] # condition and sample as color to plot added here in addition to levels
+levels = ['Level2.1'] # condition and sample as color to plot added here in addition to levels
 
 out_files_panel = []
 

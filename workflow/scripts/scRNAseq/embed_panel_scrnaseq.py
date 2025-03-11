@@ -14,10 +14,8 @@ import preprocessing
 
 # Set up argument parser
 parser = argparse.ArgumentParser(description="Embed panel of Xenium donors.")
-parser.add_argument("--panel", type=Path, help="Path to the panel file.")
+parser.add_argument("--data", type=Path, help="Path to the data file.")
 parser.add_argument("--out_file", type=str, help="Path to the output file.")
-parser.add_argument("--normalisation_method", type=str, help="Normalisation method")
-parser.add_argument("--layer", type=str, help="Name of saved layer of the seurat object, data or scale_data")
 parser.add_argument("--n_comps", type=int, help="Number of components.")
 parser.add_argument("--n_neighbors", type=int, help="Number of neighbors.")
 parser.add_argument("--metric", type=str, help="Distance metric to use.")
@@ -32,10 +30,8 @@ parser.add_argument("--genes", type=str, nargs="*", default=[], help="Restrict d
 args = parser.parse_args()
 
 # Access the arguments
-panel = args.panel
+data = args.data
 out_file = args.out_file
-normalisation_method = args.normalisation_method
-layer = args.layer
 n_comps = args.n_comps
 n_neighbors = args.n_neighbors
 metric = args.metric
@@ -48,43 +44,8 @@ min_cells = args.min_cells
 genes = args.genes
 
 
-segmentation = panel.parents[1].stem
-condition = panel.parents[0].stem
-
-# read xenium samples
-# xenium_paths = {}
-# for donor in (donors := panel.iterdir()):
-#     for sample in (samples := donor.iterdir()):
-#         k = (segmentation, condition, panel.stem, donor.stem, sample.stem)
-#         sample_path = sample / "normalised_results/outs"
-
-#         xenium_paths[k] = sample_path
-
-# ads = readwrite.read_xenium_samples(xenium_paths, anndata_only=True, transcripts=False, sample_name_as_key=False)
 print("Reading samples")
-ads = {}
-for donor in (donors := panel.iterdir()):
-    for sample in (samples := donor.iterdir()):
-        print(donor.stem, sample.stem)
-
-        k = (segmentation, condition, panel.stem, donor.stem, sample.stem)
-        sample_counts_path = sample / f"{normalisation_method}/normalised_counts/{layer}.parquet"
-        sample_idx_path = sample / f"{normalisation_method}/normalised_counts/cells.parquet"
-
-        ads[k] = sc.AnnData(pd.read_parquet(sample_counts_path))
-        if layer != "scale_data":  # no need to sparsify scale_data which is dense
-            ads[k].X = scipy.sparse.csr_matrix(ads[k].X)
-        ads[k].obs_names = pd.read_parquet(sample_idx_path).iloc[:, 0]
-
-
-print("Concatenating")
-# concatenate
-xenium_levels = ["segmentation", "condition", "panel", "donor", "sample"]
-for k in ads.keys():
-    for i, lvl in enumerate(xenium_levels):
-        ads[k].obs[lvl] = k[i]
-ad_merge = sc.concat(ads)
-print("Done")
+ad_merge = sc.read_10x_h5(data)
 
 # subset to genes
 if len(genes):
@@ -103,8 +64,8 @@ print("Computing PCA and UMAP")
 # preprocess
 preprocessing.preprocess(
     ad_merge,
-    normalize=False,
-    log1p=False,
+    normalize=True,
+    log1p=True,
     scale="none",
     n_comps=n_comps,
     metric=metric,
@@ -122,6 +83,4 @@ preprocessing.preprocess(
 
 # save
 df_umap = pd.DataFrame(ad_merge.obsm["X_umap"], index=ad_merge.obs_names, columns=["UMAP1", "UMAP2"])
-df_umap[xenium_levels] = ad_merge.obs[xenium_levels]
-
 df_umap.to_parquet(out_file)

@@ -13,16 +13,14 @@ max_features = float("inf")
 min_cells = 5
 
 # Params
-n_comps = 20
-n_neighbors = 25
-min_dist = 0.3
+n_comps = 50
+n_neighbors = 50
+min_dist = 0.5
 metric = 'euclidean'
 
 out_files_panel = []
 
 for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
-    if segmentation.stem == 'proseg_v1':
-        continue
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
             for normalisation in normalisations: 

@@ -20,6 +20,11 @@ def parse_args():
     parser.add_argument("--sample_normalised_counts", type=str, help="")
     parser.add_argument("--sample_idx", type=str, help="")
     parser.add_argument("--sample_annotation", type=str, help="")
+    parser.add_argument(
+        "--out_file_df_ctj_marker_genes",
+        type=str,
+        help="path to the marker genes used for each contaminating cell type",
+    )
     parser.add_argument("--out_file_df_diffexpr", type=str, help="path to the differential expression output file")
     parser.add_argument(
         "--out_file_df_markers_rank_significance_diffexpr",
@@ -91,6 +96,9 @@ if __name__ == "__main__":
     adata.obs[label_key] = pd.read_parquet(args.sample_annotation).set_index("cell_id").iloc[:, 0]
     adata.obs[label_key] = adata.obs[label_key].replace(r" of .+", "", regex=True)
     adata = adata[adata.obs[label_key].notna()]  # remove NaN annotation
+    adata.obs.loc[adata.obs[label_key].str.contains("malignant"), label_key] = (
+        "malignant cell"  # for Level2.1, simplify all to malignant
+    )
 
     # read markers if needed
     if args.markers != "diffexpr":
@@ -114,6 +122,7 @@ if __name__ == "__main__":
     df_diffexpr = {}
     df_markers_rank_significance_diffexpr = {}
     df_markers_rank_significance_lrdata = {}
+    df_ctj_marker_genes = {}
 
     for ctj in u_cell_types:
         if (adata.obs[label_key] == ctj).sum() < 30:
@@ -129,6 +138,8 @@ if __name__ == "__main__":
             ctj_marker_genes = [g for g in ctj_marker_genes if g in adata.var_names]
 
             assert len(ctj_marker_genes), f"no markers found for {ctj}"
+
+        df_ctj_marker_genes[ctj] = ctj_marker_genes
 
         for cti in u_cell_types:
             if cti == ctj:
@@ -163,6 +174,9 @@ if __name__ == "__main__":
     ###
     ### CONCAT AND SAVE OUTPUTS
     ###
+    # markers
+    df_ctj_marker_genes = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in df_ctj_marker_genes.items()]))
+    df_ctj_marker_genes.to_parquet(args.out_file_df_ctj_marker_genes)
     # diffexpr
     pd.concat(df_diffexpr).to_parquet(args.out_file_df_diffexpr)
     pd.concat(df_markers_rank_significance_diffexpr).to_parquet(args.out_file_df_markers_rank_significance_diffexpr)

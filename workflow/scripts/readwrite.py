@@ -553,6 +553,7 @@ def read_xenium_samples(
                 morphology_mip,
                 morphology_focus,
                 aligned_images,
+                cells_table,
                 anndata,
                 xeniumranger_dir,
                 sample_name,

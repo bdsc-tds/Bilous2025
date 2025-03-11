@@ -8,11 +8,11 @@ std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
 # stricter params than pipeline config
 normalisations = ['lognorm','sctransform']
 layers = ['data','scale_data']
-min_counts = 20
-min_features = 10
+min_counts = 10
+min_features = 5
 max_counts = float("inf")
 max_features = float("inf")
-min_cells = 20
+min_cells = 5
 
 # Params
 n_comps = 50
@@ -24,8 +24,6 @@ genes = pd.read_csv('/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data
 out_files_panel = []
 
 for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
-    if segmentation.stem == 'proseg_v1':
-        continue
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
             for normalisation in normalisations: 
@@ -69,7 +67,7 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                             """
                             mkdir -p "$(dirname {output.out_file})"
 
-                            python workflow/scripts/xenium/embed_panel.py \
+                            python -u workflow/scripts/xenium/embed_panel.py \
                                 --panel {input.panel} \
                                 --out_file {output.out_file} \
                                 --normalisation {params.normalisation} \

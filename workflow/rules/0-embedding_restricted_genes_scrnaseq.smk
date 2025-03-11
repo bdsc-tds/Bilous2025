@@ -1,0 +1,96 @@
+import pandas as pd
+
+# cfg paths
+xenium_dir = Path(config['xenium_processed_data_dir'])
+results_dir = Path(config['results_dir'])
+std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
+scrnaseq_processed_data_dir = Path(config['scrnaseq_processed_data_dir'])
+seurat_to_h5_dir = results_dir / 'seurat_to_h5'
+
+# stricter params than pipeline config
+min_counts = 10
+min_features = 5
+max_counts = float("inf")
+max_features = float("inf")
+min_cells = 5
+
+# Params
+layer = 'RNA_counts'
+genes = pd.read_csv('/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/Xenium_hLung_v1_metadata.csv')['Gene'].tolist()
+
+# n_comps = 50
+# n_neighbors = 50
+# min_dist = 0.3
+# metric = 'cosine'
+
+# n_comps = 20
+# n_neighbors = 25
+# min_dist = 0.3
+# metric = 'euclidean'
+
+n_comps = 50
+n_neighbors = 50
+min_dist = 0.5
+metric = 'euclidean'
+
+
+out_files = []
+
+for reference in (references := scrnaseq_processed_data_dir.iterdir()):
+    name = reference.stem
+
+    data = seurat_to_h5_dir / name / f"{layer}.h5"
+
+    out_file = results_dir / f'embed_panel_restricted_genes_scrnaseq/{name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet' 
+    out_files.append(out_file)
+
+    rule:
+        name: f'embed_panel_restricted_genes_scrnaseq/{name}'
+        input:
+            data=data,
+        output:
+            out_file=out_file,
+        params:
+            n_comps=n_comps,
+            n_neighbors=n_neighbors,
+            metric=metric,
+            min_dist=min_dist,
+            min_counts=min_counts,
+            min_features=min_features,
+            max_counts=max_counts,
+            max_features=max_features,
+            min_cells=min_cells,
+            genes=genes,
+        threads: 1
+        resources:
+            mem='100GB',
+            runtime='8h',
+            # slurm_partition = "gpu",
+            # slurm_extra = '--gres=gpu:1',
+        conda:
+            "spatial"
+        shell:
+            """
+            mkdir -p "$(dirname {output.out_file})"
+
+            python -u workflow/scripts/scRNAseq/embed_panel_scrnaseq.py \
+                --data {input.data} \
+                --out_file {output.out_file} \
+                --n_comps {params.n_comps} \
+                --n_neighbors {params.n_neighbors} \
+                --metric {params.metric} \
+                --min_dist {params.min_dist} \
+                --min_counts {params.min_counts} \
+                --min_features {params.min_features} \
+                --max_counts {params.max_counts} \
+                --max_features {params.max_features} \
+                --min_cells {params.min_cells} \
+                --genes {params.genes}
+                
+            echo "DONE"
+            """
+
+
+rule embed_panel_restricted_genes_scrnaseq_all:
+    input:
+        out_files

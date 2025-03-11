@@ -161,6 +161,7 @@ def get_marker_rank_significance(rnk, gene_set, top_n=None):
 
         # Add hypergeometric p-value to the results
         markers_rank_significance["hypergeometric_pvalue"] = scipy.stats.hypergeom.sf(x - 1, N, K, top_n)
+        markers_rank_significance[f"n_hits_{top_n=}"] = x
 
     return markers_rank_significance
 
