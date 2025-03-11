@@ -131,7 +131,6 @@ if __name__ == "__main__":
     df_permutations_logreg = {}
     df_importances_logreg = {}
     df_markers_rank_significance_logreg = {}
-    df_markers_rank_significance_lrdata = {}
 
     for ctj in u_cell_types:
         if (adata.obs[label_key] == ctj).sum() < 30:
