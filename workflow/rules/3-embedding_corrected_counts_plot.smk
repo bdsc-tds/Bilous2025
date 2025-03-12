@@ -24,7 +24,7 @@ normalisations = ['lognorm','sctransform']
 layers = ['data','scale_data']
 references = ['matched_reference_combo','external_reference']
 methods = ['rctd_class_aware']
-colors = ['sample','Level2']#['Level1','Level2','Level3','Level4','panel','sample',] # condition and sample as color to plot added here in addition to levels
+colors = ['sample','Level2.1']#['Level1','Level2','Level3','Level4','panel','sample',] # condition and sample as color to plot added here in addition to levels
 extension = 'png'
 
 out_files_panel = []

@@ -28,6 +28,8 @@ out_files = []
 
 for reference in (references := scrnaseq_processed_data_dir.iterdir()):
     reference_name = reference.stem
+    reference_dir = seurat_to_h5_dir / reference_name
+    reference_is_done = reference_dir / '.done'
 
     out_file = results_dir / f'embed_panel_restricted_genes_scrnaseq/{reference_name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet' 
     out_files.append(out_file)
@@ -35,10 +37,11 @@ for reference in (references := scrnaseq_processed_data_dir.iterdir()):
     rule:
         name: f'embed_panel_restricted_genes_scrnaseq/{reference_name}'
         input:
-            reference=reference,
+            reference_is_done=reference_is_done
         output:
             out_file=out_file,
         params:
+            reference=reference_dir,
             layer=layer,
             n_comps=n_comps,
             n_neighbors=n_neighbors,
@@ -63,7 +66,7 @@ for reference in (references := scrnaseq_processed_data_dir.iterdir()):
             mkdir -p "$(dirname {output.out_file})"
 
             python -u workflow/scripts/scRNAseq/embed_panel_scrnaseq.py \
-                --reference {input.reference} \
+                --reference {params.reference} \
                 --out_file {output.out_file} \
                 --layer {params.layer} \
                 --n_comps {params.n_comps} \

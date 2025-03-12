@@ -14,7 +14,7 @@ normalisations = ['lognorm','sctransform']
 layers = ['data','scale_data']
 references = ['matched_reference_combo','external_reference']
 methods = ['rctd_class_aware']
-levels = ['Level2'] 
+levels = ['Level2.1'] 
 extension = 'png'
 dpi = 100
 

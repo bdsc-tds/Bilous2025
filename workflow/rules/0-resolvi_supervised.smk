@@ -23,7 +23,7 @@ normalisation = 'lognorm'
 mode = 'reference_based'
 references = ['matched_reference_combo']
 methods = ['rctd_class_aware']
-levels = ['Level2']
+levels = ['Level2.1']
 
 out_files_training = []
 for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):

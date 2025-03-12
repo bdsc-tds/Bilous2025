@@ -13,7 +13,7 @@ normalisations = ['lognorm','sctransform']
 layers = ['data','scale_data']
 references = ['matched_reference','external_reference']
 methods = ['rctd_class_aware']
-levels = ['Level2'] 
+levels = ['Level2.1'] 
 extension = 'png'
 
 out_files_panel = []
