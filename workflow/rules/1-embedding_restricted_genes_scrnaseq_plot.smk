@@ -74,7 +74,7 @@ for reference in (references := scrnaseq_processed_data_dir.iterdir()):
                 """
                 mkdir -p "$(dirname {output.out_file})"
 
-                python workflow/scripts/scrnaseq/embed_panel_scrnaseq_plot.py \
+                python workflow/scripts/scRNAseq/embed_panel_scrnaseq_plot.py \
                 --embed_file {input.embed_file} \
                 --reference {params.reference} \
                 --color {params.color} \
