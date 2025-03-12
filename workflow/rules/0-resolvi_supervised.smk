@@ -27,6 +27,8 @@ levels = ['Level2.1']
 
 out_files_training = []
 for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
+    if segmentation.stem == 'proseg_mode':
+        continue
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
             for donor in (donors := panel.iterdir()):
@@ -35,12 +37,12 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                         for method in methods:
                             for level in levels:
                                 
-                                name_sample =  '/'.join((segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,))
                                 if segmentation.stem == 'proseg_expected':
+                                    name_sample =  '/'.join(('proseg',condition.stem,panel.stem,donor.stem,sample.stem,))
                                     path = xenium_dir / f'{name_sample}/raw_results'
                                 else:
+                                    name_sample =  '/'.join((segmentation.stem.replace('proseg_mode','proseg'),condition.stem,panel.stem,donor.stem,sample.stem,))
                                     path = xenium_dir / f'{name_sample}/normalised_results/outs'
-                                
 
                                 k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,
                                      normalisation,mode,reference,method,level,f'{mixture_k=}')
@@ -98,6 +100,8 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
 
 out_files_inference = []
 for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
+    if segmentation.stem == 'proseg_mode':
+        continue
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
             for donor in (donors := panel.iterdir()):
@@ -106,14 +110,16 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                         for method in methods:
                             for level in levels:
                                 
-                                k_sample = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,)
-                                name_sample =  '/'.join(k_sample)
                                 if segmentation.stem == 'proseg_expected':
+                                    k_sample_dir = ('proseg',condition.stem,panel.stem,donor.stem,sample.stem,)
+                                    name_sample =  '/'.join(k_sample_dir)
                                     path = xenium_dir / f'{name_sample}/raw_results'
                                 else:
+                                    k_sample_dir = (segmentation.stem.replace('proseg_mode','proseg'),condition.stem,panel.stem,donor.stem,sample.stem,)
+                                    name_sample =  '/'.join(k_sample_dir)
                                     path = xenium_dir / f'{name_sample}/normalised_results/outs'
 
-                                
+                                k_sample = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
                                 k_model = k_sample+(normalisation,mode,reference,method,level,f'{mixture_k=}',)
                                 k = k_model + (f'{num_samples=}',)
                                 name_model = '/'.join(k_model)

@@ -55,6 +55,8 @@ def config(path=config_path):
     with open(path, "r") as ymlfile:
         cfg = yaml.safe_load(ymlfile)
         for k in cfg.keys():
+            if "umap_" in k:
+                continue
             cfg[k] = os.path.join(cfg["base_dir"], cfg[k])
     return cfg
 

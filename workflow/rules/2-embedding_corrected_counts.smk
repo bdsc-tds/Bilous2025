@@ -29,6 +29,8 @@ out_files_panel = []
 
 for correction_method in correction_methods:
     for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
+        if segmentation.stem == 'proseg_mode':
+            continue
         for condition in (conditions := segmentation.iterdir()): 
             for panel in (panels := condition.iterdir()):
                 # for normalisation in normalisations: 

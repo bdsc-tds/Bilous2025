@@ -46,8 +46,16 @@ if color == "sample":
 elif color == "panel":
     palette = pd.read_csv(panel_palette, index_col=0).iloc[:, 0]
 else:
-    palette = pd.read_csv(cell_type_palette)[[color, f"cols_{color}"]].drop_duplicates().set_index(color).squeeze()
-
+    if color == "Level2.1":
+        palette_lvl2 = (
+            pd.read_csv(cell_type_palette)[["Level2", "cols_Level2"]].drop_duplicates().set_index("Level2").squeeze()
+        )
+        palette = pd.read_csv(cell_type_palette)[[color, f"cols_{color}"]].drop_duplicates().set_index(color).squeeze()
+        for k, v in palette_lvl2.items():
+            if k not in palette.index:
+                palette[k] = palette_lvl2[k]
+    else:
+        palette = pd.read_csv(cell_type_palette)[[color, f"cols_{color}"]].drop_duplicates().set_index(color).squeeze()
 
 # vars
 xenium_levels = ["segmentation", "condition", "panel", "donor", "sample", "cell_id"]
@@ -99,9 +107,22 @@ else:
     df_annot = df_annot.reset_index()
 
     # merge umap and cell type annotations
-    df = pd.merge(obs, df_annot, on=xenium_levels, how="inner")
+    df = pd.merge(obs, df_annot, on=xenium_levels, how="inner").dropna()
 
     params = (reference, method, color)
+
+    if color == "Level2.1":
+        if condition.stem == "NSCLC":
+            name_malignant = "malignant cell of lung"
+        elif condition.stem == "breast":
+            name_malignant = "malignant cell of breast"
+        else:
+            name_malignant = "malignant cell"
+
+        ct_to_replace = df[params][df[params].str.contains("malignant cell")].unique()
+        replace_map = dict([[ct, name_malignant] for ct in ct_to_replace])
+        df[params] = df[params].replace(replace_map)
+
     title = f"Segmentation: {segmentation.stem}, condition: {condition.stem}, Panel: {panel.stem}\n Method: {method}, Reference: {reference}"
 
 

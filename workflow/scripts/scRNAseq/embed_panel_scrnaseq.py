@@ -60,14 +60,31 @@ if len(genes):
     ]
 
     print(f"Found {len(genes_found)} out of {len(genes)} genes.")
+
+    # read raw counts to reapply QC
+    ad_merge_raw_counts = sc.read_10x_h5(reference / "RNA_counts.h5")
+    ad_merge_raw_counts = ad_merge[:, genes_found].copy()
     ad_merge = ad_merge[:, genes_found].copy()
+
+    # reapply QC to subset of genes
+    preprocessing.preprocess(
+        ad_merge_raw_counts,
+        min_counts=min_counts,
+        min_genes=min_features,
+        max_counts=max_counts,
+        max_genes=max_features,
+        min_cells=min_cells,
+        save_raw=False,
+    )
+    # replace X
+    ad_merge = ad_merge[ad_merge_raw_counts.obs_names].copy()
 
 print("Computing PCA and UMAP")
 # preprocess
 preprocessing.preprocess(
     ad_merge,
-    normalize=True,
-    log1p=True,
+    normalize=False,
+    log1p=False,
     scale="none",
     n_comps=n_comps,
     metric=metric,

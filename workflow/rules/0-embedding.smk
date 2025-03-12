@@ -1,5 +1,5 @@
 # cfg paths
-xenium_dir = Path(config['xenium_processed_data_dir'])
+xenium_processed_data_dir = Path(config['xenium_processed_data_dir'])
 results_dir = Path(config['results_dir'])
 std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
 
@@ -21,6 +21,8 @@ metric = config['umap_metric']
 out_files_panel = []
 
 for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
+    if segmentation.stem == 'proseg_mode':
+        continue
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
             for normalisation in normalisations: 
@@ -39,6 +41,7 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                         output:
                             out_file=out_file,
                         params:
+                            xenium_processed_data_dir=xenium_processed_data_dir,
                             normalisation=normalisation,
                             layer=layer,
                             n_comps=n_comps,
@@ -66,6 +69,7 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                             python workflow/scripts/xenium/embed_panel.py \
                                 --panel {input.panel} \
                                 --out_file {output.out_file} \
+                                --xenium_processed_data_dir {params.xenium_processed_data_dir} \
                                 --normalisation {params.normalisation} \
                                 --layer {params.layer} \
                                 --n_comps {params.n_comps} \

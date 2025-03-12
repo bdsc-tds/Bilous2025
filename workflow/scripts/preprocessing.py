@@ -148,7 +148,7 @@ def preprocess(
     min_dist=0.5,
     backend="gpu",  # "gpu" or "cpu"
     device=0,  # Device ID for GPU backend
-    save_raw=True,  # Whether to save raw data
+    save_raw=False,  # Whether to save raw data
     verbose=True,  # Optional verbose output
     filter_empty=True,  # Whether to filter empty batches
     min_counts=None,

@@ -32,7 +32,7 @@ max_n_cells = 500_000
 
 out_files = []
 for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
-    if segmentation.stem in ['proseg_mode','proseg_expected']:
+    if segmentation.stem == 'proseg_mode':
         continue
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):

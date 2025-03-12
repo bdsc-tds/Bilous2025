@@ -11,7 +11,6 @@ import sys
 
 sys.path.append("workflow/scripts/")
 import preprocessing
-import readwrite
 
 # Set up argument parser
 parser = argparse.ArgumentParser(description="Embed panel of Xenium donors.")

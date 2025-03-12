@@ -17,6 +17,8 @@ levels = ['Level2.1'] # condition and sample as color to plot added here in addi
 out_files_panel = []
 
 for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
+    if segmentation.stem == 'proseg_mode':
+        continue
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
             for normalisation in normalisations:

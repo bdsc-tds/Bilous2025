@@ -30,6 +30,8 @@ extension = 'png'
 out_files_panel = []
 
 for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
+    if segmentation.stem == 'proseg_mode':
+        continue
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
             for normalisation in normalisations:

@@ -31,7 +31,7 @@ markers = 'diffexpr' #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/da
 
 out_files = []
 for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
-    if segmentation.stem in ['proseg_mode','proseg_expected']:
+    if segmentation.stem == 'proseg_mode':
         continue
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):

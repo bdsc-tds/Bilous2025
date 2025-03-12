@@ -37,13 +37,34 @@ if color == "sample":
 elif color == "panel":
     palette = pd.read_csv(panel_palette, index_col=0).iloc[:, 0]
 else:
-    palette = pd.read_csv(cell_type_palette)[[color, f"cols_{color}"]].drop_duplicates().set_index(color).squeeze()
-
+    if color == "Level2.1":
+        palette_lvl2 = (
+            pd.read_csv(cell_type_palette)[["Level2", "cols_Level2"]].drop_duplicates().set_index("Level2").squeeze()
+        )
+        palette = pd.read_csv(cell_type_palette)[[color, f"cols_{color}"]].drop_duplicates().set_index(color).squeeze()
+        for k, v in palette_lvl2.items():
+            if k not in palette.index:
+                palette[k] = palette_lvl2[k]
+    else:
+        palette = pd.read_csv(cell_type_palette)[[color, f"cols_{color}"]].drop_duplicates().set_index(color).squeeze()
 
 # load umap
 df = pd.read_parquet(embed_file)
 df["cell_id"] = df.index
 df[color] = pd.read_parquet(reference / "metadata.parquet")[color].values
+df = df.dropna()
+
+if color == "Level2.1":
+    if reference.stem in ["external_lung", "matched_combo_standard_breast_specific", "matched_lung_standard"]:
+        name_malignant = "malignant cell of lung"
+    elif reference.stem in ["external_breast", "matched_combo_standard_lung_specific"]:
+        name_malignant = "malignant cell of breast"
+    else:
+        name_malignant = "malignant cell"
+
+    ct_to_replace = df[color][df[color].str.contains("malignant cell")].unique()
+    replace_map = dict([[ct, name_malignant] for ct in ct_to_replace])
+    df[color] = df[color].replace(replace_map)
 
 # plotting color, palette
 unique_labels = np.unique(df[color].dropna())
