@@ -7,10 +7,10 @@ figures_dir = Path(config['figures_dir'])
 palette_dir = Path(config['xenium_metadata_dir'])
 
 # Params
-n_comps = 50
-n_neighbors = 50
-min_dist = 0.3
-metric = 'cosine'
+n_comps = config['umap_n_comps']
+n_neighbors = config['umap_n_neighbors']
+min_dist = config['umap_min_dist']
+metric = config['umap_metric']
 s=0.5
 alpha=0.5
 

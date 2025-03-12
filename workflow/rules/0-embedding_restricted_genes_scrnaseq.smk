@@ -18,39 +18,28 @@ min_cells = 5
 layer = 'RNA_counts'
 genes = pd.read_csv('/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/Xenium_hLung_v1_metadata.csv')['Gene'].tolist()
 
-# n_comps = 50
-# n_neighbors = 50
-# min_dist = 0.3
-# metric = 'cosine'
-
-# n_comps = 20
-# n_neighbors = 25
-# min_dist = 0.3
-# metric = 'euclidean'
-
-n_comps = 50
-n_neighbors = 50
-min_dist = 0.5
-metric = 'euclidean'
+n_comps = config['umap_n_comps']
+n_neighbors = config['umap_n_neighbors']
+min_dist = config['umap_min_dist']
+metric = config['umap_metric']
 
 
 out_files = []
 
 for reference in (references := scrnaseq_processed_data_dir.iterdir()):
-    name = reference.stem
+    reference_name = reference.stem
 
-    data = seurat_to_h5_dir / name / f"{layer}.h5"
-
-    out_file = results_dir / f'embed_panel_restricted_genes_scrnaseq/{name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet' 
+    out_file = results_dir / f'embed_panel_restricted_genes_scrnaseq/{reference_name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet' 
     out_files.append(out_file)
 
     rule:
-        name: f'embed_panel_restricted_genes_scrnaseq/{name}'
+        name: f'embed_panel_restricted_genes_scrnaseq/{reference_name}'
         input:
-            data=data,
+            reference=reference,
         output:
             out_file=out_file,
         params:
+            layer=layer,
             n_comps=n_comps,
             n_neighbors=n_neighbors,
             metric=metric,
@@ -74,8 +63,9 @@ for reference in (references := scrnaseq_processed_data_dir.iterdir()):
             mkdir -p "$(dirname {output.out_file})"
 
             python -u workflow/scripts/scRNAseq/embed_panel_scrnaseq.py \
-                --data {input.data} \
+                --reference {input.reference} \
                 --out_file {output.out_file} \
+                --layer {params.layer} \
                 --n_comps {params.n_comps} \
                 --n_neighbors {params.n_neighbors} \
                 --metric {params.metric} \

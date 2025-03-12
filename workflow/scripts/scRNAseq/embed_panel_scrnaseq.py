@@ -14,8 +14,9 @@ import preprocessing
 
 # Set up argument parser
 parser = argparse.ArgumentParser(description="Embed panel of Xenium donors.")
-parser.add_argument("--data", type=Path, help="Path to the data file.")
+parser.add_argument("--reference", type=Path, help="Path to the reference folder.")
 parser.add_argument("--out_file", type=str, help="Path to the output file.")
+parser.add_argument("--layer", type=str, help="Name of data layer to load.")
 parser.add_argument("--n_comps", type=int, help="Number of components.")
 parser.add_argument("--n_neighbors", type=int, help="Number of neighbors.")
 parser.add_argument("--metric", type=str, help="Distance metric to use.")
@@ -30,8 +31,9 @@ parser.add_argument("--genes", type=str, nargs="*", default=[], help="Restrict d
 args = parser.parse_args()
 
 # Access the arguments
-data = args.data
+reference = args.reference
 out_file = args.out_file
+layer = args.layer
 n_comps = args.n_comps
 n_neighbors = args.n_neighbors
 metric = args.metric
@@ -45,7 +47,7 @@ genes = args.genes
 
 
 print("Reading samples")
-ad_merge = sc.read_10x_h5(data)
+ad_merge = sc.read_10x_h5(reference / f"{layer}.h5")
 
 # subset to genes
 if len(genes):

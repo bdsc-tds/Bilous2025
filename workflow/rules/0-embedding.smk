@@ -13,10 +13,10 @@ max_features = float("inf")
 min_cells = 5
 
 # Params
-n_comps = 50
-n_neighbors = 50
-min_dist = 0.5
-metric = 'euclidean'
+n_comps = config['umap_n_comps']
+n_neighbors = config['umap_n_neighbors']
+min_dist = config['umap_min_dist']
+metric = config['umap_metric']
 
 out_files_panel = []
 

@@ -1,38 +1,38 @@
 configfile: "config/config.yml"
 
-# include: "rules/0-seurat_to_h5.smk"
+include: "rules/0-seurat_to_h5.smk"
 # include: "rules/1-coexpression_scrnaseq_references.smk"
 
-# include: "rules/0-coexpression.smk"
-# include: "rules/0-coexpression_cross_panel.smk"
+include: "rules/0-coexpression.smk"
+include: "rules/0-coexpression_cross_panel.smk"
 # include: "rules/1-coexpression_plot.smk"
 
 # include: "rules/0-silhouette.smk"
 # include: "rules/1-silhouette_plot.smk"
 include: "rules/0-scib_metrics.smk"
 
-# include: "rules/0-embedding.smk"
-# include: "rules/1-embedding_plot.smk"
+include: "rules/0-embedding.smk"
+include: "rules/1-embedding_plot.smk"
 
 include: "rules/0-embedding_restricted_genes.smk"
 include: "rules/0-embedding_restricted_genes_scrnaseq.smk"
-# include: "rules/1-embedding_restricted_genes_plot.smk"
-# include: "rules/1-embedding_restricted_genes_scrnaseq_plot.smk"
+include: "rules/1-embedding_restricted_genes_plot.smk"
+include: "rules/1-embedding_restricted_genes_scrnaseq_plot.smk"
 
-# include: "rules/0-ovrlpy.smk"
-# include: "rules/0-resolvi.smk"
-# include: "rules/0-resolvi_supervised.smk"
-# include: "rules/1-coexpression_corrected_counts.smk"
-# include: "rules/1-coexpression_corrected_counts_plot.smk"
-# include: "rules/2-embedding_corrected_counts.smk"
-# include: "rules/3-embedding_corrected_counts_plot.smk"
+include: "rules/0-ovrlpy.smk"
+include: "rules/0-resolvi.smk"
+include: "rules/0-resolvi_supervised.smk"
+include: "rules/1-coexpression_corrected_counts.smk"
+include: "rules/1-coexpression_corrected_counts_plot.smk"
+include: "rules/2-embedding_corrected_counts.smk"
+include: "rules/3-embedding_corrected_counts_plot.smk"
 
 include: "rules/2-contamination_metrics_diffexpr.smk"
 include: "rules/2-contamination_metrics_logreg.smk"
 
 rule all:
     input:
-        # rules.seurat_to_h5_all.input,
+        rules.seurat_to_h5_all.input,
         # rules.coexpression_all.input,
         # rules.coexpression_cross_panel_all.input,
         # rules.coexpression_scrnaseq_references_all.input,
@@ -56,8 +56,8 @@ rule all:
         # #
         # rules.embed_panel_restricted_genes_all.input,
         # rules.embed_panel_restricted_genes_scrnaseq_all.input,
-        # rules.embed_panel_restricted_genes_plot_all.input,
-        # rules.embed_panel_restricted_genes_scrnaseq_plot_all.input,
+        rules.embed_panel_restricted_genes_plot_all.input,
+        rules.embed_panel_restricted_genes_scrnaseq_plot_all.input,
         # #
         # rules.embed_panel_corrected_counts_plot_all.input,
         # rules.embed_condition_corrected_counts_plot_all.input,
@@ -70,7 +70,7 @@ rule all:
         # rules.ovrlpy_all.input,
         # rules.ovrlpy_correction_all.input,
         # #
-        rules.contamination_metrics_diffexpr_all.input,
-        rules.contamination_metrics_logreg_all.input,
+        # rules.contamination_metrics_diffexpr_all.input,
+        # rules.contamination_metrics_logreg_all.input,
         # #
-        rules.scib_metrics_panel_all.input,
+        # rules.scib_metrics_panel_all.input,

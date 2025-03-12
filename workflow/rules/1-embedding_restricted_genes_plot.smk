@@ -7,20 +7,10 @@ palette_dir = Path(config['xenium_metadata_dir'])
 cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
 
 # Params
-# n_comps = 50
-# n_neighbors = 50
-# min_dist = 0.3
-# metric = 'cosine'
-
-# n_comps = 20
-# n_neighbors = 25
-# min_dist = 0.3
-# metric = 'euclidean'
-
-n_comps = 50
-n_neighbors = 50
-min_dist = 0.5
-metric = 'euclidean'
+n_comps = config['umap_n_comps']
+n_neighbors = config['umap_n_neighbors']
+min_dist = config['umap_min_dist']
+metric = config['umap_metric']
 
 s=0.5
 alpha=0.5
@@ -53,7 +43,7 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                                 # input embedding file (doesn't depend on ref,method or color loops but more readable to have here)
                                 k = (segmentation.stem,condition.stem,panel.stem,normalisation)
                                 name = '/'.join(k)
-                                embed_file = results_dir / f'embed_panel/{name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet'
+                                embed_file = results_dir / f'embed_panel_restricted_genes/{name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet'
 
                                 # no need to plot panel for panel color UMAPs
                                 if color == 'panel':

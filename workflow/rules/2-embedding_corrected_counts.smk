@@ -15,10 +15,10 @@ max_features = float("inf")
 min_cells = 5
 
 # Params
-n_comps = 50
-n_neighbors = 50
-min_dist = 0.3
-metric = 'cosine'
+n_comps = config['umap_n_comps']
+n_neighbors = config['umap_n_neighbors']
+min_dist = config['umap_min_dist']
+metric = config['umap_metric']
 raw_corrected_counts = True
 
 # resolvi params

@@ -15,10 +15,11 @@ max_features = float("inf")
 min_cells = 5
 
 # Params
-n_comps = 50
-n_neighbors = 50
-min_dist = 0.3
-metric = 'cosine'
+n_comps = config['umap_n_comps']
+n_neighbors = config['umap_n_neighbors']
+min_dist = config['umap_min_dist']
+metric = config['umap_metric']
+
 genes = pd.read_csv('/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/Xenium_hLung_v1_metadata.csv')['Gene'].tolist()
 
 out_files_panel = []

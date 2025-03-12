@@ -7,15 +7,10 @@ palette_dir = Path(config['xenium_metadata_dir'])
 cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
 
 # Params
-# n_comps = 50
-# n_neighbors = 50
-# min_dist = 0.3
-# metric = 'cosine'
-
-n_comps = 20
-n_neighbors = 25
-min_dist = 0.3
-metric = 'euclidean'
+n_comps = config['umap_n_comps']
+n_neighbors = config['umap_n_neighbors']
+min_dist = config['umap_min_dist']
+metric = config['umap_metric']
 
 s=0.5
 alpha=0.5
@@ -32,35 +27,33 @@ extension = 'png'
 
 out_files_panel = []
 for reference in (references := scrnaseq_processed_data_dir.iterdir()):
-    name = reference.stem
+    reference_name = reference.stem
 
     for color in colors:
-        if color == 'Level2.1' and reference == 'external_reference':
+        if color == 'Level2.1' and 'external' in reference_name:
             continue
 
         # input embedding file (doesn't depend on ref,method or color loops but more readable to have here)
-        embed_file = results_dir / f'embed_panel_restricted_genes_scrnaseq/{name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet' 
+        embed_file = results_dir / f'embed_panel_restricted_genes_scrnaseq/{reference_name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet' 
 
         # no need to plot panel for panel color UMAPs
         if color == 'panel':
             continue
         
         # no need to plot sample coloring for every param combination
-        if color == 'sample' and (reference != references[0] or method != methods[0]):
+        if color == 'sample':
             continue
 
-        out_file = figures_dir / f"embed_panel_restricted_genes_scrnaseq_plot/{name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}_{reference}_{method}_{color}.{extension}"
+        out_file = figures_dir / f"embed_panel_restricted_genes_scrnaseq_plot/{reference_name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}_{method}_{color}.{extension}"
         out_files_panel.append(out_file)
 
         rule:
-            name: f'embed_panel_restricted_genes_scrnaseq_plot/{name}/umap_{layer}_{reference}_{method}_{color}'
+            name: f'embed_panel_restricted_genes_scrnaseq_plot/{reference_name}/umap_{layer}_{method}_{color}'
             input:
-                panel=panel,
                 embed_file=embed_file,
             output:
                 out_file=out_file,
             params:
-                cell_type_annotation_dir=cell_type_annotation_dir,
                 normalisation=normalisation,
                 reference=reference,
                 method=method,
@@ -81,13 +74,9 @@ for reference in (references := scrnaseq_processed_data_dir.iterdir()):
                 """
                 mkdir -p "$(dirname {output.out_file})"
 
-                python workflow/scripts/xenium/embed_panel_plot.py \
-                --panel {input.panel} \
+                python workflow/scripts/scrnaseq/embed_panel_scrnaseq_plot.py \
                 --embed_file {input.embed_file} \
-                --cell_type_annotation_dir {params.cell_type_annotation_dir} \
-                --normalisation {params.normalisation} \
                 --reference {params.reference} \
-                --method {params.method} \
                 --color {params.color} \
                 --out_file {output.out_file} \
                 --cell_type_palette {params.cell_type_palette} \
