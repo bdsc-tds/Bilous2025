@@ -90,7 +90,10 @@ out_files_condition = []
 for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
     if segmentation.stem == 'proseg_v1':
         continue
-    for condition in (conditions := segmentation.iterdir()): 
+    for condition in (conditions := segmentation.iterdir()):
+        n_panels = len(list(condition.iterdir()))
+        if n_panels == 1: # no point to do condition plot if there's only one panel
+            continue 
         for normalisation in normalisations: 
             for layer in layers:
                 k = (segmentation.stem,condition.stem,normalisation)
@@ -107,6 +110,7 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                     output:
                         out_file=out_file,
                     params:
+                        xenium_processed_data_dir=xenium_processed_data_dir,
                         normalisation=normalisation,
                         layer=layer,
                         n_comps=n_comps,
@@ -133,6 +137,7 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                         python workflow/scripts/xenium/embed_condition.py \
                             --condition {input.condition} \
                             --out_file {output.out_file} \
+                            --xenium_processed_data_dir {params.xenium_processed_data_dir} \
                             --normalisation {params.normalisation} \
                             --layer {params.layer} \
                             --n_comps {params.n_comps} \
@@ -143,7 +148,7 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                             --min_features {params.min_features} \
                             --max_counts {params.max_counts} \
                             --max_features {params.max_features} \
-                            --min_cells {params.min_cells}
+                            --min_cells {params.min_cells} \
 
                         echo "DONE"
                         """

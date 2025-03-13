@@ -51,24 +51,13 @@ min_cells = args.min_cells
 genes = args.genes
 
 
-segmentation = sample.parents[6].stem
-condition = sample.parents[5].stem
-panel = sample.parents[4]
-donor = sample.parents[3]
+segmentation = sample.parents[3].stem
+condition = sample.parents[2].stem
+panel = sample.parents[1]
+donor = sample.parents[0]
 
-# read xenium samples
-# xenium_paths = {}
-# for donor in (donors := panel.iterdir()):
-#     for sample in (samples := donor.iterdir()):
-#         k = (segmentation, condition, panel.stem, donor.stem, sample.stem)
-#         sample_path = sample / "normalised_results/outs"
-
-#         xenium_paths[k] = sample_path
-
-# ads = readwrite.read_xenium_samples(xenium_paths, anndata_only=True, transcripts=False, sample_name_as_key=False)
-print("Reading samples")
-ads = {}
-
+# read xenium sample
+print("Reading sample")
 print(donor.stem, sample.stem)
 
 if segmentation == "proseg_expected":
@@ -120,9 +109,8 @@ else:
 print("Concatenating")
 # concatenate
 xenium_levels = ["segmentation", "condition", "panel", "donor", "sample"]
-for k in ads.keys():
-    for i, lvl in enumerate(xenium_levels):
-        ad.obs[lvl] = k[i]
+for i, lvl in enumerate(xenium_levels):
+    ad.obs[lvl] = k[i]
 
 print("Done")
 

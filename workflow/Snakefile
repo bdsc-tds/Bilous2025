@@ -50,8 +50,8 @@ rule all:
         # rules.silhouette_plot_condition_all.input,
         # #
         # rules.embed_panel_all.input,
-        # rules.embed_condition_all.input,
         # rules.embed_panel_plot_all.input,
+        rules.embed_condition_all.input,
         # rules.embed_condition_plot_all.input,
         # #
         # rules.embed_panel_restricted_genes_all.input,

@@ -21,13 +21,14 @@ parser.add_argument("--panel_palette", type=Path, help="Path to palette csv file
 parser.add_argument("--sample_palette", type=Path, help="Path to palette csv file")
 parser.add_argument("--s", type=float, help="scatter point size")
 parser.add_argument("--alpha", type=float, help="scatter alpha (transparency)")
+parser.add_argument("--dpi", type=int, help="dpi of saved plot")
 args = parser.parse_args()
 
 # Access the arguments
 condition = args.condition
 embed_file = args.embed_file
 cell_type_annotation_dir = args.cell_type_annotation_dir
-normalisation = args.normalisation
+normalisation = "lognorm"  # fix this for now, even for sctransfrom args.normalisation
 reference = args.reference
 method = args.method
 color = args.color
@@ -37,6 +38,7 @@ panel_palette = args.panel_palette
 sample_palette = args.sample_palette
 s = args.s
 alpha = args.alpha
+dpi = args.dpi
 
 if color == "sample":
     palette = pd.read_csv(sample_palette, index_col=0).iloc[:, 0]
@@ -64,7 +66,6 @@ if color in ["panel", "sample"]:
 else:
     # read cell type annotation
     annot = {}
-
     for panel in (panels := condition.iterdir()):
         for donor in (donors := panel.iterdir()):
             for sample in (samples := donor.iterdir()):
@@ -98,10 +99,23 @@ else:
     df_annot = df_annot.reset_index()
 
     # merge umap and cell type annotations
-    df = pd.merge(obs, df_annot, on=xenium_levels, how="inner")
+    df = pd.merge(obs, df_annot, on=xenium_levels, how="inner").dropna()
 
     params = (reference, method, color)
-    title = f"Segmentation: {segmentation.stem}, condition: {condition.stem}\n Method: {method}, Reference: {reference}"
+
+    if color == "Level2.1":
+        if condition.stem == "NSCLC":
+            name_malignant = "malignant cell of lung"
+        elif condition.stem == "breast":
+            name_malignant = "malignant cell of breast"
+        else:
+            name_malignant = "malignant cell"
+
+        ct_to_replace = df[params][df[params].str.contains("malignant cell")].unique()
+        replace_map = dict([[ct, name_malignant] for ct in ct_to_replace])
+        df[params] = df[params].replace(replace_map)
+
+    title = f"Segmentation: {segmentation.stem}, condition: {condition.stem}, Panel: {panel.stem}\n Method: {method}, Reference: {reference}"
 
 
 # plotting params, palette
@@ -109,7 +123,9 @@ unique_labels = np.unique(df[params].dropna())
 palette = {u: palette[u] for u in unique_labels}
 legend_handles = [mpatches.Patch(color=color, label=label) for label, color in palette.items()]
 
-print(f"Segmentation: {segmentation.stem}, condition: {condition.stem}, Method: {method}, Reference: {reference}")
+print(
+    f"Segmentation: {segmentation.stem}, condition: {condition.stem}, Panel: {panel.stem}, Method: {method}, Reference: {reference}"
+)
 
 
 # plot
@@ -140,5 +156,5 @@ f.legend(
     frameon=False,
 )
 plt.tight_layout(rect=[0, 0, 0.85, 0.95])
-plt.savefig(out_file, dpi=300, bbox_inches="tight")
+plt.savefig(out_file, dpi=dpi, bbox_inches="tight")
 plt.close()

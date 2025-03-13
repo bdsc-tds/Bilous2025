@@ -2,6 +2,7 @@ import dask
 
 dask.config.set({"dataframe.query-planning": False})
 
+import numpy as np
 import scanpy as sc
 import pandas as pd
 import argparse
@@ -106,8 +107,8 @@ if __name__ == "__main__":
     )
 
     # subsample very large samples
-    if len(adata) > args.max_n_cells:
-        sc.pp.subsample(adata, n_obs=args.max_n_cells)
+    # if len(adata) > args.max_n_cells:
+    #     sc.pp.subsample(adata, n_obs=args.max_n_cells)
 
     # read markers if needed
     if args.markers != "diffexpr":
@@ -156,6 +157,20 @@ if __name__ == "__main__":
 
             # Filter for cti
             adata_cti = adata[adata.obs[label_key] == cti]
+            if len(adata_cti) > args.max_n_cells:
+                rng = np.random.default_rng(0)
+                print(f"Subsampling {cti} to {args.max_n_cells} cells")
+                subsampled_true = adata_cti.obs_names[adata_cti.obs[f"has_{ctj}_neighbor"]]
+                subsampled_true = rng.choice(
+                    subsampled_true, min(len(subsampled_true), args.max_n_cells // 2), replace=False
+                )
+                subsampled_false = adata_cti.obs_names[~adata_cti.obs[f"has_{ctj}_neighbor"]]
+                subsampled_false = rng.choice(
+                    subsampled_false, min(len(subsampled_false), args.max_n_cells // 2), replace=False
+                )
+
+                subsampled_idx = np.hstack([subsampled_true, subsampled_false])
+                adata_cti = adata_cti[subsampled_idx]
 
             if (adata_cti.obs[f"has_{ctj}_neighbor"]).sum() < 30 or (~adata_cti.obs[f"has_{ctj}_neighbor"]).sum() < 30:
                 print(f"Not enough cells from each class to test {cti} with {ctj} neighbors")

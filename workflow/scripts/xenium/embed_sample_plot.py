@@ -59,10 +59,10 @@ else:
 
 # vars
 xenium_levels = ["segmentation", "condition", "panel", "donor", "sample", "cell_id"]
-segmentation = sample.parents[6]
-condition = sample.parents[5]
-panel = sample.parents[4]
-donor = sample.parents[3]
+segmentation = sample.parents[3]
+condition = sample.parents[2]
+panel = sample.parents[1]
+donor = sample.parents[0]
 
 print(sample)
 # load umap

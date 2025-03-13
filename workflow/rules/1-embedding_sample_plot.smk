@@ -12,8 +12,8 @@ n_neighbors = config['umap_n_neighbors']
 min_dist = config['umap_min_dist']
 metric = config['umap_metric']
 
-s=0.5
-alpha=0.5
+s=3
+alpha = 0.5
 dpi = 100
 
 cell_type_palette = palette_dir / 'col_palette_cell_types_combo.csv'

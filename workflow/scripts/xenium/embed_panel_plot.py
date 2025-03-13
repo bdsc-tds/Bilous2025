@@ -43,8 +43,6 @@ dpi = args.dpi
 
 if color == "sample":
     palette = pd.read_csv(sample_palette, index_col=0).iloc[:, 0]
-elif color == "panel":
-    palette = pd.read_csv(panel_palette, index_col=0).iloc[:, 0]
 else:
     if color == "Level2.1":
         palette_lvl2 = (

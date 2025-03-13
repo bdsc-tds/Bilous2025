@@ -25,7 +25,7 @@ top_n = 20
 top_n_lr = 10
 scoring = 'f1'
 markers = 'diffexpr' #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/cellmarker_cell_types_markers.json'
-max_n_cells = 500_000
+max_n_cells = 50_000
 
 # needed to get unique cell types names for each level
 # cell_types_palette = pd.read_csv(palette_dir / 'col_palette_cell_types_combo.csv')
