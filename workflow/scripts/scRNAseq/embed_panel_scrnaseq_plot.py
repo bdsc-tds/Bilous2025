@@ -51,8 +51,8 @@ else:
 # load umap
 df = pd.read_parquet(embed_file)
 df["cell_id"] = df.index
-df[color] = pd.read_parquet(reference / "metadata.parquet")[color].values
-df = df.dropna()
+annot = pd.read_parquet(reference / "metadata.parquet").set_index("cell_id")[color]
+df = df.join(annot).dropna()
 
 if color == "Level2.1":
     if reference.stem in ["external_lung", "matched_combo_standard_breast_specific", "matched_lung_standard"]:

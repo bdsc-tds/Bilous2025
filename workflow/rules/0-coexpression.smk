@@ -10,8 +10,6 @@ target_counts = [30,50,200]
 out_files = []
 
 for segmentation in (segmentations := xenium_dir.iterdir()):
-    if segmentation.stem == 'proseg_v1':
-        continue
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
             for donor in (donors := panel.iterdir()):

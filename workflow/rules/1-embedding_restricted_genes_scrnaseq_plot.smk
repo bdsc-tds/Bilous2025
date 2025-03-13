@@ -5,6 +5,7 @@ results_dir = Path(config['results_dir'])
 figures_dir = Path(config['figures_dir'])
 palette_dir = Path(config['xenium_metadata_dir'])
 cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
+seurat_to_h5_dir = results_dir / 'seurat_to_h5'
 
 # Params
 n_comps = config['umap_n_comps']
@@ -12,7 +13,7 @@ n_neighbors = config['umap_n_neighbors']
 min_dist = config['umap_min_dist']
 metric = config['umap_metric']
 
-s=0.5
+s=3
 alpha=0.5
 dpi = 100
 
@@ -28,7 +29,8 @@ extension = 'png'
 out_files_panel = []
 for reference in (references := scrnaseq_processed_data_dir.iterdir()):
     reference_name = reference.stem
-
+    reference_dir = seurat_to_h5_dir / reference_name
+    
     for color in colors:
         if color == 'Level2.1' and 'external' in reference_name:
             continue
@@ -44,7 +46,7 @@ for reference in (references := scrnaseq_processed_data_dir.iterdir()):
         if color == 'sample':
             continue
 
-        out_file = figures_dir / f"embed_panel_restricted_genes_scrnaseq_plot/{reference_name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}_{method}_{color}.{extension}"
+        out_file = figures_dir / f"embed_panel_restricted_genes_scrnaseq/{reference_name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}_{method}_{color}.{extension}"
         out_files_panel.append(out_file)
 
         rule:
@@ -55,7 +57,7 @@ for reference in (references := scrnaseq_processed_data_dir.iterdir()):
                 out_file=out_file,
             params:
                 normalisation=normalisation,
-                reference=reference,
+                reference=reference_dir,
                 method=method,
                 color=color,
                 cell_type_palette=cell_type_palette,
