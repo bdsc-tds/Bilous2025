@@ -100,20 +100,35 @@ if __name__ == "__main__":
     # read labels
     label_key = "label_key"
     adata.obs[label_key] = pd.read_parquet(args.sample_annotation).set_index("cell_id").iloc[:, 0]
-    adata.obs[label_key] = adata.obs[label_key].replace(r" of .+", "", regex=True)
     adata = adata[adata.obs[label_key].notna()]  # remove NaN annotation
-    adata.obs.loc[adata.obs[label_key].str.contains("malignant"), label_key] = (
-        "malignant cell"  # for Level2.1, simplify all to malignant
-    )
+
+    if "Level2.1" in args.sample_annotation:
+        # for custom Level2.1, simplify malignant subtypes to malignant
+        adata.obs.loc[adata.obs[label_key].str.contains("malignant"), label_key] = "malignant cell"
+
+    # read markers if needed
+    if args.markers != "diffexpr":
+        if "Level2.1" in args.sample_annotation:
+            # custom mapping for Level2.1: simplify to Level1 to assess with known markers
+            level_simplified = "Level1"
+
+            df_markers = pd.read_csv("data/markers/Xenium_panels_common_markers.csv")[["cell_type", "gene_name"]]
+            palette = pd.read_csv("data/xenium/metadata/col_palette_cell_types_combo.csv")
+
+            cell_types_mapping = palette.set_index("Level2.1")[level_simplified].replace(r" of .+", "", regex=True)
+            cell_types_mapping[cell_types_mapping.str.contains("malignant")] = "malignant cell"
+            adata.obs[label_key] = adata.obs[label_key].replace(cell_types_mapping)
+
+        else:
+            df_markers = pd.read_csv(args.markers)[["cell_type", "gene_name"]]
+
+        ct_not_found = adata.obs[label_key][~adata.obs[label_key].isin(df_markers["cell_type"])].unique()
+        print(f"Could not find {ct_not_found} in markers file")
+        adata = adata[adata.obs[label_key].isin(df_markers["cell_type"])]
 
     # subsample very large samples
     # if len(adata) > args.max_n_cells:
     #     sc.pp.subsample(adata, n_obs=args.max_n_cells)
-
-    # read markers if needed
-    if args.markers != "diffexpr":
-        df_markers = pd.read_json(args.markers)["canonical"].explode().reset_index()
-        df_markers.columns = ["cell_type", "gene"]
 
     # log-normalize before DE
     sc.pp.normalize_total(adata)

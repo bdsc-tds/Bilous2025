@@ -71,11 +71,17 @@ for panel in (panels := condition.iterdir()):
             print(panel.stem, donor.stem, sample.stem)
 
             if segmentation == "proseg_expected":
-                k = ("proseg", condition, panel.stem, donor.stem, sample.stem)
+                k = ("proseg", condition.stem, panel.stem, donor.stem, sample.stem)
                 name_sample = "/".join(k)
                 sample_dir = xenium_processed_data_dir / f"{name_sample}/raw_results"
             else:
-                k = (segmentation.replace("proseg_counts", "proseg"), condition, panel.stem, donor.stem, sample.stem)
+                k = (
+                    segmentation.replace("proseg_counts", "proseg"),
+                    condition.stem,
+                    panel.stem,
+                    donor.stem,
+                    sample.stem,
+                )
                 name_sample = "/".join(k)
                 sample_dir = xenium_processed_data_dir / f"{name_sample}/normalised_results/outs"
 

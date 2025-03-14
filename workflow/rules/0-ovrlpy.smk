@@ -16,7 +16,8 @@ for segmentation in xenium_dir.iterdir():
         for panel in (panels := condition.iterdir()):
             for donor in (donors := panel.iterdir()):
                 for sample in (samples := donor.iterdir()):
-
+                    if donor.stem in ['0WMU','1G73']:
+                        continue
                     if panel.stem == '5k' and sample.stem in ['1GDD','1GAC','0PSV','1GQ9','1GVD']:
                         # these samples fail even with 1Tb memory
                         continue
@@ -82,6 +83,8 @@ for signal_integrity_threshold in signal_integrity_thresholds:
             for panel in (panels := condition.iterdir()):
                 for donor in (donors := panel.iterdir()):
                     for sample in (samples := donor.iterdir()):
+                        if donor.stem in ['0WMU','1G73']:
+                            continue
                         if panel.stem == '5k' and sample.stem in ['1GDD','1GAC','0PSV','1GQ9','1GVD','1G73']:
                             # these samples fail even with 1Tb memory
                             continue
