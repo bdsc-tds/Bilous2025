@@ -19,8 +19,6 @@ for correction_method in correction_methods:
             for panel in (panels := condition.iterdir()):
                 for donor in (donors := panel.iterdir()):
                     for sample in (samples := donor.iterdir()):
-                        if donor.stem in ['0WMU','1G73']:
-                            continue
                         k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
                         name = '/'.join(k)
 

@@ -33,8 +33,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
         for panel in (panels := condition.iterdir()):
             for donor in (donors := panel.iterdir()):
                 for sample in (samples := donor.iterdir()):
-                    if donor.stem in ['0WMU','1G73']:
-                        continue
+
                     for reference in references:
                         for method in methods:
                             for level in levels:
@@ -108,8 +107,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
         for panel in (panels := condition.iterdir()):
             for donor in (donors := panel.iterdir()):
                 for sample in (samples := donor.iterdir()):
-                    if donor.stem in ['0WMU','1G73']:
-                        continue
+
                     for reference in references:
                         for method in methods:
                             for level in levels:

@@ -33,6 +33,8 @@ include: "rules/0-resolvi_supervised.smk"
 include: "rules/2-contamination_metrics_diffexpr.smk"
 include: "rules/2-contamination_metrics_logreg.smk"
 
+include: "rules/2-contamination_metrics_diffexpr_corrected_counts.smk"
+
 rule all:
     input:
         # rules.seurat_to_h5_all.input,
@@ -66,15 +68,16 @@ rule all:
         # rules.embed_panel_corrected_counts_plot_all.input,
         # rules.embed_condition_corrected_counts_plot_all.input,
         # #
-        rules.resolvi_training_all.input,
-        rules.resolvi_training_supervised_all.input,
-        rules.resolvi_inference_all.input,
-        rules.resolvi_inference_supervised_all.input,
-        # # #
-        rules.ovrlpy_all.input,
-        rules.ovrlpy_correction_all.input,
+        # rules.resolvi_training_all.input,
+        # rules.resolvi_training_supervised_all.input,
+        # rules.resolvi_inference_all.input,
+        # rules.resolvi_inference_supervised_all.input,
+        # # # #
+        # rules.ovrlpy_all.input,
+        # rules.ovrlpy_correction_all.input,
         # # #
         rules.contamination_metrics_diffexpr_all.input,
-        rules.contamination_metrics_logreg_all.input,
+        # rules.contamination_metrics_logreg_all.input,
         # # #
+        rules.contamination_metrics_diffexpr_corrected_counts_all.input,
         # rules.scib_metrics_panel_all.input,

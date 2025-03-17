@@ -4,6 +4,7 @@ dask.config.set({"dataframe.query-planning": False})
 
 import scanpy as sc
 import pandas as pd
+import numpy as np
 import argparse
 import os
 import sys
@@ -16,6 +17,7 @@ import readwrite
 # Set up argument parser
 def parse_args():
     parser = argparse.ArgumentParser(description="Run RESOLVI on a Xenium sample.")
+    parser.add_argument("--sample_corrected_counts_path", type=str, help="")
     parser.add_argument("--sample_dir", type=str, help="")
     parser.add_argument("--sample_normalised_counts", type=str, help="")
     parser.add_argument("--sample_idx", type=str, help="")
@@ -61,6 +63,8 @@ if __name__ == "__main__":
         sys.stdout = _log
         sys.stderr = _log
 
+    rank_metrics = ["logfoldchanges", "-log10pvals_x_logfoldchanges", "-log10pvals_x_signFC"]
+
     ####
     #### READ DATA
     ####
@@ -84,12 +88,21 @@ if __name__ == "__main__":
             raise ValueError("raw results folder needed for proseg expected counts")
         adata.obs_names = "proseg-" + adata.obs_names.astype(str)
 
+    # read corrected counts
+    if args.sample_corrected_counts_path is not None:
+        adata_corrected_counts = sc.read_10x_h5(
+            args.sample_corrected_counts_path,
+        )
+
+        adata_corrected_counts.obsm["spatial"] = adata[adata_corrected_counts.obs_names].obsm["spatial"]
+        adata = adata_corrected_counts
+
     # read normalised data, filter cells
-    X_normalised = pd.read_parquet(args.sample_normalised_counts)
-    X_normalised.index = pd.read_parquet(args.sample_idx).iloc[:, 0]
-    X_normalised.columns = X_normalised.columns.str.replace(".", "-")  # undo seurat renaming
-    adata = adata[X_normalised.index, X_normalised.columns]
-    adata.layers["X_normalised"] = X_normalised
+    # X_normalised = pd.read_parquet(args.sample_normalised_counts)
+    # X_normalised.index = pd.read_parquet(args.sample_idx).iloc[:, 0]
+    # X_normalised.columns = X_normalised.columns.str.replace(".", "-")  # undo seurat renaming
+    # adata = adata[X_normalised.index, X_normalised.columns]
+    # adata.layers["X_normalised"] = X_normalised
 
     # read labels
     label_key = "label_key"
@@ -102,7 +115,7 @@ if __name__ == "__main__":
 
     # read markers if needed
     if args.markers != "diffexpr":
-        if "Level2.1" in args.sample_annotation:
+        if "Level2.1" in args.sample_annotation and args.markers == "common_markers":
             # custom mapping for Level2.1: simplify to Level1 to assess with known markers
             level_simplified = "Level1"
 
@@ -177,14 +190,21 @@ if __name__ == "__main__":
             sc.tl.rank_genes_groups(
                 adata_cti, groupby=f"has_{ctj}_neighbor_str", groups=["True"], reference="False", method="wilcoxon"
             )
-            df_diffexpr[cti, ctj] = sc.get.rank_genes_groups_df(adata_cti, group="True").sort_values("pvals_adj")
-
-            # get significance from gsea and hypergeometric test
-            df_markers_rank_significance_diffexpr[cti, ctj] = _utils.get_marker_rank_significance(
-                rnk=df_diffexpr[cti, ctj].set_index("names")["logfoldchanges"],
-                gene_set=ctj_marker_genes,
-                top_n=args.top_n,
+            df_diffexpr[cti, ctj] = sc.get.rank_genes_groups_df(adata_cti, group="True")
+            df_diffexpr[cti, ctj]["-log10pvals_x_logfoldchanges"] = (
+                -np.log10(df_diffexpr[cti, ctj]["pvals"]) * df_diffexpr[cti, ctj]["logfoldchanges"]
             )
+            df_diffexpr[cti, ctj]["-log10pvals_x_signFC"] = -np.log10(df_diffexpr[cti, ctj]["pvals"]) * np.sign(
+                df_diffexpr[cti, ctj]["logfoldchanges"]
+            )
+            # get significance from gsea and hypergeometric test
+            df_markers_rank_significance_diffexpr[cti, ctj] = pd.DataFrame()
+            for rank_metric in rank_metrics:
+                df_markers_rank_significance_diffexpr[cti, ctj][rank_metric] = _utils.get_marker_rank_significance(
+                    rnk=df_diffexpr[cti, ctj].set_index("names")[rank_metric].sort_values(ascending=False),
+                    gene_set=ctj_marker_genes,
+                    top_n=args.top_n,
+                ).iloc[0]
 
     ###
     ### CONCAT AND SAVE OUTPUTS
@@ -194,7 +214,7 @@ if __name__ == "__main__":
     df_ctj_marker_genes.to_parquet(args.out_file_df_ctj_marker_genes)
     # diffexpr
     pd.concat(df_diffexpr).to_parquet(args.out_file_df_diffexpr)
-    pd.concat(df_markers_rank_significance_diffexpr).to_parquet(args.out_file_df_markers_rank_significance_diffexpr)
+    pd.concat(df_markers_rank_significance_diffexpr).T.to_parquet(args.out_file_df_markers_rank_significance_diffexpr)
 
     if args.l is not None:
         _log.close()

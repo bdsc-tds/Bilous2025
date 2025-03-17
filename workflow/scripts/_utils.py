@@ -127,8 +127,8 @@ def get_marker_rank_significance(rnk, gene_set, top_n=None):
     - markers_rank_significance (pd.DataFrame): DataFrame containing the significance results.
     """
 
-    if np.all(rnk == 0.0):
-        print("Warning: all zero importance vector. Returning empty dataframe.")
+    if np.all(rnk == 0.0) or np.all(rnk.loc[gene_set] == 0.0):
+        print("Warning: all zero or all zero gene set importance vector. Returning empty dataframe.")
         return pd.DataFrame(
             np.nan,
             index=[0],

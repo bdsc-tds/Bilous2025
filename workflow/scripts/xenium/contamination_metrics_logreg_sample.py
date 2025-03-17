@@ -17,6 +17,7 @@ import readwrite
 # Set up argument parser
 def parse_args():
     parser = argparse.ArgumentParser(description="Run RESOLVI on a Xenium sample.")
+    parser.add_argument("--sample_corrected_counts_path", type=str, help="")
     parser.add_argument("--sample_dir", type=str, help="")
     parser.add_argument("--sample_normalised_counts", type=str, help="")
     parser.add_argument("--sample_idx", type=str, help="")
@@ -72,7 +73,7 @@ if __name__ == "__main__":
     ####
     # read raw counts and spatial coordinates
     adata = readwrite.read_xenium_sample(
-        args.sample_dir,
+        args.sample_path,
         cells_as_circles=False,
         cells_boundaries=False,
         cells_boundaries_layers=False,
@@ -89,6 +90,17 @@ if __name__ == "__main__":
         if "raw_results" not in args.sample_dir:
             raise ValueError("raw results folder needed for proseg expected counts")
         adata.obs_names = "proseg-" + adata.obs_names.astype(str)
+
+    # read corrected counts
+    if args.sample_corrected_counts_path is not None:
+        adata_corrected_counts = sc.read_10x_h5(
+            args.sample_corrected_counts_path,
+        )
+        if "proseg_expected" in args.sample_normalised_counts:
+            adata_corrected_counts.obs_names = "proseg-" + adata_corrected_counts.obs_names.astype(str)
+
+        adata_corrected_counts.obsm["spatial"] = adata[adata_corrected_counts].obsm["spatial"]
+        adata = adata_corrected_counts
 
     # read normalised data, filter cells
     X_normalised = pd.read_parquet(args.sample_normalised_counts)
@@ -108,7 +120,7 @@ if __name__ == "__main__":
 
     # read markers if needed
     if args.markers != "diffexpr":
-        if "Level2.1" in args.sample_annotation:
+        if "Level2.1" in args.sample_annotation and args.markers == "common_markers":
             # custom mapping for Level2.1: simplify to Level1 to assess with known markers
             level_simplified = "Level1"
 
@@ -175,6 +187,7 @@ if __name__ == "__main__":
             if len(adata_cti) > args.max_n_cells:
                 rng = np.random.default_rng(0)
                 print(f"Subsampling {cti} to {args.max_n_cells} cells")
+
                 subsampled_true = adata_cti.obs_names[adata_cti.obs[f"has_{ctj}_neighbor"]]
                 subsampled_true = rng.choice(
                     subsampled_true, min(len(subsampled_true), args.max_n_cells // 2), replace=False
@@ -205,7 +218,7 @@ if __name__ == "__main__":
                 n_permutations=args.n_permutations,
                 n_repeats=args.n_repeats,
                 random_state=0,
-                max_iter=1000,
+                max_iter=100,
                 importance_mode="coef",
             )
 

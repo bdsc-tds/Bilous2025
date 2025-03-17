@@ -16,11 +16,10 @@ for segmentation in xenium_dir.iterdir():
         for panel in (panels := condition.iterdir()):
             for donor in (donors := panel.iterdir()):
                 for sample in (samples := donor.iterdir()):
-                    if donor.stem in ['0WMU','1G73']:
-                        continue
-                    if panel.stem == '5k' and sample.stem in ['1GDD','1GAC','0PSV','1GQ9','1GVD']:
-                        # these samples fail even with 1Tb memory
-                        continue
+
+                    # if panel.stem == '5k' and sample.stem in ['1GDD','1GAC','0PSV','1GQ9','1GVD']:
+                    #     # these samples fail even with 1Tb memory
+                    #     continue
                 
                     if segmentation.stem == 'proseg':
                         sample_transcripts_path = sample / "raw_results/transcript-metadata.csv.gz"
@@ -56,8 +55,8 @@ for segmentation in xenium_dir.iterdir():
                             proseg_format='--proseg_format' if segmentation.stem=='proseg' else '',
                         threads: 1
                         resources:
-                            mem='800GB',
-                            runtime='12h',
+                            mem='1000GB',
+                            runtime='48h',
                         conda:
                             "spatial"
                         shell:
@@ -83,11 +82,10 @@ for signal_integrity_threshold in signal_integrity_thresholds:
             for panel in (panels := condition.iterdir()):
                 for donor in (donors := panel.iterdir()):
                     for sample in (samples := donor.iterdir()):
-                        if donor.stem in ['0WMU','1G73']:
-                            continue
-                        if panel.stem == '5k' and sample.stem in ['1GDD','1GAC','0PSV','1GQ9','1GVD','1G73']:
-                            # these samples fail even with 1Tb memory
-                            continue
+
+                        # if panel.stem == '5k' and sample.stem in ['1GDD','1GAC','0PSV','1GQ9','1GVD','1G73']:
+                        #     # these samples fail even with 1Tb memory
+                        #     continue
 
                         if segmentation.stem == 'proseg':
                             sample_transcripts_path = sample / "raw_results/transcript-metadata.csv.gz"

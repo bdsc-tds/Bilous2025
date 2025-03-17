@@ -25,8 +25,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
         for panel in (panels := condition.iterdir()):
             for donor in (donors := panel.iterdir()):
                 for sample in (samples := donor.iterdir()):
-                    if donor.stem in ['0WMU','1G73']:
-                        continue
+
                     
                     if segmentation.stem == 'proseg_expected':
                         name_sample =  '/'.join(('proseg',condition.stem,panel.stem,donor.stem,sample.stem,))
@@ -92,8 +91,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
         for panel in (panels := condition.iterdir()):
             for donor in (donors := panel.iterdir()):
                 for sample in (samples := donor.iterdir()):
-                    if donor.stem in ['0WMU','1G73']:
-                        continue
+
 
                     if segmentation.stem == 'proseg_expected':
                         k_sample = ('proseg',condition.stem,panel.stem,donor.stem,sample.stem,)
