@@ -9,7 +9,7 @@ configfile: "config/config.yml"
 
 # include: "rules/0-silhouette.smk"
 # include: "rules/1-silhouette_plot.smk"
-include: "rules/0-scib_metrics.smk"
+# include: "rules/0-scib_metrics.smk"
 
 # include: "rules/0-embedding.smk"
 # include: "rules/1-embedding_plot.smk"
@@ -73,11 +73,11 @@ rule all:
         # rules.resolvi_inference_all.input,
         # rules.resolvi_inference_supervised_all.input,
         # # # #
-        # rules.ovrlpy_all.input,
-        # rules.ovrlpy_correction_all.input,
+        rules.ovrlpy_all.input,
+        rules.ovrlpy_correction_all.input,
         # # #
         rules.contamination_metrics_diffexpr_all.input,
-        # rules.contamination_metrics_logreg_all.input,
+        rules.contamination_metrics_logreg_all.input,
         # # #
         rules.contamination_metrics_diffexpr_corrected_counts_all.input,
         # rules.scib_metrics_panel_all.input,

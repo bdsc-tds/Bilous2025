@@ -73,7 +73,7 @@ if __name__ == "__main__":
     ####
     # read raw counts and spatial coordinates
     adata = readwrite.read_xenium_sample(
-        args.sample_path,
+        args.sample_dir,
         cells_as_circles=False,
         cells_boundaries=False,
         cells_boundaries_layers=False,
@@ -96,10 +96,8 @@ if __name__ == "__main__":
         adata_corrected_counts = sc.read_10x_h5(
             args.sample_corrected_counts_path,
         )
-        if "proseg_expected" in args.sample_normalised_counts:
-            adata_corrected_counts.obs_names = "proseg-" + adata_corrected_counts.obs_names.astype(str)
 
-        adata_corrected_counts.obsm["spatial"] = adata[adata_corrected_counts].obsm["spatial"]
+        adata_corrected_counts.obsm["spatial"] = adata[adata_corrected_counts.obs_names].obsm["spatial"]
         adata = adata_corrected_counts
 
     # read normalised data, filter cells

@@ -24,7 +24,7 @@ n_repeats = 5
 top_n = 20
 top_n_lr = 10
 scoring = 'f1'
-markers_mode = ['diffexpr','common_markers'] #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/cellmarker_cell_types_markers.json'
+markers_mode = ['diffexpr']#,'common_markers'] #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/cellmarker_cell_types_markers.json'
 max_n_cells = 20_000
 
 # needed to get unique cell types names for each      level
