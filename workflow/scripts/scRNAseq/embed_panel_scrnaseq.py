@@ -79,12 +79,20 @@ if len(genes):
     # replace X
     ad_merge = ad_merge[ad_merge_raw_counts.obs_names].copy()
 
+
+if layer == "counts":
+    normalize = True
+    log1p = True
+else:
+    normalize = False
+    log1p = False
+
 print("Computing PCA and UMAP")
 # preprocess
 preprocessing.preprocess(
     ad_merge,
-    normalize=False,
-    log1p=False,
+    normalize=normalize,
+    log1p=log1p,
     scale="none",
     n_comps=n_comps,
     metric=metric,

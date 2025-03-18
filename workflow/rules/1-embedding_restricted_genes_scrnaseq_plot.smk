@@ -21,7 +21,7 @@ cell_type_palette = palette_dir / 'col_palette_cell_types_combo.csv'
 panel_palette = palette_dir / 'col_palette_panel.csv'
 sample_palette = palette_dir / 'col_palette_sample.csv'
 
-layer = 'RNA_data'
+layer = 'RNA_counts'
 methods = ['rctd_class_aware']
 colors = ['sample','Level2.1']#['Level1','Level2','Level3','Level4','panel','sample',] # condition and sample as color to plot added here in addition to levels
 extension = 'png'
