@@ -11,14 +11,14 @@ configfile: "config/config.yml"
 # include: "rules/1-silhouette_plot.smk"
 # include: "rules/0-scib_metrics.smk"
 
-# include: "rules/0-embedding.smk"
+include: "rules/0-embedding.smk"
 # include: "rules/1-embedding_plot.smk"
 
 # include: "rules/0-embedding_sample.smk"
 # include: "rules/1-embedding_sample_plot.smk"
 
-# include: "rules/0-embedding_restricted_genes.smk"
-# include: "rules/0-embedding_restricted_genes_scrnaseq.smk"
+include: "rules/0-embedding_restricted_genes.smk"
+include: "rules/0-embedding_restricted_genes_scrnaseq.smk"
 # include: "rules/1-embedding_restricted_genes_plot.smk"
 # include: "rules/1-embedding_restricted_genes_scrnaseq_plot.smk"
 
@@ -27,7 +27,7 @@ include: "rules/0-resolvi.smk"
 include: "rules/0-resolvi_supervised.smk"
 # include: "rules/1-coexpression_corrected_counts.smk"
 # include: "rules/1-coexpression_corrected_counts_plot.smk"
-# include: "rules/2-embedding_corrected_counts.smk"
+include: "rules/2-embedding_corrected_counts.smk"
 # include: "rules/3-embedding_corrected_counts_plot.smk"
 
 include: "rules/2-contamination_metrics_diffexpr.smk"
