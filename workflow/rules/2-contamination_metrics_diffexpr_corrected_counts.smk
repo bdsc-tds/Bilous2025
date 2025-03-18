@@ -106,7 +106,7 @@ for markers in markers_mode:
                                                             markers=markers,
                                                         threads: 1
                                                         resources:
-                                                            mem='30GB',
+                                                            mem='50GB',
                                                             runtime='1h',
                                                         conda:
                                                             "spatial"
