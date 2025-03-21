@@ -47,8 +47,6 @@ def get_knn_labels(
         nn = sklearn.neighbors.NearestNeighbors(n_neighbors=n_neighbors, radius=radius, n_jobs=n_jobs).fit(
             adata.obsm[obsm]
         )
-        if n_neighbors is not None and radius is not None:
-            raise ValueError("Please provide either n_neighbors or radius, but not both.")
         if n_neighbors is not None:
             knndis, knnidx = nn.kneighbors(adata.obsm[obsm])
         elif radius is not None:
@@ -84,7 +82,11 @@ def get_knn_labels(
     knnlabels = pd.DataFrame(knnlabels, index=adata.obs.index, columns=df_dummies.columns)
 
     if return_sparse_neighbors:
-        knn_graph = nn.kneighbors_graph()
+        if n_neighbors is not None:
+            knn_graph = nn.kneighbors_graph()
+        elif radius is not None:
+            knn_graph = nn.radius_neighbors_graph()
+
         return knnlabels, knndis, knnidx, knn_graph
     else:
         return knnlabels, knndis, knnidx
@@ -127,8 +129,8 @@ def get_marker_rank_significance(rnk, gene_set, top_n=None):
     - markers_rank_significance (pd.DataFrame): DataFrame containing the significance results.
     """
 
-    if np.all(rnk == 0.0) or np.all(rnk.loc[gene_set] == 0.0):
-        print("Warning: all zero or all zero gene set importance vector. Returning empty dataframe.")
+    if np.sum(rnk > 0.0) == 0:
+        print("Warning: all zero or all negative feature score vector. Returning empty dataframe.")
         return pd.DataFrame(
             np.nan,
             index=[0],

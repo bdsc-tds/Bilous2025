@@ -15,7 +15,7 @@ import scanpy as sc
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from collections import defaultdict
-
+from tqdm import tqdm
 from types import MappingProxyType
 from spatialdata.models import (
     # Image2DModel,
@@ -490,6 +490,8 @@ def read_xenium_samples(
     anndata=False,
     sample_name_as_key=True,
     xeniumranger_dir=None,
+    max_workers=None,
+    pool_mode="process",
 ):
     """
     Reads in a dictionary of sample directories and returns a dictionary of
@@ -539,8 +541,13 @@ def read_xenium_samples(
         data_dirs = {sample_name: path for sample_name, path in zip(sample_names, data_dirs)}
 
     # Parallel processing
+    if pool_mode == "process":
+        pool = ProcessPoolExecutor
+    elif pool_mode == "thread":
+        pool = ThreadPoolExecutor()
+
     sdatas = {}
-    with ProcessPoolExecutor() as executor:
+    with pool(max_workers=max_workers) as executor:
         futures = [
             executor.submit(
                 read_xenium_sample,
@@ -969,3 +976,231 @@ def read_anndata_folder(adata_dir):
             except pd.errors.EmptyDataError:
                 pass
     return adata
+
+
+def _read_count_correction_sample(sample_name, corrected_counts_path):
+    """Reads a 10x h5 file using scanpy."""
+    try:
+        adata = sc.read_10x_h5(corrected_counts_path)
+        return sample_name, adata
+    except Exception as e:
+        print(f"Error reading {corrected_counts_path}: {e}")
+        return sample_name, None  # Return None in case of an error
+
+
+def read_count_correction_samples(xenium_paths, correction_methods):
+    """
+    Reads corrected count samples in parallel using ThreadPoolExecutor.
+
+    Args:
+        xenium_paths (dict): A dictionary where keys are correction methods and values are dictionaries
+                            mapping sample names to corrected counts file paths.  Assumes `xenium_paths[correction_method]`
+                            is a dictionary with keys as sample_name and values as path to the .h5 file.
+        correction_methods (list): A list of correction methods.
+    Returns:
+        dict: A dictionary where keys are correction methods, and values are dictionaries mapping sample names
+              to AnnData objects (or None if reading failed).
+    """
+
+    xenium_corrected_counts = {}
+
+    for correction_method in correction_methods:  # Skip the first correction method
+        xenium_corrected_counts[correction_method] = {}
+
+        with ThreadPoolExecutor() as executor:
+            futures = {
+                executor.submit(_read_count_correction_sample, sample_name, xenium_corr_path): (
+                    correction_method,
+                    sample_name,
+                )
+                for sample_name, xenium_corr_path in xenium_paths[correction_method].items()
+            }
+
+            # Progress bar with total number of samples
+            for future in tqdm(as_completed(futures), total=len(futures), desc=f"Processing {correction_method}"):
+                try:
+                    sample_name, adata = future.result()
+                    if adata is not None:
+                        xenium_corrected_counts[correction_method][sample_name] = adata
+                    else:
+                        xenium_corrected_counts[correction_method][sample_name] = None
+                except Exception as e:
+                    correction_method, sample_name = futures[future]
+                    xenium_corrected_counts[correction_method][sample_name] = None  # Store None in case of error
+
+    return xenium_corrected_counts
+
+
+def _read_diffexpr_results_sample(
+    results_dir: Path,
+    reference: str,
+    method: str,
+    level: str,
+    mixture_k: int,
+    num_samples: int,
+    correction_method: str,
+    segmentation: Path,
+    condition: Path,
+    panel: Path,
+    donor: Path,
+    sample: Path,
+    normalisation: str,
+    layer: str,
+    load_diffexpr: bool,
+):
+    """
+    Reads differential expression results for a single sample.
+
+    Args:
+        results_dir (Path): Path to the results directory.
+        reference (str): Reference string.
+        method (str): Method string.
+        level (str): Level string.
+        mixture_k (int): Mixture K value.
+        num_samples (int): Number of samples.
+        correction_method (str): The correction method used.
+        segmentation (Path): Path to the segmentation directory.
+        condition (Path): Path to the condition directory.
+        panel (Path): Path to the panel directory.
+        donor (Path): Path to the donor directory.
+        sample (Path): Path to the sample directory.
+        normalisation (str): The normalisation method used.
+        layer (str): The layer used.
+        load_diffexpr (bool): Whether to load the diffexpr results or not.
+
+    Returns:
+        tuple: (correction_method, tuple of keys, DataFrame) if the file exists and is successfully read,
+               otherwise None.
+    """
+
+    k = (segmentation.stem, condition.stem, panel.stem, donor.stem, sample.stem)
+    name = "/".join(k)
+
+    if correction_method == "raw":
+        folder = "contamination_metrics_diffexpr"
+    else:
+        folder = "contamination_metrics_diffexpr_corrected_counts"
+
+        if correction_method == "resolvi":
+            name = f"{correction_method}/{name}/{mixture_k=}/{num_samples=}/"
+        elif correction_method == "resolvi_supervised":
+            name = f"{correction_method}/{name}/{normalisation}/reference_based/{reference}/{method}/{level}/{mixture_k=}/{num_samples=}"
+        elif "ovrlpy" in correction_method:
+            name = f"{correction_method}/{name}"
+
+    out_file_df_ctj_marker_genes = (
+        results_dir / f"{folder}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet"
+    )
+
+    out_file_df_diffexpr = (
+        results_dir / f"{folder}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_diffexpr.parquet"
+    )
+
+    out_file_df_markers_rank_significance_diffexpr = (
+        results_dir
+        / f"{folder}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_markers_rank_significance_diffexpr.parquet"
+    )
+
+    if out_file_df_markers_rank_significance_diffexpr.exists():
+        print(correction_method, k, end="\n")
+        try:
+            df = pd.read_parquet(out_file_df_markers_rank_significance_diffexpr, engine="pyarrow")
+            df_markers = pd.read_parquet(out_file_df_ctj_marker_genes, engine="pyarrow")
+
+            if load_diffexpr:
+                df_diffexpr = pd.read_parquet(out_file_df_diffexpr, engine="pyarrow")
+                return correction_method, k, df, df_markers, df_diffexpr
+            else:
+                return correction_method, k, df, df_markers
+        except Exception as e:
+            print(f"Error reading {out_file_df_markers_rank_significance_diffexpr}: {e}")
+            return None
+    else:
+        print("File does not exist:", out_file_df_diffexpr)
+        return None
+
+
+def read_diffexpr_results_samples(
+    results_dir: Path,
+    correction_methods: list[str],
+    xenium_std_seurat_analysis_dir: Path,
+    reference: str,
+    method: str,
+    level: str,
+    mixture_k: int,
+    num_samples: int,
+    normalisation: str,
+    layer: str,
+    load_diffexpr=False,
+):
+    """
+    Reads differential expression results for multiple samples in parallel.
+
+    Args:
+        results_dir (Path): Path to the results directory.
+        correction_methods (list): List of correction methods to process.
+        xenium_std_seurat_analysis_dir (Path): Path to the analysis directory.
+        reference (str): Reference string.
+        method (str): Method string.
+        level (str): Level string.
+        mixture_k (int): Mixture K value.
+        num_samples (int): Number of samples.
+        normalisation (str): The normalisation method used.
+        layer (str): The layer used.
+
+    Returns:
+        dict: A dictionary where keys are correction methods, and values are dictionaries mapping sample keys
+              to DataFrames.
+    """
+
+    if load_diffexpr:
+        df_diffexpr = {correction_method: {} for correction_method in correction_methods}
+    df_markers_rank_significance_diffexpr = {correction_method: {} for correction_method in correction_methods}
+    df_markers = {correction_method: {} for correction_method in correction_methods}
+
+    with ThreadPoolExecutor() as executor:
+        futures = []
+        for correction_method in correction_methods:
+            for segmentation in xenium_std_seurat_analysis_dir.iterdir():
+                if segmentation.stem == "proseg_mode":
+                    continue
+                for condition in segmentation.iterdir():
+                    for panel in condition.iterdir():
+                        for donor in panel.iterdir():
+                            for sample in donor.iterdir():
+                                futures.append(
+                                    executor.submit(
+                                        _read_diffexpr_results_sample,
+                                        results_dir,
+                                        reference,
+                                        method,
+                                        level,
+                                        mixture_k,
+                                        num_samples,
+                                        correction_method,
+                                        segmentation,
+                                        condition,
+                                        panel,
+                                        donor,
+                                        sample,
+                                        normalisation,
+                                        layer,
+                                        load_diffexpr,
+                                    )
+                                )
+
+        for future in as_completed(futures):
+            result = future.result()
+            if result:
+                if load_diffexpr:
+                    correction_method, k, df_rank_, df_markers_, df_diffexpr_ = result
+                else:
+                    correction_method, k, df_rank_, df_markers_ = result
+                df_markers_rank_significance_diffexpr[correction_method][k] = df_rank_
+                df_diffexpr[correction_method][k] = df_diffexpr_
+                df_markers[correction_method][k] = df_markers_
+
+    if load_diffexpr:
+        return df_markers_rank_significance_diffexpr, df_markers, df_diffexpr
+
+    return df_markers_rank_significance_diffexpr

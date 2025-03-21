@@ -18,11 +18,18 @@ references = ['matched_reference_combo']
 methods = ['rctd_class_aware']
 levels = ['Level2.1']
 
-n_neighbors = 10
+
+# params from pipeline config
+min_counts = 10
+min_features = 5
+max_counts = float("inf")
+max_features = float("inf")
+min_cells = 5
+
+radius = 10
 n_permutations = 30
 n_repeats = 5
 top_n = 20
-top_n_lr = 10
 scoring = 'f1'
 markers_mode = ['diffexpr']#,'common_markers'] #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/cellmarker_cell_types_markers.json'
 
@@ -63,11 +70,16 @@ for markers in markers_mode:
                                             out_file_df_ctj_marker_genes = results_dir /  f'contamination_metrics_{markers}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
                                             out_file_df_diffexpr = results_dir / f'contamination_metrics_{markers}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_diffexpr.parquet'
                                             out_file_df_markers_rank_significance_diffexpr = results_dir / f'contamination_metrics_{markers}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_markers_rank_significance_diffexpr.parquet'
+                                            out_file_summary_stats = results_dir / f'contamination_metrics_{markers}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_summary_stats.json'
+                                            out_file_adata_obs = results_dir / f'contamination_metrics_{markers}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_out_file_adata_obs.parquet'
+
 
                                             out_files.extend([
                                                 out_file_df_ctj_marker_genes,
                                                 out_file_df_diffexpr,
                                                 out_file_df_markers_rank_significance_diffexpr,
+                                                out_file_summary_stats,
+                                                out_file_adata_obs,
                                                 ])
 
                                             rule:
@@ -81,13 +93,20 @@ for markers in markers_mode:
                                                     out_file_df_ctj_marker_genes=out_file_df_ctj_marker_genes,
                                                     out_file_df_diffexpr=out_file_df_diffexpr,
                                                     out_file_df_markers_rank_significance_diffexpr=out_file_df_markers_rank_significance_diffexpr,
+                                                    out_file_summary_stats=out_file_summary_stats,
+                                                    out_file_adata_obs=out_file_adata_obs,
                                                 params:
-                                                    n_neighbors=n_neighbors,
+                                                    radius=radius,
                                                     n_permutations=n_permutations,
                                                     n_repeats=n_repeats,
                                                     top_n=top_n,
                                                     scoring=scoring,
                                                     markers=markers,
+                                                    min_counts=min_counts,
+                                                    min_features=min_features,
+                                                    max_counts=max_counts,
+                                                    max_features=max_features,
+                                                    min_cells=min_cells,
                                                 threads: 1
                                                 resources:
                                                     mem='50GB',
@@ -106,10 +125,17 @@ for markers in markers_mode:
                                                         --out_file_df_ctj_marker_genes {output.out_file_df_ctj_marker_genes} \
                                                         --out_file_df_diffexpr {output.out_file_df_diffexpr} \
                                                         --out_file_df_markers_rank_significance_diffexpr {output.out_file_df_markers_rank_significance_diffexpr} \
-                                                        --n_neighbors {params.n_neighbors} \
+                                                        --out_file_summary_stats {output.out_file_summary_stats} \
+                                                        --out_file_adata_obs {output.out_file_adata_obs} \
+                                                        --radius {params.radius} \
                                                         --top_n {params.top_n} \
                                                         --scoring {params.scoring} \
                                                         --markers {params.markers} \
+                                                        --min_counts {params.min_counts} \
+                                                        --min_features {params.min_features} \
+                                                        --max_counts {params.max_counts} \
+                                                        --max_features {params.max_features} \
+                                                        --min_cells {params.min_cells} \
 
                                                     echo "DONE"
                                                     """
@@ -119,6 +145,6 @@ rule contamination_metrics_diffexpr_all:
     input:
         out_files
     output:
-        touch(results_dir / "contamination_metrics_{markers}.done")
+        touch(results_dir / f"contamination_metrics_{markers}.done")
 
 

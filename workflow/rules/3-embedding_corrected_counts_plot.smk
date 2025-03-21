@@ -13,6 +13,7 @@ min_dist = config['umap_min_dist']
 metric = config['umap_metric']
 s=0.5
 alpha=0.5
+points_only = True
 
 cell_type_palette = palette_dir / 'col_palette_cell_types_combo.csv'
 panel_palette = palette_dir / 'col_palette_panel.csv'
@@ -78,6 +79,7 @@ for correction_method in correction_methods:
                                             sample_palette=sample_palette,
                                             s=s,
                                             alpha=alpha,
+                                            points_only='--points_only' if points_only else '',
                                         threads: 1
                                         resources:
                                             mem='30GB',
@@ -102,7 +104,8 @@ for correction_method in correction_methods:
                                             --sample_palette {params.sample_palette} \
                                             --s {params.s} \
                                             --alpha {params.alpha} \
-                                            
+                                            --points_only {params.points_only} \
+
                                             echo "DONE"
                                             """
 

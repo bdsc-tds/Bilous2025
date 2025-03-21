@@ -15,7 +15,7 @@ max_features = float("inf")
 min_cells = 5
 
 # Params
-layer = 'RNA_data'
+layer = 'RNA_counts'
 genes = pd.read_csv('/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/Xenium_hLung_v1_metadata.csv')['Gene'].tolist()
 
 n_comps = config['umap_n_comps']

@@ -15,7 +15,8 @@ metric = config['umap_metric']
 
 s=3
 alpha=0.5
-dpi = 100
+dpi = 300
+points_only = True
 
 cell_type_palette = palette_dir / 'col_palette_cell_types_combo.csv'
 panel_palette = palette_dir / 'col_palette_panel.csv'
@@ -66,6 +67,7 @@ for reference in (references := scrnaseq_processed_data_dir.iterdir()):
                 s=s,
                 alpha=alpha,
                 dpi=dpi,
+                points_only='--points_only' if points_only else '',
             threads: 1
             resources:
                 mem='30GB',
@@ -87,7 +89,8 @@ for reference in (references := scrnaseq_processed_data_dir.iterdir()):
                 --s {params.s} \
                 --alpha {params.alpha} \
                 --dpi {params.dpi} \
-                
+                --points_only {params.points_only} \
+
                 echo "DONE"
                 """
 

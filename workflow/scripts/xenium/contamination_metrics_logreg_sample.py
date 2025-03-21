@@ -12,6 +12,7 @@ import sys
 sys.path.append("workflow/scripts/")
 import _utils
 import readwrite
+import preprocessing
 
 
 # Set up argument parser
@@ -31,7 +32,7 @@ def parse_args():
         type=str,
         help="path to the logreg rank significance output file",
     )
-    parser.add_argument("--n_neighbors", type=int, help="n° of neighbors to use to define the spatial graph")
+    parser.add_argument("--radius", type=int, help="n° of neighbors to use to define the spatial graph")
     parser.add_argument("--n_permutations", type=int, help="n° of permutations for logreg random prediction baseline")
     parser.add_argument("--n_repeats", type=int, help="n° of repeats for logreg feature importances by permutations")
     parser.add_argument("--top_n", type=int, help="n° of top genes to evaluate for hypergeometric test")
@@ -41,6 +42,21 @@ def parse_args():
         type=str,
         help="'diffexpr' to use empirical markers by diffexpr test, or a path to a df with cell_type and marker genes columns",
     )
+    parser.add_argument(
+        "--precomputed_ctj_markers",
+        type=str,
+        help="path to ctj markers parquet obtained from running the function on raw counts",
+    )
+    parser.add_argument(
+        "--precomputed_adata_obs",
+        type=str,
+        help="path to adata obs parquet obtained from running the function on raw counts",
+    )
+    parser.add_argument("--min_counts", type=int, help="QC parameter from pipeline config")
+    parser.add_argument("--min_features", type=int, help="QC parameter from pipeline config")
+    parser.add_argument("--max_counts", type=float, help="QC parameter from pipeline config")
+    parser.add_argument("--max_features", type=float, help="QC parameter from pipeline config")
+    parser.add_argument("--min_cells", type=int, help="QC parameter from pipeline config")
     parser.add_argument(
         "--max_n_cells",
         type=int,
@@ -67,6 +83,24 @@ if __name__ == "__main__":
 
         sys.stdout = _log
         sys.stderr = _log
+
+    obsm = "spatial"
+    label_key = "label_key"
+    index_diffexpr_metrics = [
+        "Name",
+        "Term",
+        "ES",
+        "NES",
+        "NOM p-val",
+        "FDR q-val",
+        "FWER p-val",
+        "Tag %",
+        "Gene %",
+        "Lead_genes",
+        "hypergeometric_pvalue",
+        "mean_zscore",
+        "mean_zscore_pvalue",
+    ]
 
     ####
     #### READ DATA
@@ -101,11 +135,24 @@ if __name__ == "__main__":
         adata = adata_corrected_counts
 
     # read normalised data, filter cells
-    X_normalised = pd.read_parquet(args.sample_normalised_counts)
-    X_normalised.index = pd.read_parquet(args.sample_idx).iloc[:, 0]
-    X_normalised.columns = X_normalised.columns.str.replace(".", "-")  # undo seurat renaming
-    adata = adata[X_normalised.index, X_normalised.columns]
-    adata.layers["X_normalised"] = X_normalised
+    # X_normalised = pd.read_parquet(args.sample_normalised_counts)
+    # X_normalised.index = pd.read_parquet(args.sample_idx).iloc[:, 0]
+    # X_normalised.columns = X_normalised.columns.str.replace(".", "-")  # undo seurat renaming
+    # obs_found = [c for c in X_normalised.index if c in adata.obs_names]
+    # var_found = [g for g in X_normalised.columns if g in adata.var_names]
+    # adata = adata[obs_found, var_found]
+    # adata.layers["X_normalised"] = X_normalised.loc[obs_found, var_found]
+
+    # reapply QC to corrected counts data
+    preprocessing.preprocess(
+        adata,
+        min_counts=args.min_counts,
+        min_genes=args.min_features,
+        max_counts=args.max_counts,
+        max_genes=args.max_features,
+        min_cells=args.min_cells,
+        save_raw=False,
+    )
 
     # read labels
     label_key = "label_key"
@@ -115,6 +162,7 @@ if __name__ == "__main__":
     if "Level2.1" in args.sample_annotation:
         # for custom Level2.1, simplify malignant subtypes to malignant
         adata.obs.loc[adata.obs[label_key].str.contains("malignant"), label_key] = "malignant cell"
+        adata.obs.loc[adata.obs[label_key].str.contains("T cell"), label_key] = "T cell"
 
     # read markers if needed
     if args.markers != "diffexpr":
@@ -135,25 +183,37 @@ if __name__ == "__main__":
         ct_not_found = adata.obs[label_key][~adata.obs[label_key].isin(df_markers["cell_type"])].unique()
         print(f"Could not find {ct_not_found} in markers file")
         adata = adata[adata.obs[label_key].isin(df_markers["cell_type"])]
+    else:
+        # get precomputed markers from raw data
+        if args.precomputed_ctj_markers is not None:
+            print(f"Loading precomputed {args.ctj} markers")
+            df_ctj_marker_genes_precomputed = pd.read_parquet(args.precomputed_ctj_markers)
 
-    # subsample very large samples
-    # if len(adata) > args.max_n_cells:
-    #     sc.pp.subsample(adata, n_obs=args.max_n_cells)
-
+    ####
+    #### PREPARE DATA
+    ####
     # log-normalize before DE
     sc.pp.normalize_total(adata)
     sc.pp.log1p(adata)
 
     # define target (cell type j presence in kNN)
-    obsm = "spatial"
-    knnlabels, knndis, knnidx, knn_graph = _utils.get_knn_labels(
-        adata, n_neighbors=args.n_neighbors, label_key=label_key, obsm=obsm, return_sparse_neighbors=True
-    )
+    if args.precomputed_adata_obs is not None:
+        print("Loading precomputed adata obs. Replacing loaded labels")
+        adata.obs = pd.read_parquet(args.precomputed_adata_obs)
+    else:
+        obsm = "spatial"
+        knnlabels, knndis, knnidx, knn_graph = _utils.get_knn_labels(
+            adata, radius=args.radius, label_key=label_key, obsm=obsm, return_sparse_neighbors=True
+        )
 
-    adata.obsp[f"{obsm}_connectivities"] = knn_graph
+        adata.obsp[f"{obsm}_connectivities"] = knn_graph
+
+    ####
+    #### SCORE CONTAMINATION
+    ####
+    # iterate over cell types permutations (cell type i with cell type j presence in kNN)
     u_cell_types = adata.obs[label_key].unique()
 
-    # iterate over cell types permutations (cell type i with cell type j presence in kNN)
     df_permutations_logreg = {}
     df_importances_logreg = {}
     df_markers_rank_significance_logreg = {}
@@ -165,6 +225,9 @@ if __name__ == "__main__":
 
         # get markers
         if args.markers == "diffexpr":
+            if args.precomputed_ctj_markers is not None:
+                print(f"Loading precomputed {ctj} markers")
+                ctj_marker_genes_precomputed = pd.read_parquet(args.precomputed_ctj_markers)
             sc.tl.rank_genes_groups(adata, groupby=label_key, groups=[ctj], reference="rest", method="wilcoxon")
             ctj_marker_genes = sc.get.rank_genes_groups_df(adata, group=ctj)["names"][: args.top_n].tolist()
         else:
@@ -208,7 +271,7 @@ if __name__ == "__main__":
 
             # train logreg model
             df_permutations_logreg[cti, ctj], df_importances_logreg[cti, ctj] = _utils.logreg(
-                X=adata_cti.layers["X_normalised"],
+                X=adata_cti.X,  # adata_cti.layers["X_normalised"],
                 y=adata_cti.obs[f"has_{ctj}_neighbor"],
                 feature_names=adata.var_names,
                 scoring=args.scoring,
@@ -221,13 +284,25 @@ if __name__ == "__main__":
             )
 
             # get significance from gsea and hypergeometric test
-            df_markers_rank_significance_logreg[cti, ctj] = _utils.get_marker_rank_significance(
-                rnk=df_importances_logreg[cti, ctj]["importances"], gene_set=ctj_marker_genes, top_n=args.top_n
-            )
+            rank_metric = "importances"
+            df_markers_rank_significance_logreg[cti, ctj] = pd.DataFrame(index=index_diffexpr_metrics)
+            dict_ctj_marker_genes = {"": ctj_marker_genes}
+
+            if args.precomputed_ctj_markers is not None:
+                # also compute scores for precomputed marker gene list
+                dict_ctj_marker_genes["_precomputed"] = ctj_marker_genes_precomputed
+
+            for k_, markers_ in dict_ctj_marker_genes.items():
+                df_markers_rank_significance_logreg[cti, ctj][rank_metric + k_] = _utils.get_marker_rank_significance(
+                    rnk=df_importances_logreg[cti, ctj][rank_metric].sort_values(ascending=False),
+                    gene_set=markers_,
+                    top_n=args.top_n,
+                ).iloc[0]
 
     ###
     ### CONCAT AND SAVE OUTPUTS
     ###
+
     # logreg
     pd.concat(df_permutations_logreg).to_parquet(args.out_file_df_permutations_logreg)
     pd.concat(df_importances_logreg).to_parquet(args.out_file_df_importances_logreg)

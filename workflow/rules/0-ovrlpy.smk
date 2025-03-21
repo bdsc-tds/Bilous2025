@@ -17,9 +17,9 @@ for segmentation in xenium_dir.iterdir():
             for donor in (donors := panel.iterdir()):
                 for sample in (samples := donor.iterdir()):
 
-                    # if panel.stem == '5k' and sample.stem in ['1GDD','1GAC','0PSV','1GQ9','1GVD']:
-                    #     # these samples fail even with 1Tb memory
-                    #     continue
+                    if panel.stem == '5k':
+                        # 5k samples fail even with 1Tb memory
+                        continue
                 
                     if segmentation.stem == 'proseg':
                         sample_transcripts_path = sample / "raw_results/transcript-metadata.csv.gz"
@@ -56,7 +56,7 @@ for segmentation in xenium_dir.iterdir():
                         threads: 1
                         resources:
                             mem='1000GB',
-                            runtime='48h',
+                            runtime='3d',
                         conda:
                             "spatial"
                         shell:
@@ -83,9 +83,9 @@ for signal_integrity_threshold in signal_integrity_thresholds:
                 for donor in (donors := panel.iterdir()):
                     for sample in (samples := donor.iterdir()):
 
-                        # if panel.stem == '5k' and sample.stem in ['1GDD','1GAC','0PSV','1GQ9','1GVD','1G73']:
-                        #     # these samples fail even with 1Tb memory
-                        #     continue
+                        if panel.stem == '5k':
+                            # 5k samples fail even with 1Tb memory
+                            continue
 
                         if segmentation.stem == 'proseg':
                             sample_transcripts_path = sample / "raw_results/transcript-metadata.csv.gz"

@@ -23,6 +23,12 @@ parser.add_argument("--sample_palette", type=Path, help="Path to palette csv fil
 parser.add_argument("--s", type=float, help="scatter point size")
 parser.add_argument("--alpha", type=float, help="scatter alpha (transparency)")
 parser.add_argument("--dpi", type=int, help="dpi of saved plot")
+parser.add_argument(
+    "--points_only",
+    action="store_true",
+    help="Remove axes, legend, title and only plot points",
+)
+
 args = parser.parse_args()
 
 # Access the arguments
@@ -40,6 +46,7 @@ sample_palette = args.sample_palette
 s = args.s
 alpha = args.alpha
 dpi = args.dpi
+points_only = args.points_only
 
 if color == "sample":
     palette = pd.read_csv(sample_palette, index_col=0).iloc[:, 0]
@@ -135,7 +142,8 @@ print(
 
 
 # plot
-f = plt.figure(figsize=(12, 10))
+figsize = (10, 10) if points_only else (12, 10)
+f = plt.figure(figsize=figsize)
 ax = plt.subplot()
 
 sns.scatterplot(
@@ -149,18 +157,23 @@ sns.scatterplot(
     palette=palette,
     legend=False,
 )
-ax.xaxis.set_ticks([])
-ax.yaxis.set_ticks([])
-sns.despine()
 
-plt.title(title)
-f.legend(
-    handles=legend_handles,
-    loc="center left",
-    bbox_to_anchor=(1, 0.5),
-    title=params if isinstance(params, str) else ", ".join(params),
-    frameon=False,
-)
-plt.tight_layout(rect=[0, 0, 0.85, 0.95])
+if not points_only:
+    ax.xaxis.set_ticks([])
+    ax.yaxis.set_ticks([])
+    sns.despine()
+
+    plt.title(title)
+    f.legend(
+        handles=legend_handles,
+        loc="center left",
+        bbox_to_anchor=(1, 0.5),
+        title=params if isinstance(params, str) else ", ".join(params),
+        frameon=False,
+    )
+    plt.tight_layout(rect=[0, 0, 0.85, 0.95])
+else:
+    ax.axis("off")
+
 plt.savefig(out_file, dpi=dpi, bbox_inches="tight")
 plt.close()
