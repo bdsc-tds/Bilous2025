@@ -187,7 +187,7 @@ if __name__ == "__main__":
     else:
         # get precomputed markers from raw data
         if args.precomputed_ctj_markers is not None:
-            print(f"Loading precomputed {args.ctj} markers")
+            print("Loading precomputed markers")
             df_ctj_marker_genes_precomputed = pd.read_parquet(args.precomputed_ctj_markers)
 
     ####
@@ -226,8 +226,7 @@ if __name__ == "__main__":
         # get markers
         if args.markers == "diffexpr":
             if args.precomputed_ctj_markers is not None:
-                print(f"Loading precomputed {ctj} markers")
-                ctj_marker_genes_precomputed = pd.read_parquet(args.precomputed_ctj_markers)
+                ctj_marker_genes_precomputed = df_ctj_marker_genes_precomputed[ctj]
 
             sc.tl.rank_genes_groups(adata, groupby=label_key, groups=[ctj], reference="rest", method="wilcoxon")
             ctj_marker_genes = sc.get.rank_genes_groups_df(adata, group=ctj)["names"][: args.top_n].tolist()

@@ -5,6 +5,7 @@ import pandas as pd
 
 # cfg paths
 xenium_dir = Path(config['xenium_processed_data_dir'])
+xenium_count_correction_dir = Path(config['xenium_count_correction_dir'])
 xenium_std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
 xenium_cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
 results_dir = Path(config['results_dir'])
@@ -13,7 +14,7 @@ palette_dir = Path(config['xenium_metadata_dir'])
 # Params
 # probably only need to run for lognorm data
 signal_integrity_thresholds = [0.5,0.7]
-correction_methods = ['resolvi','resolvi_supervised'] + [f'ovrlpy_correction_{signal_integrity_threshold=}' for signal_integrity_threshold in signal_integrity_thresholds]
+correction_methods = ['split_fully_purified']#['resolvi','resolvi_supervised'] + [f'ovrlpy_correction_{signal_integrity_threshold=}' for signal_integrity_threshold in signal_integrity_thresholds]
 normalisations = ['lognorm',]
 layers = ['data',]
 references = ['matched_reference_combo']
@@ -69,19 +70,24 @@ for markers in markers_mode:
                                                 else:
                                                     sample_dir = xenium_dir / f'{name}/normalised_results/outs'
 
-                                                if correction_method == "resolvi":
-                                                    name_corrected = f'{name}/{mixture_k=}/{num_samples=}/'
-                                                elif correction_method == "resolvi_supervised":
-                                                    name_corrected = f'{name}/{normalisation}/reference_based/{reference}/{method}/{level}/{mixture_k=}/{num_samples=}'
-                                                elif "ovrlpy" in correction_method:
-                                                    name_corrected = f'{name}'
+                                                if correction_method == "split_fully_purified":
+                                                    name_corrected = f'{name}/{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/split_fully_purified/'
+                                                    sample_corrected_counts_path = xenium_count_correction_dir / f"{name_corrected}/corrected_counts.h5"
 
-                                                sample_corrected_counts_path = results_dir / f"{correction_method}/{name_corrected}/corrected_counts.h5"
+                                                else:
+                                                    if correction_method == "resolvi":
+                                                        name_corrected = f'{name}/{mixture_k=}/{num_samples=}/'
+                                                    elif correction_method == "resolvi_supervised":
+                                                        name_corrected = f'{name}/{normalisation}/reference_based/{reference}/{method}/{level}/{mixture_k=}/{num_samples=}'
+                                                    elif "ovrlpy" in correction_method:
+                                                        name_corrected = f'{name}'
+
+                                                    sample_corrected_counts_path = results_dir / f"{correction_method}/{name_corrected}/corrected_counts.h5"
 
                                                 sample_normalised_counts = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/{layer}.parquet'
                                                 sample_idx = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/cells.parquet'
                                                 sample_annotation = xenium_cell_type_annotation_dir / f'{name}/{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet'
-                                                precomputed_ctj_markers = results_dir / f'contamination_metrics_{markers}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_summary_stats.json'
+                                                precomputed_ctj_markers = results_dir / f'contamination_metrics_{markers}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
                                                 precomputed_adata_obs = results_dir / f'contamination_metrics_{markers}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_out_file_adata_obs.parquet'
 
                                                 out_file_df_ctj_marker_genes = results_dir /  f'contamination_metrics_{markers}_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'

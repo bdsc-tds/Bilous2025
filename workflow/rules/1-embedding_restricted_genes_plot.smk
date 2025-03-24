@@ -12,7 +12,7 @@ n_neighbors = config['umap_n_neighbors']
 min_dist = config['umap_min_dist']
 metric = config['umap_metric']
 
-s=3
+s=2
 alpha=0.5
 dpi = 300
 points_only = True

@@ -7,7 +7,7 @@ std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
 scrnaseq_processed_data_dir = Path(config['scrnaseq_processed_data_dir'])
 seurat_to_h5_dir = results_dir / 'seurat_to_h5'
 
-# stricter params than pipeline config
+# params from pipeline config
 min_counts = 10
 min_features = 5
 max_counts = float("inf")
