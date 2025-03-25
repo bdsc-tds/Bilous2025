@@ -42,7 +42,7 @@ condition = panel.parents[0].stem
 OBSM_KEY = "X_pca"
 CT_KEY = (reference, method, level)
 BATCH_KEY = "batch_key"
-normalisation_annot = "lognorm"  # fix this for now, even for sctransfrom
+cell_type_normalisation = "lognorm"  # fix this for now, even for sctransfrom
 exclude_cell_type_containing = "malignant"
 
 # read xenium samples
@@ -67,7 +67,7 @@ for donor in (donors := panel.iterdir()):
         ads[k].obs_names = pd.read_parquet(sample_idx_path).iloc[:, 0]
 
         # read cell type annotation
-        sample_annotation_dir = cell_type_annotation_dir / f"{name}/{normalisation_annot}/reference_based"
+        sample_annotation_dir = cell_type_annotation_dir / f"{name}/{cell_type_normalisation}/reference_based"
         annot_file = sample_annotation_dir / f"{reference}/{method}/{level}/single_cell/labels.parquet"
         ads[k].obs[CT_KEY] = pd.read_parquet(annot_file).set_index("cell_id").iloc[:, 0]
 

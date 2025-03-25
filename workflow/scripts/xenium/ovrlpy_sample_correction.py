@@ -74,7 +74,7 @@ if proseg_format:
             "assignment": "cell_id",
         }
     )
-
+    coordinate_df["cell_id"] = "proseg-" + coordinate_df["cell_id"].astype(str)
     # remove dummy molecules
     coordinate_df = coordinate_df[
         ~coordinate_df["gene"].str.contains("|".join(["BLANK_", "UnassignedCodeword", "NegControl"]))

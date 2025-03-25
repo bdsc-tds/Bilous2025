@@ -86,7 +86,7 @@ for donor in (donors := panel.iterdir()):
             donor.stem,
             sample.stem,
         )
-        name_annot = "/".join(k)
+        name_annot = "/".join(k_annot)
 
         sample_normalised_counts_path = sample / f"{normalisation}/normalised_counts/{layer}.parquet"
         sample_idx_path = sample / f"{normalisation}/normalised_counts/cells.parquet"
@@ -194,6 +194,6 @@ preprocessing.preprocess(
 
 # save
 df_umap = pd.DataFrame(ad_merge.obsm["X_umap"], index=ad_merge.obs_names, columns=["UMAP1", "UMAP2"])
-df_umap[xenium_levels] = ad_merge.obs[xenium_levels]
+df_umap[xenium_levels + ["spot_class"]] = ad_merge.obs[xenium_levels + ["spot_class"]]
 
 df_umap.to_parquet(out_file)

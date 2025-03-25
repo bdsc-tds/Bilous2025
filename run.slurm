@@ -4,6 +4,7 @@
 #SBATCH --time=24:00:00
 #SBATCH --output=workflow/log/run.out
 
+rm -rf .snakemake/log
 rm -rf .snakemake/slurm_logs
 rm -rf .snakemake/tmp.*
 mamba activate sm

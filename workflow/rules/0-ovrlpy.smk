@@ -23,10 +23,10 @@ for segmentation in xenium_dir.iterdir():
                 
                     if segmentation.stem == 'proseg':
                         sample_transcripts_path = sample / "raw_results/transcript-metadata.csv.gz"
+                        k = ('proseg_expected',condition.stem,panel.stem,donor.stem,sample.stem)
                     else:
                         sample_transcripts_path = sample / "normalised_results/outs/transcripts.parquet"
-
-                    k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
+                        k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
                     name = '/'.join(k)
 
 
@@ -89,12 +89,14 @@ for signal_integrity_threshold in signal_integrity_thresholds:
 
                         if segmentation.stem == 'proseg':
                             sample_transcripts_path = sample / "raw_results/transcript-metadata.csv.gz"
-                            ref_segmentation = segmentation.stem
+                            ref_segmentation = 'proseg_expected'
+                            k = ('proseg_expected',condition.stem,panel.stem,donor.stem,sample.stem)
                         else:
                             sample_transcripts_path = sample / "normalised_results/outs/transcripts.parquet"
                             ref_segmentation = ref_segmentations[0]
+                            k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
 
-                        k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
+
                         k_ref = (ref_segmentation,condition.stem,panel.stem,donor.stem,sample.stem)
 
                         name = '/'.join(k)

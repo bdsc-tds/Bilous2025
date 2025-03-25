@@ -54,6 +54,9 @@ for correction_method in correction_methods:
                                 panel=panel_path,
                                 normalisation=normalisation,
                                 layer=layer,
+                                reference=reference,
+                                method=method,
+                                level=level,
                                 n_comps=n_comps,
                                 n_neighbors=n_neighbors,
                                 metric=metric,
@@ -65,6 +68,8 @@ for correction_method in correction_methods:
                                 min_cells=min_cells,
                                 num_samples=num_samples,
                                 mixture_k=mixture_k,
+                                xenium_count_correction_dir=xenium_count_correction_dir,
+                                results_dir=results_dir,
                                 raw_corrected_counts='--raw_corrected_counts' if raw_corrected_counts else '',
                             threads: 1
                             resources:

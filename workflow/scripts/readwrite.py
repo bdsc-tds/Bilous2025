@@ -1046,10 +1046,15 @@ def _read_diffexpr_results_sample(
     sample: Path,
     normalisation: str,
     layer: str,
-    load_diffexpr: bool,
+    load_df_ctj_marker_genes: bool = True,
+    load_df_diffexpr: bool = False,
+    load_df_markers_rank_significance_diffexpr: bool = True,
+    load_summary_stats: bool = True,
+    load_adata_obs: bool = False,
+    evaluation: list = "diffexpr",
 ):
     """
-    Reads differential expression results for a single sample.
+    Reads differential expression results for a single sample based on boolean flags.
 
     Args:
         results_dir (Path): Path to the results directory.
@@ -1066,11 +1071,22 @@ def _read_diffexpr_results_sample(
         sample (Path): Path to the sample directory.
         normalisation (str): The normalisation method used.
         layer (str): The layer used.
-        load_diffexpr (bool): Whether to load the diffexpr results or not.
+        load_df_ctj_marker_genes (bool): Whether to load the cell type-specific marker genes DataFrame.  Defaults to True.
+        load_df_diffexpr (bool): Whether to load the differential expression results DataFrame. Defaults to False.
+        load_df_markers_rank_significance_diffexpr (bool): Whether to load the marker rank significance diffexpr DataFrame. Defaults to True.
+        load_summary_stats (bool): Whether to load the summary statistics JSON file. Defaults to False.
+        load_adata_obs (bool): Whether to load the AnnData observation data (adata.obs). Defaults to False.
+        evaluation (str): evaluation test to load, 'diffexpr' or 'logreg'.
 
     Returns:
-        tuple: (correction_method, tuple of keys, DataFrame) if the file exists and is successfully read,
-               otherwise None.
+        tuple or None:
+            - If all required files exist and are successfully read:
+                A tuple containing:
+                    - correction_method (str): The correction method used.
+                    - k (tuple): A tuple of keys (segmentation, condition, panel, donor, sample).
+                    - loaded_data (tuple): A tuple containing the loaded DataFrames and summary stats based on the boolean flags.
+            - If any required file does not exist or an error occurs during reading:
+                None.
     """
 
     k = (segmentation.stem, condition.stem, panel.stem, donor.stem, sample.stem)
@@ -1088,6 +1104,9 @@ def _read_diffexpr_results_sample(
         elif "ovrlpy" in correction_method:
             name = f"{correction_method}/{name}"
 
+    if evaluation == "logreg":
+        folder += "_logreg"
+
     out_file_df_ctj_marker_genes = (
         results_dir / f"{folder}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet"
     )
@@ -1101,23 +1120,53 @@ def _read_diffexpr_results_sample(
         / f"{folder}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_markers_rank_significance_diffexpr.parquet"
     )
 
-    if out_file_df_markers_rank_significance_diffexpr.exists():
-        print(correction_method, k, end="\n")
-        try:
-            df = pd.read_parquet(out_file_df_markers_rank_significance_diffexpr, engine="pyarrow")
-            df_markers = pd.read_parquet(out_file_df_ctj_marker_genes, engine="pyarrow")
+    out_file_summary_stats = (
+        results_dir / f"{folder}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_summary_stats.json"
+    )
 
-            if load_diffexpr:
-                df_diffexpr = pd.read_parquet(out_file_df_diffexpr, engine="pyarrow")
-                return correction_method, k, df, df_markers, df_diffexpr
-            else:
-                return correction_method, k, df, df_markers
-        except Exception as e:
-            print(f"Error reading {out_file_df_markers_rank_significance_diffexpr}: {e}")
-            return None
-    else:
-        print("File does not exist:", out_file_df_diffexpr)
+    # Load data based on boolean flags
+    loaded_data = []
+
+    try:
+        if load_df_markers_rank_significance_diffexpr:
+            if not out_file_df_markers_rank_significance_diffexpr.exists():
+                print(f"File does not exist: {out_file_df_markers_rank_significance_diffexpr}")
+                return None
+            df_markers_rank_significance_diffexpr = pd.read_parquet(
+                out_file_df_markers_rank_significance_diffexpr, engine="pyarrow"
+            )
+            loaded_data.append(df_markers_rank_significance_diffexpr)
+
+        if load_df_ctj_marker_genes:
+            if not out_file_df_ctj_marker_genes.exists():
+                print(f"File does not exist: {out_file_df_ctj_marker_genes}")
+                return None
+            df_ctj_marker_genes = pd.read_parquet(out_file_df_ctj_marker_genes, engine="pyarrow")
+            loaded_data.append(df_ctj_marker_genes)
+
+        if load_df_diffexpr:
+            if not out_file_df_diffexpr.exists():
+                print(f"File does not exist: {out_file_df_diffexpr}")
+                return None
+            df_diffexpr = pd.read_parquet(out_file_df_diffexpr, engine="pyarrow")
+            loaded_data.append(df_diffexpr)
+
+        if load_summary_stats:
+            if not out_file_summary_stats.exists():
+                print(f"File does not exist: {out_file_summary_stats}")
+                return None
+            # Assuming it's a JSON file, load it as a dictionary
+            with open(out_file_summary_stats, "r") as f:
+                summary_stats = json.load(f)
+            loaded_data.append(summary_stats)
+        # no load_adata_obs at this point
+
+    except Exception as e:
+        print(f"Error reading files: {e}")
         return None
+
+    print(correction_method, k, end="\n")
+    return correction_method, k, tuple(loaded_data)
 
 
 def read_diffexpr_results_samples(
