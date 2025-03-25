@@ -14,7 +14,7 @@ palette_dir = Path(config['xenium_metadata_dir'])
 # Params
 # probably only need to run for lognorm data
 signal_integrity_thresholds = [0.5,0.7]
-correction_methods = ['split_fully_purified']#['resolvi','resolvi_supervised'] + [f'ovrlpy_correction_{signal_integrity_threshold=}' for signal_integrity_threshold in signal_integrity_thresholds]
+correction_methods = ['split_fully_purified','resolvi','resolvi_supervised'] + [f'ovrlpy_correction_{signal_integrity_threshold=}' for signal_integrity_threshold in signal_integrity_thresholds]
 normalisations = ['lognorm',]
 layers = ['data',]
 references = ['matched_reference_combo']
@@ -35,6 +35,7 @@ n_repeats = 5
 top_n = 20
 scoring = 'f1'
 markers_mode = ['diffexpr']#,'common_markers'] #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/cellmarker_cell_types_markers.json'
+max_n_cells = 50_000
 
 # resolvi params
 num_samples = 30
@@ -123,6 +124,7 @@ for markers in markers_mode:
                                                             top_n=top_n,
                                                             scoring=scoring,
                                                             markers=markers,
+                                                            max_n_cells=max_n_cells,
                                                             min_counts=min_counts,
                                                             min_features=min_features,
                                                             max_counts=max_counts,
@@ -131,7 +133,7 @@ for markers in markers_mode:
                                                         threads: 1
                                                         resources:
                                                             mem='50GB',
-                                                            runtime='1h',
+                                                            runtime='2d',
                                                         conda:
                                                             "spatial"
                                                         shell:
@@ -150,9 +152,12 @@ for markers in markers_mode:
                                                                 --out_file_df_importances_logreg {output.out_file_df_importances_logreg} \
                                                                 --out_file_df_markers_rank_significance_logreg {output.out_file_df_markers_rank_significance_logreg} \
                                                                 --radius {params.radius} \
+                                                                --n_permutations {params.n_permutations} \
+                                                                --n_repeats {params.n_repeats} \
                                                                 --top_n {params.top_n} \
                                                                 --scoring {params.scoring} \
                                                                 --markers {params.markers} \
+                                                                --max_n_cells {params.max_n_cells} \
                                                                 --min_counts {params.min_counts} \
                                                                 --min_features {params.min_features} \
                                                                 --max_counts {params.max_counts} \

@@ -199,7 +199,7 @@ if __name__ == "__main__":
     # define target (cell type j presence in kNN)
     if args.precomputed_adata_obs is not None:
         print("Loading precomputed adata obs. Replacing loaded labels")
-        adata.obs = pd.read_parquet(args.precomputed_adata_obs)
+        adata.obs = pd.read_parquet(args.precomputed_adata_obs).loc[adata.obs_names]
     else:
         obsm = "spatial"
         knnlabels, knndis, knnidx, knn_graph = _utils.get_knn_labels(
@@ -241,7 +241,8 @@ if __name__ == "__main__":
                 continue
             print(cti, ctj)
 
-            adata.obs[f"has_{ctj}_neighbor"] = knnlabels[ctj] > 0
+            if args.precomputed_adata_obs is None:
+                adata.obs[f"has_{ctj}_neighbor"] = knnlabels[ctj] > 0
 
             # Filter for cti
             adata_cti = adata[adata.obs[label_key] == cti]
@@ -306,7 +307,7 @@ if __name__ == "__main__":
     # logreg
     pd.concat(df_permutations_logreg).to_parquet(args.out_file_df_permutations_logreg)
     pd.concat(df_importances_logreg).to_parquet(args.out_file_df_importances_logreg)
-    pd.concat(df_markers_rank_significance_logreg).to_parquet(args.out_file_df_markers_rank_significance_logreg)
+    pd.concat(df_markers_rank_significance_logreg).T.to_parquet(args.out_file_df_markers_rank_significance_logreg)
 
     if args.l is not None:
         _log.close()

@@ -30,6 +30,10 @@ parser.add_argument("--max_counts", type=float, help="QC parameter from pipeline
 parser.add_argument("--max_features", type=float, help="QC parameter from pipeline config")
 parser.add_argument("--min_cells", type=int, help="QC parameter from pipeline config")
 parser.add_argument("--genes", type=str, nargs="*", default=[], help="Restrict data to these genes for the UMAP.")
+parser.add_argument("--cell_type_annotation_dir", type=Path, help="Path to the cell_type_annotation_dir.")
+parser.add_argument("--reference", type=str, help="annotation reference")
+parser.add_argument("--method", type=str, help="annotation method")
+parser.add_argument("--level", type=str, help="annotation level")
 
 args = parser.parse_args()
 
@@ -50,20 +54,16 @@ max_features = args.max_features
 min_cells = args.min_cells
 genes = args.genes
 
+cell_type_annotation_dir = args.cell_type_annotation_dir
+cell_type_normalisation = "lognorm"  # fix this for now, even for sctransfrom args.normalisation
+reference = args.reference
+method = args.method
+level = args.level
 
 segmentation = panel.parents[1].stem
 condition = panel.parents[0].stem
+xenium_levels = ["segmentation", "condition", "panel", "donor", "sample"]
 
-# read xenium samples
-# xenium_paths = {}
-# for donor in (donors := panel.iterdir()):
-#     for sample in (samples := donor.iterdir()):
-#         k = (segmentation, condition, panel.stem, donor.stem, sample.stem)
-#         sample_path = sample / "normalised_results/outs"
-
-#         xenium_paths[k] = sample_path
-
-# ads = readwrite.read_xenium_samples(xenium_paths, anndata_only=True, transcripts=False, sample_name_as_key=False)
 print("Reading samples")
 ads = {}
 for donor in (donors := panel.iterdir()):
@@ -78,6 +78,15 @@ for donor in (donors := panel.iterdir()):
             k = (segmentation.replace("proseg_counts", "proseg"), condition, panel.stem, donor.stem, sample.stem)
             name_sample = "/".join(k)
             sample_dir = xenium_processed_data_dir / f"{name_sample}/normalised_results/outs"
+
+        k_annot = (
+            segmentation,
+            condition,
+            panel.stem,
+            donor.stem,
+            sample.stem,
+        )
+        name_annot = "/".join(k)
 
         sample_normalised_counts_path = sample / f"{normalisation}/normalised_counts/{layer}.parquet"
         sample_idx_path = sample / f"{normalisation}/normalised_counts/cells.parquet"
@@ -116,9 +125,20 @@ for donor in (donors := panel.iterdir()):
             if layer != "scale_data":  # no need to sparsify scale_data which is dense
                 ads[k].X = scipy.sparse.csr_matrix(ads[k].X)
 
+        # read spot class
+        annot_file = (
+            cell_type_annotation_dir
+            / name_annot
+            / f"{cell_type_normalisation}/reference_based/{reference}/{method}/{level}/single_cell/output/results_df.parquet"
+        )
+
+        ads[k].obs["spot_class"] = pd.read_parquet(annot_file, columns=["cell_id", "spot_class"]).set_index("cell_id")
+
+        ads[k] = ads[k][ads[k].obs["spot_class"] == "singlet"]
+
+
 print("Concatenating")
 # concatenate
-xenium_levels = ["segmentation", "condition", "panel", "donor", "sample"]
 for k in ads.keys():
     for i, lvl in enumerate(xenium_levels):
         ads[k].obs[lvl] = k[i]

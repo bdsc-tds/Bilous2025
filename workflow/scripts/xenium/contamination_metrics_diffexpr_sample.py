@@ -200,7 +200,7 @@ if __name__ == "__main__":
     # define target (cell type j presence in kNN)
     if args.precomputed_adata_obs is not None:
         print("Loading precomputed adata obs. Replacing loaded labels")
-        adata.obs = pd.read_parquet(args.precomputed_adata_obs)
+        adata.obs = pd.read_parquet(args.precomputed_adata_obs).loc[adata.obs_names]
     else:
         knnlabels, knndis, knnidx, knn_graph = _utils.get_knn_labels(
             adata, radius=args.radius, label_key=label_key, obsm=obsm, return_sparse_neighbors=True
@@ -227,6 +227,7 @@ if __name__ == "__main__":
         if args.markers == "diffexpr":
             if args.precomputed_ctj_markers is not None:
                 ctj_marker_genes_precomputed = df_ctj_marker_genes_precomputed[ctj]
+                ctj_marker_genes_precomputed = [g for g in ctj_marker_genes_precomputed if g in adata.var_names]
 
             sc.tl.rank_genes_groups(adata, groupby=label_key, groups=[ctj], reference="rest", method="wilcoxon")
             ctj_marker_genes = sc.get.rank_genes_groups_df(adata, group=ctj)["names"][: args.top_n].tolist()
@@ -243,7 +244,8 @@ if __name__ == "__main__":
                 continue
             print(cti, ctj)
 
-            adata.obs[f"has_{ctj}_neighbor"] = knnlabels[ctj] > 0
+            if args.precomputed_adata_obs is None:
+                adata.obs[f"has_{ctj}_neighbor"] = knnlabels[ctj] > 0
 
             # Filter for cti
             adata_cti = adata[adata.obs[label_key] == cti]

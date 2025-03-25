@@ -14,7 +14,7 @@ palette_dir = Path(config['xenium_metadata_dir'])
 # Params
 # probably only need to run for lognorm data
 signal_integrity_thresholds = [0.5,0.7]
-correction_methods = ['split_fully_purified']#['resolvi','resolvi_supervised'] + [f'ovrlpy_correction_{signal_integrity_threshold=}' for signal_integrity_threshold in signal_integrity_thresholds]
+correction_methods = ['split_fully_purified','resolvi','resolvi_supervised'] + [f'ovrlpy_correction_{signal_integrity_threshold=}' for signal_integrity_threshold in signal_integrity_thresholds]
 normalisations = ['lognorm',]
 layers = ['data',]
 references = ['matched_reference_combo']

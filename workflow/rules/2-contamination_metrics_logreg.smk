@@ -66,7 +66,7 @@ for markers in markers_mode:
                                             sample_normalised_counts = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/{layer}.parquet'
                                             sample_idx = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/cells.parquet'
                                             sample_annotation = xenium_cell_type_annotation_dir / f'{name}/{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet'
-                                            precomputed_ctj_markers = results_dir / f'contamination_metrics_{markers}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_summary_stats.json'
+                                            precomputed_ctj_markers = results_dir / f'contamination_metrics_{markers}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
                                             precomputed_adata_obs = results_dir / f'contamination_metrics_{markers}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_out_file_adata_obs.parquet'
 
                                             out_file_df_permutations_logreg = results_dir / f'contamination_metrics_{markers}_logreg/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_permutations_logreg.parquet'
@@ -99,12 +99,12 @@ for markers in markers_mode:
                                                     top_n=top_n,
                                                     scoring=scoring,
                                                     markers=markers,
+                                                    max_n_cells=max_n_cells,
                                                     min_counts=min_counts,
                                                     min_features=min_features,
                                                     max_counts=max_counts,
                                                     max_features=max_features,
                                                     min_cells=min_cells,
-                                                    max_n_cells=max_n_cells,
                                                 threads: 1
                                                 resources:
                                                     mem='50GB',
