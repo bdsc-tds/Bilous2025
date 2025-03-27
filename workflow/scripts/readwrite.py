@@ -544,7 +544,7 @@ def read_xenium_samples(
     if pool_mode == "process":
         pool = ProcessPoolExecutor
     elif pool_mode == "thread":
-        pool = ThreadPoolExecutor()
+        pool = ThreadPoolExecutor
 
     sdatas = {}
     with pool(max_workers=max_workers) as executor:
@@ -1046,11 +1046,6 @@ def _read_diffexpr_results_sample(
     sample: Path,
     normalisation: str,
     layer: str,
-    load_df_ctj_marker_genes: bool = True,
-    load_df_diffexpr: bool = False,
-    load_df_markers_rank_significance_diffexpr: bool = True,
-    load_summary_stats: bool = True,
-    load_adata_obs: bool = False,
     evaluation: list = "diffexpr",
 ):
     """
@@ -1071,11 +1066,6 @@ def _read_diffexpr_results_sample(
         sample (Path): Path to the sample directory.
         normalisation (str): The normalisation method used.
         layer (str): The layer used.
-        load_df_ctj_marker_genes (bool): Whether to load the cell type-specific marker genes DataFrame.  Defaults to True.
-        load_df_diffexpr (bool): Whether to load the differential expression results DataFrame. Defaults to False.
-        load_df_markers_rank_significance_diffexpr (bool): Whether to load the marker rank significance diffexpr DataFrame. Defaults to True.
-        load_summary_stats (bool): Whether to load the summary statistics JSON file. Defaults to False.
-        load_adata_obs (bool): Whether to load the AnnData observation data (adata.obs). Defaults to False.
         evaluation (str): evaluation test to load, 'diffexpr' or 'logreg'.
 
     Returns:
@@ -1103,70 +1093,77 @@ def _read_diffexpr_results_sample(
             name = f"{correction_method}/{name}/{normalisation}/reference_based/{reference}/{method}/{level}/{mixture_k=}/{num_samples=}"
         elif "ovrlpy" in correction_method:
             name = f"{correction_method}/{name}"
+        elif correction_method == "split_fully_purified":
+            name = f"{correction_method}/{name}/{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/split_fully_purified/"
 
     if evaluation == "logreg":
         folder += "_logreg"
 
-    out_file_df_ctj_marker_genes = (
-        results_dir / f"{folder}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet"
-    )
+    prefix = (results_dir / f"{folder}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_").as_posix()
 
-    out_file_df_diffexpr = (
-        results_dir / f"{folder}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_diffexpr.parquet"
-    )
+    # Load data
+    loaded_data = {}
+    if evaluation == "diffexpr":
+        # diffexpr files
+        out_file_df_ctj_marker_genes = Path(prefix + "marker_genes.parquet")
+        out_file_df_diffexpr = Path(prefix + "diffexpr.parquet")
+        out_file_df_markers_rank_significance_diffexpr = Path(prefix + "markers_rank_significance_diffexpr.parquet")
+        out_file_summary_stats = Path(prefix + "summary_stats.json")
 
-    out_file_df_markers_rank_significance_diffexpr = (
-        results_dir
-        / f"{folder}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_markers_rank_significance_diffexpr.parquet"
-    )
-
-    out_file_summary_stats = (
-        results_dir / f"{folder}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_summary_stats.json"
-    )
-
-    # Load data based on boolean flags
-    loaded_data = []
-
-    try:
-        if load_df_markers_rank_significance_diffexpr:
-            if not out_file_df_markers_rank_significance_diffexpr.exists():
-                print(f"File does not exist: {out_file_df_markers_rank_significance_diffexpr}")
-                return None
-            df_markers_rank_significance_diffexpr = pd.read_parquet(
+        if out_file_df_markers_rank_significance_diffexpr.exists():
+            loaded_data["df_markers_rank_significance_diffexpr"] = pd.read_parquet(
                 out_file_df_markers_rank_significance_diffexpr, engine="pyarrow"
             )
-            loaded_data.append(df_markers_rank_significance_diffexpr)
+        else:
+            print(f"File does not exist: {out_file_df_markers_rank_significance_diffexpr}")
 
-        if load_df_ctj_marker_genes:
-            if not out_file_df_ctj_marker_genes.exists():
-                print(f"File does not exist: {out_file_df_ctj_marker_genes}")
-                return None
-            df_ctj_marker_genes = pd.read_parquet(out_file_df_ctj_marker_genes, engine="pyarrow")
-            loaded_data.append(df_ctj_marker_genes)
+        if out_file_df_ctj_marker_genes.exists():
+            loaded_data["df_ctj_marker_genes"] = pd.read_parquet(out_file_df_ctj_marker_genes, engine="pyarrow")
+        else:
+            print(f"File does not exist: {out_file_df_ctj_marker_genes}")
 
-        if load_df_diffexpr:
-            if not out_file_df_diffexpr.exists():
-                print(f"File does not exist: {out_file_df_diffexpr}")
-                return None
+        if out_file_df_diffexpr.exists():
             df_diffexpr = pd.read_parquet(out_file_df_diffexpr, engine="pyarrow")
-            loaded_data.append(df_diffexpr)
+            loaded_data["df_diffexpr"] = df_diffexpr
+        else:
+            print(f"File does not exist: {out_file_df_diffexpr}")
 
-        if load_summary_stats:
-            if not out_file_summary_stats.exists():
-                print(f"File does not exist: {out_file_summary_stats}")
-                return None
-            # Assuming it's a JSON file, load it as a dictionary
+        if out_file_summary_stats.exists():
             with open(out_file_summary_stats, "r") as f:
                 summary_stats = json.load(f)
-            loaded_data.append(summary_stats)
-        # no load_adata_obs at this point
+            loaded_data["summary_stats"] = summary_stats
+        else:
+            print(f"File does not exist: {out_file_summary_stats}")
 
-    except Exception as e:
-        print(f"Error reading files: {e}")
-        return None
+    elif evaluation == "logreg":
+        # logreg files
+        out_file_df_permutations_logreg = Path(prefix + "permutations_logreg.parquet")
+        out_file_df_importances_logreg = Path(prefix + "importances_logreg.parquet")
+        out_file_df_markers_rank_significance_logreg = Path(prefix + "markers_rank_significance_logreg.json")
+        if out_file_df_permutations_logreg.exists():
+            df_permutations_logreg = pd.read_parquet(out_file_df_permutations_logreg, engine="pyarrow")
+            loaded_data["df_permutations_logreg"] = df_permutations_logreg
+        else:
+            print(f"File does not exist: {out_file_df_permutations_logreg}")
 
-    print(correction_method, k, end="\n")
-    return correction_method, k, tuple(loaded_data)
+        if out_file_df_importances_logreg.exists():
+            df_importances_logreg = pd.read_parquet(out_file_df_importances_logreg, engine="pyarrow")
+            loaded_data["df_importances_logreg"] = df_importances_logreg
+        else:
+            print(f"File does not exist: {out_file_df_importances_logreg}")
+
+        if out_file_df_markers_rank_significance_logreg.exists():
+            df_markers_rank_significance_logreg = pd.read_parquet(
+                out_file_df_markers_rank_significance_logreg, engine="pyarrow"
+            )
+            loaded_data["df_markers_rank_significance_logreg"] = df_markers_rank_significance_logreg
+        else:
+            print(f"File does not exist: {out_file_df_markers_rank_significance_logreg}")
+
+    else:
+        raise ValueError(f"Unknown evaluation: {evaluation}")
+
+    return correction_method, k, loaded_data
 
 
 def read_diffexpr_results_samples(
@@ -1180,7 +1177,7 @@ def read_diffexpr_results_samples(
     num_samples: int,
     normalisation: str,
     layer: str,
-    load_diffexpr=False,
+    evaluation: str = "diffexpr",
 ):
     """
     Reads differential expression results for multiple samples in parallel.
@@ -1196,17 +1193,14 @@ def read_diffexpr_results_samples(
         num_samples (int): Number of samples.
         normalisation (str): The normalisation method used.
         layer (str): The layer used.
+        evaluation (str): evaluation test to load, 'diffexpr' or 'logreg'.
 
     Returns:
         dict: A dictionary where keys are correction methods, and values are dictionaries mapping sample keys
               to DataFrames.
     """
 
-    if load_diffexpr:
-        df_diffexpr = {correction_method: {} for correction_method in correction_methods}
-    df_markers_rank_significance_diffexpr = {correction_method: {} for correction_method in correction_methods}
-    df_markers = {correction_method: {} for correction_method in correction_methods}
-
+    dfs = {}
     with ThreadPoolExecutor() as executor:
         futures = []
         for correction_method in correction_methods:
@@ -1234,22 +1228,33 @@ def read_diffexpr_results_samples(
                                         sample,
                                         normalisation,
                                         layer,
-                                        load_diffexpr,
+                                        evaluation,
                                     )
                                 )
 
-        for future in as_completed(futures):
-            result = future.result()
-            if result:
-                if load_diffexpr:
-                    correction_method, k, df_rank_, df_markers_, df_diffexpr_ = result
-                else:
-                    correction_method, k, df_rank_, df_markers_ = result
-                df_markers_rank_significance_diffexpr[correction_method][k] = df_rank_
-                df_diffexpr[correction_method][k] = df_diffexpr_
-                df_markers[correction_method][k] = df_markers_
+        with tqdm(total=len(futures), desc="Processing futures") as pbar:
+            for future in as_completed(futures):
+                result = future.result()
+                if result:
+                    correction_method, k, dfs_ = result
 
-    if load_diffexpr:
-        return df_markers_rank_significance_diffexpr, df_markers, df_diffexpr
+                    if correction_method not in dfs:
+                        dfs[correction_method] = {}
 
-    return df_markers_rank_significance_diffexpr
+                    dfs[correction_method][k] = dfs_
+                pbar.update(1)  # Update progress bar
+
+    # reorganize to have innermost keys (df types) as top level keys
+    new_dfs = {}
+
+    for correction_method, nested_dict in dfs.items():
+        for k, sub_dict in nested_dict.items():
+            for df_key, df_value in sub_dict.items():
+                if df_key not in new_dfs:
+                    new_dfs[df_key] = {}
+                if correction_method not in new_dfs[df_key]:
+                    new_dfs[df_key][correction_method] = {}
+
+                new_dfs[df_key][correction_method][k] = df_value
+
+    return new_dfs

@@ -31,6 +31,7 @@ parser.add_argument("--mixture_k", type=int, help="RESOLVI parameter from pipeli
 parser.add_argument("--raw_corrected_counts", action="store_true", help="Use raw corrected counts")
 parser.add_argument("--xenium_count_correction_dir", type=Path, help="xenium_count_correction_dir")
 parser.add_argument("--results_dir", type=Path, help="results_dir")
+parser.add_argument("--correction_method", type=str, help="correction_method")
 
 args = parser.parse_args()
 
@@ -55,9 +56,9 @@ mixture_k = args.mixture_k
 raw_corrected_counts = args.raw_corrected_counts
 xenium_count_correction_dir = args.xenium_count_correction_dir
 results_dir = args.results_dir
+correction_method = args.correction_method
 
 # variables
-correction_method = panel.parents[2].name
 segmentation = panel.parents[1].stem
 condition = panel.parents[0].stem
 
@@ -67,7 +68,6 @@ BATCH_KEY = "batch_key"
 cell_type_normalisation = "lognorm"  # fix this for now, even for sctransfrom
 exclude_cell_type_containing = "malignant"
 
-print(correction_method, segmentation, condition, panel.stem)
 # read xenium samples
 ads = {}
 if raw_corrected_counts:

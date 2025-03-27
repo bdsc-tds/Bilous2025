@@ -74,15 +74,16 @@ if proseg_format:
             "assignment": "cell_id",
         }
     )
-    coordinate_df["cell_id"] = "proseg-" + coordinate_df["cell_id"].astype(str)
+
     # remove dummy molecules
     coordinate_df = coordinate_df[
         ~coordinate_df["gene"].str.contains("|".join(["BLANK_", "UnassignedCodeword", "NegControl"]))
     ]
-    # recode unassigned transcripts cell_id to UNASSIGNED
-    coordinate_df["cell_id"] = (
-        coordinate_df["cell_id"].astype(str).replace({str(coordinate_df["cell_id"].max()): "UNASSIGNED"})
-    )
+
+    # recode cell_id as str and unassigned transcripts cell_id to UNASSIGNED
+    idx_unassigned = coordinate_df["cell_id"] == coordinate_df["cell_id"].max()
+    coordinate_df["cell_id"] = "proseg-" + coordinate_df["cell_id"].astype(str)
+    coordinate_df.loc[idx_unassigned, "cell_id"] = "UNASSIGNED"
 
 else:
     coordinate_df = (

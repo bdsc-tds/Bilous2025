@@ -39,7 +39,7 @@ out_files_panel = []
 
 for correction_method in correction_methods:
     for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
-        if segmentation.stem == 'proseg_mode':
+        if segmentation.stem in ['proseg_mode','10x_mm_5um']:
             continue
         for condition in (conditions := segmentation.iterdir()): 
             for panel in (panels := condition.iterdir()):
@@ -56,13 +56,17 @@ for correction_method in correction_methods:
                                     # input embedding file (doesn't depend on ref,method or color loops but more readable to have here)
                                     k = (segmentation.stem,condition.stem,panel.stem)
                                     name = '/'.join(k)
-                                    panel_path = results_dir / f'{correction_method}/{name}'
+                                    
+                                    if correction_method == 'split_fully_purified':
+                                        panel_path = xenium_count_correction_dir / name
+                                    else:
+                                        panel_path = results_dir / f'{correction_method}/{name}'
 
-                                    out_file = results_dir / f"scib_metrics_panel_corrected_counts/{name}/scib_metrics_{layer}_{reference}_{method}_{level}_{n_comps=}_{max_n_cells=}.parquet"
+                                    out_file = results_dir / f"scib_metrics_panel/{correction_method}/{name}/{normalisation}/scib_metrics_{layer}_{reference}_{method}_{level}_{n_comps=}_{max_n_cells=}.parquet"
                                     out_files_panel.append(out_file)
 
                                     rule:
-                                        name: f'scib_metrics_panel_corrected_counts/{name}/scib_metrics_{layer}_{reference}_{method}_{level}'
+                                        name: f'scib_metrics_panel/{correction_method}/{name}/scib_metrics_{layer}_{reference}_{method}_{level}'
                                         input:
                                             panel=panel_path,
                                         output:
@@ -85,6 +89,7 @@ for correction_method in correction_methods:
                                             mixture_k=mixture_k,
                                             xenium_count_correction_dir=xenium_count_correction_dir,
                                             results_dir=results_dir,
+                                            correction_method=correction_method,
                                             raw_corrected_counts='--raw_corrected_counts' if raw_corrected_counts else '',
                                         threads: 1
                                         resources:
@@ -114,6 +119,7 @@ for correction_method in correction_methods:
                                             --mixture_k {params.mixture_k} \
                                             --xenium_count_correction_dir {params.xenium_count_correction_dir} \
                                             --results_dir {params.results_dir} \
+                                            --correction_method {params.correction_method} \
                                             {params.raw_corrected_counts}
 
                                             echo "DONE"

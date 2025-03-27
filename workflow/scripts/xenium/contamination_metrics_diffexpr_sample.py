@@ -98,6 +98,7 @@ if __name__ == "__main__":
         "Gene %",
         "Lead_genes",
         "hypergeometric_pvalue",
+        f"n_hits_{args.top_n=}",
         "mean_zscore",
         "mean_zscore_pvalue",
     ]

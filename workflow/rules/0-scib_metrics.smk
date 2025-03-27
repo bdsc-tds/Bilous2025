@@ -31,11 +31,11 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                                 k = (segmentation.stem,condition.stem,panel.stem,normalisation)
                                 name = '/'.join(k)
 
-                                out_file = results_dir / f"scib_metrics_panel/{name}/scib_metrics_{layer}_{reference}_{method}_{level}_{n_comps=}_{max_n_cells=}.parquet"
+                                out_file = results_dir / f"scib_metrics_panel/raw/{name}/scib_metrics_{layer}_{reference}_{method}_{level}_{n_comps=}_{max_n_cells=}.parquet"
                                 out_files_panel.append(out_file)
 
                                 rule:
-                                    name: f'scib_metrics_panel/{name}/scib_metrics_{layer}_{reference}_{method}_{level}'
+                                    name: f'scib_metrics_panel/raw/{name}/scib_metrics_{layer}_{reference}_{method}_{level}'
                                     input:
                                         panel=panel,
                                     output:

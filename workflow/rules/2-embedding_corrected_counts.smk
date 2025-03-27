@@ -39,8 +39,11 @@ for correction_method in correction_methods:
                         name = '/'.join(k)
                         rule_name = '/'.join(k)#+(layer,))
 
-                        panel_path = results_dir / f'{correction_method}/{name}'
-                                                                                        # {layer}_
+                        if correction_method == 'split_fully_purified':
+                            panel_path = xenium_count_correction_dir / name
+                        else:
+                            panel_path = results_dir / f'{correction_method}/{name}'     
+                                                                                       # {layer}_
                         out_file = results_dir / f'{correction_method}_embed_panel/{name}/umap_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet' 
                         out_files_panel.append(out_file)
 
@@ -70,6 +73,7 @@ for correction_method in correction_methods:
                                 mixture_k=mixture_k,
                                 xenium_count_correction_dir=xenium_count_correction_dir,
                                 results_dir=results_dir,
+                                correction_method=correction_method,
                                 raw_corrected_counts='--raw_corrected_counts' if raw_corrected_counts else '',
                             threads: 1
                             resources:
@@ -100,6 +104,7 @@ for correction_method in correction_methods:
                                     --min_cells {params.min_cells} \
                                     --num_samples {params.num_samples} \
                                     --mixture_k {params.mixture_k} \
+                                    --correction_method {params.correction_method} \
                                     {params.raw_corrected_counts}
                                     
                                 echo "DONE"
