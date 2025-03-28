@@ -98,7 +98,7 @@ if __name__ == "__main__":
         "Gene %",
         "Lead_genes",
         "hypergeometric_pvalue",
-        f"n_hits_{args.top_n=}",
+        f"n_hits_top_n={args.top_n}",
         "mean_zscore",
         "mean_zscore_pvalue",
     ]
@@ -281,7 +281,7 @@ if __name__ == "__main__":
                 n_permutations=args.n_permutations,
                 n_repeats=args.n_repeats,
                 random_state=0,
-                max_iter=100,
+                max_iter=500,
                 importance_mode="coef",
             )
 

@@ -98,7 +98,7 @@ if __name__ == "__main__":
         "Gene %",
         "Lead_genes",
         "hypergeometric_pvalue",
-        f"n_hits_{args.top_n=}",
+        f"n_hits_top_n={args.top_n}",
         "mean_zscore",
         "mean_zscore_pvalue",
     ]
@@ -312,6 +312,7 @@ if __name__ == "__main__":
     )
 
     adata.obs["n_genes"] = (adata.X > 0).sum(axis=1).A1
+    adata.obs["n_counts"] = (adata.X).sum(axis=1).A1
 
     ###
     ### CONCAT AND SAVE OUTPUTS
@@ -320,11 +321,15 @@ if __name__ == "__main__":
     summary_stats = {
         "n_cells": len(adata),
         "n_cells_by_type": adata.obs[label_key].value_counts().to_dict(),
+        "mean_n_counts_by_type": adata.obs.groupby(label_key, observed=True)["n_counts"].mean().to_dict(),
+        "median_counts_by_type": adata.obs.groupby(label_key, observed=True)["n_counts"].median().to_dict(),
         "mean_n_genes_by_type": adata.obs.groupby(label_key, observed=True)["n_genes"].mean().to_dict(),
         "median_n_genes_by_type": adata.obs.groupby(label_key, observed=True)["n_genes"].median().to_dict(),
+        "mean_n_counts": adata.obs["n_counts"].mean(),
+        "median_n_counts": adata.obs["n_counts"].median(),
         "mean_n_genes": adata.obs["n_genes"].mean(),
         "median_n_genes": adata.obs["n_genes"].median(),
-        "df_has_neighbor_counts": df_has_neighbor_counts.to_dict(),  # Storing the DataFrame
+        "df_has_neighbor_counts": df_has_neighbor_counts.to_dict(),
     }
 
     with open(args.out_file_summary_stats, "w") as f:

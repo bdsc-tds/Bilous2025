@@ -35,6 +35,11 @@ parser.add_argument(
 parser.add_argument("--xenium_count_correction_dir", type=Path, help="xenium_count_correction_dir")
 parser.add_argument("--results_dir", type=Path, help="results_dir")
 parser.add_argument("--correction_method", type=str, help="correction_method")
+parser.add_argument("--cell_type_annotation_dir", type=Path, help="Path to the cell_type_annotation_dir.")
+parser.add_argument("--cell_type_normalisation", type=Path, help="")
+parser.add_argument("--reference", type=str, help="annotation reference")
+parser.add_argument("--method", type=str, help="annotation method")
+parser.add_argument("--level", type=str, help="annotation level")
 
 args = parser.parse_args()
 
@@ -43,9 +48,6 @@ panel = args.panel
 out_file = args.out_file
 normalisation = args.normalisation
 layer = args.layer
-reference = args.reference
-method = args.method
-level = args.level
 n_comps = args.n_comps
 n_neighbors = args.n_neighbors
 metric = args.metric
@@ -61,9 +63,16 @@ raw_corrected_counts = args.raw_corrected_counts
 xenium_count_correction_dir = args.xenium_count_correction_dir
 results_dir = args.results_dir
 correction_method = args.correction_method
+cell_type_annotation_dir = args.cell_type_annotation_dir
+cell_type_normalisation = args.cell_type_normalisation
+reference = args.reference
+method = args.method
+level = args.level
 
 segmentation = panel.parents[1].stem
 condition = panel.parents[0].stem
+
+CT_KEY = (reference, method, level)
 
 # read xenium samples
 # if raw_corrected_counts:
@@ -101,9 +110,9 @@ if raw_corrected_counts:
             ads[k] = sc.read_10x_h5(sample_corrected_counts_path)
 
             # read cell type annotation
-            sample_annotation_dir = cell_type_annotation_dir / f"{name}/{cell_type_normalisation}/reference_based"
-            annot_file = sample_annotation_dir / f"{reference}/{method}/{level}/single_cell/labels.parquet"
-            ads[k].obs[CT_KEY] = pd.read_parquet(annot_file).set_index("cell_id").iloc[:, 0]
+            # sample_annotation_dir = cell_type_annotation_dir / f"{name}/{cell_type_normalisation}/reference_based"
+            # annot_file = sample_annotation_dir / f"{reference}/{method}/{level}/single_cell/labels.parquet"
+            # ads[k].obs[CT_KEY] = pd.read_parquet(annot_file).set_index("cell_id").iloc[:, 0]
     is_raw = True
 
 else:
