@@ -312,7 +312,7 @@ if __name__ == "__main__":
     )
 
     adata.obs["n_genes"] = (adata.X > 0).sum(axis=1).A1
-    adata.obs["n_counts"] = (adata.X).sum(axis=1).A1
+    adata.obs["n_counts"] = (adata.X).sum(axis=1).A1.astype(float)
 
     ###
     ### CONCAT AND SAVE OUTPUTS

@@ -21,9 +21,9 @@ sample_palette = palette_dir / 'col_palette_sample.csv'
 
 signal_integrity_thresholds = [0.5,0.7]
 correction_methods = ['split_fully_purified','resolvi','resolvi_supervised'] + [f'ovrlpy_correction_{signal_integrity_threshold=}' for signal_integrity_threshold in signal_integrity_thresholds]
-normalisations = ['lognorm','sctransform']
-layers = ['data','scale_data']
-references = ['matched_reference_combo','external_reference']
+normalisations = ['lognorm']#,'sctransform']
+layers = ['data']#,'scale_data']
+references = ['matched_reference_combo']#,'external_reference']
 methods = ['rctd_class_aware']
 colors = ['sample','Level2.1']#['Level1','Level2','Level3','Level4','panel','sample',] # condition and sample as color to plot added here in addition to levels
 extension = 'png'
@@ -36,8 +36,11 @@ for correction_method in correction_methods:
             continue
         for condition in (conditions := segmentation.iterdir()): 
             for panel in (panels := condition.iterdir()):
-                # for normalisation in normalisations:
-                #     for layer in layers: 
+                if panel.stem == '5k' and 'ovrlpy' in correction_method:
+                    # 5k samples fail even with 1Tb memory
+                    continue
+                for normalisation in normalisations:
+                    for layer in layers: 
                         for reference in references:
                             for method in methods:
                                 for color in colors:
@@ -46,9 +49,9 @@ for correction_method in correction_methods:
                                         continue
 
                                     # input embedding file (doesn't depend on ref,method or color loops but more readable to have here)
-                                    k = (segmentation.stem,condition.stem,panel.stem)#,normalisation)
-                                    name = '/'.join(k)                                                      # {layer}_
-                                    embed_file = results_dir / f'{correction_method}_embed_panel/{name}/umap_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet'
+                                    k = (segmentation.stem,condition.stem,panel.stem,normalisation)
+                                    name = '/'.join(k)                                                      
+                                    embed_file = results_dir / f'{correction_method}_embed_panel/{name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet'
 
                                     # no need to plot panel for panel level UMAPs
                                     if color == 'panel':
@@ -62,7 +65,7 @@ for correction_method in correction_methods:
                                     out_files_panel.append(out_file)
 
                                     rule:
-                                        name: f'{correction_method}_embed_panel_plot/{name}/umap_{reference}_{method}_{color}'#_{layer}'
+                                        name: f'{correction_method}_embed_panel_plot/{name}/umap_{reference}_{method}_{color}_{layer}'
                                         input:
                                             panel=panel,
                                             embed_file=embed_file,

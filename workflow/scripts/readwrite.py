@@ -1031,7 +1031,7 @@ def read_count_correction_samples(xenium_paths, correction_methods):
     return xenium_corrected_counts
 
 
-def _read_diffexpr_results_sample(
+def _read_contamination_metrics_results_sample(
     results_dir: Path,
     reference: str,
     method: str,
@@ -1049,7 +1049,7 @@ def _read_diffexpr_results_sample(
     evaluation: list = "diffexpr",
 ):
     """
-    Reads differential expression results for a single sample based on boolean flags.
+    Reads contamination metrics results for a single sample
 
     Args:
         results_dir (Path): Path to the results directory.
@@ -1082,22 +1082,20 @@ def _read_diffexpr_results_sample(
     k = (segmentation.stem, condition.stem, panel.stem, donor.stem, sample.stem)
     name = "/".join(k)
 
-    if correction_method == "raw":
-        folder = "contamination_metrics_diffexpr"
-    else:
-        folder = "contamination_metrics_diffexpr_corrected_counts"
-
-        if correction_method == "resolvi":
-            name = f"{correction_method}/{name}/{mixture_k=}/{num_samples=}/"
-        elif correction_method == "resolvi_supervised":
-            name = f"{correction_method}/{name}/{normalisation}/reference_based/{reference}/{method}/{level}/{mixture_k=}/{num_samples=}"
-        elif "ovrlpy" in correction_method:
-            name = f"{correction_method}/{name}"
-        elif correction_method == "split_fully_purified":
-            name = f"{correction_method}/{name}/{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/split_fully_purified/"
-
+    folder = "contamination_metrics_diffexpr"
     if evaluation == "logreg":
         folder += "_logreg"
+    if correction_method != "raw":
+        folder += "_corrected_counts"
+
+    if correction_method == "resolvi":
+        name = f"{correction_method}/{name}/{mixture_k=}/{num_samples=}/"
+    elif correction_method == "resolvi_supervised":
+        name = f"{correction_method}/{name}/{normalisation}/reference_based/{reference}/{method}/{level}/{mixture_k=}/{num_samples=}"
+    elif "ovrlpy" in correction_method:
+        name = f"{correction_method}/{name}"
+    elif correction_method == "split_fully_purified":
+        name = f"{correction_method}/{name}/{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/split_fully_purified/"
 
     prefix = (results_dir / f"{folder}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_").as_posix()
 
@@ -1166,7 +1164,7 @@ def _read_diffexpr_results_sample(
     return correction_method, k, loaded_data
 
 
-def read_diffexpr_results_samples(
+def read_contamination_metrics_results(
     results_dir: Path,
     correction_methods: list[str],
     xenium_std_seurat_analysis_dir: Path,
@@ -1180,7 +1178,7 @@ def read_diffexpr_results_samples(
     evaluation: str = "diffexpr",
 ):
     """
-    Reads differential expression results for multiple samples in parallel.
+    Reads contamination metrics results for multiple samples in parallel.
 
     Args:
         results_dir (Path): Path to the results directory.
@@ -1213,7 +1211,7 @@ def read_diffexpr_results_samples(
                             for sample in donor.iterdir():
                                 futures.append(
                                     executor.submit(
-                                        _read_diffexpr_results_sample,
+                                        _read_contamination_metrics_results_sample,
                                         results_dir,
                                         reference,
                                         method,

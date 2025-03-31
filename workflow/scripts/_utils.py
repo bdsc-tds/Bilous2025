@@ -3,10 +3,14 @@ import numpy as np
 import pandas as pd
 import scipy
 import gseapy
-from sklearn.model_selection import train_test_split, permutation_test_score, cross_validate
+import anndata
+from sklearn.model_selection import train_test_split, permutation_test_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.inspection import permutation_importance
 from sklearn.preprocessing import StandardScaler
+from typing import Dict, List
+
+xenium_levels = ["segmentation", "condition", "panel", "donor", "sample"]
 
 
 def get_knn_labels(
@@ -246,3 +250,345 @@ def logreg(
         raise ValueError("Importance mode must be 'permutation' or 'coef'")
 
     return df_permutations, df_importances
+
+
+def get_mean_cell_identity_score_markers(
+    ads: Dict[str, Dict[str, anndata.AnnData]],
+    df_markers: pd.DataFrame,
+    correction_methods: List[str],
+    labels_key: str,
+    columns=None,
+) -> pd.DataFrame:
+    """
+    Calculates the mean number of genes (`n_genes`) for all unique cell types (`cti`) found
+    in the `labels_key` column across different AnnData objects and correction methods.
+
+    Args:
+        ads (Dict[str, Dict[str, anndata.AnnData]]): A nested dictionary structure containing
+            AnnData objects. The outer dictionary's keys are correction methods, and the
+            inner dictionary's keys are sample identifiers. Each inner dictionary value
+            is an AnnData object. Assumes `ads[correction_method][k]` is an AnnData object.
+        df_markers (pd.DataFrame): A DataFrame containing cell type markers.
+        correction_methods (List[str]): A list of correction methods to iterate through.
+        labels_key (str): The key in `ad.obs` that contains cell type labels.
+        columns (list): optional column names for the returned DataFrame
+    Returns:
+        pd.DataFrame: A DataFrame where each row represents a unique combination of sample
+            identifier, correction method, and cell type. The columns include sample identifiers,
+            correction method, cell type (`cti`), and the calculated mean number of genes
+            ('n_genes').
+    """
+
+    data = []
+    for correction_method in correction_methods:
+        for k, ad in ads[correction_method].items():
+            if ad is not None:
+                unique_ctis = ad.obs[labels_key].unique()
+
+                for cti in unique_ctis:
+                    cti_markers = df_markers.query("cell_type == @cti")["gene_name"].tolist()
+                    cti_markers = [g for g in cti_markers if g in ad.var_names]
+                    if len(cti_markers):
+                        n_genes_cti_markers = (ad[ad.obs[labels_key] == cti, cti_markers].X > 0).sum(1).A1
+                        mean_n_genes = np.mean(n_genes_cti_markers)
+                        data.append((*k, correction_method, cti, mean_n_genes))  # Append cell type to the data
+
+    # Create the DataFrame from the collected data
+    df = pd.DataFrame(data, columns=columns)
+
+    if columns is not None:
+        df.columns = columns
+    return df
+
+
+def get_mean_cell_identity_score_scrna(
+    ads: Dict[str, Dict[str, anndata.AnnData]],
+    ads_scrnaseq: Dict[str, anndata.AnnData],
+    df_markers: pd.DataFrame,
+    correction_methods: List[str],
+    labels_key: str,
+    columns=None,
+) -> pd.DataFrame:
+    """
+    Calculates the mean number of genes (`n_genes`) for all unique cell types (`cti`) found
+    in the `labels_key` column across different AnnData objects and correction methods.
+
+    Args:
+        ads (Dict[str, Dict[str, anndata.AnnData]]): A nested dictionary structure containing
+            AnnData objects. The outer dictionary's keys are correction methods, and the
+            inner dictionary's keys are sample identifiers. Each inner dictionary value
+            is an AnnData object. Assumes `ads[correction_method][k]` is an AnnData object.
+        ads_scrnaseq Dict[str, anndata.AnnData]: A dictionary structure containing
+            AnnData objects. The dictionary's keys are tissue identifiers corresponding to keys in `ads`.
+        correction_methods (List[str]): A list of correction methods to iterate through.
+        labels_key (str): The key in `ad.obs` that contains cell type labels.
+        columns (list): optional column names for the returned DataFrame
+    Returns:
+        pd.DataFrame: A DataFrame where each row represents a unique combination of sample
+            identifier, correction method, and cell type. The columns include sample identifiers,
+            correction method, cell type (`cti`), and the calculated mean number of genes
+            ('n_genes').
+    """
+
+    data = []
+    for correction_method in correction_methods:
+        for k, ad in ads[correction_method].items():
+            if ad is not None:
+                unique_ctis = ad.obs[labels_key].unique()
+
+                for cti in unique_ctis:
+                    cti_markers = df_markers.query("cell_type == @cti")["gene_name"].tolist()
+                    cti_markers = [g for g in cti_markers if g in ad.var_names]
+                    if len(cti_markers):
+                        n_genes_cti_markers = (ad[ad.obs[labels_key] == cti, cti_markers].X > 0).sum(1).A1
+                        mean_n_genes = np.mean(n_genes_cti_markers)
+                        data.append((*k, correction_method, cti, mean_n_genes))  # Append cell type to the data
+
+    # Create the DataFrame from the collected data
+    df = pd.DataFrame(data, columns=columns)
+
+    if columns is not None:
+        df.columns = columns
+    return df
+
+
+def get_cosine_similarity_score(pbs_xenium, pbs_scrna, labels_key, correction_methods, columns=None):
+    """
+    Calculates the cosine similarity score between each cell type's expression profile and its
+    corresponding pseudobulk expression profile.
+
+    Args:
+        pbs_xenium (Dict[str, Dict[str, anndata.AnnData]]): A nested dictionary structure containing
+            AnnData objects. The outer dictionary's keys are correction methods, and the
+            inner dictionary's keys are sample identifiers. Each inner dictionary value
+            is an AnnData object. Assumes `ads[correction_method][k]` is an AnnData object.
+        pbs_scrna (Dict[str, anndata.AnnData]): A dictionary structure containing pseudobulk expression
+            profiles. The dictionary's keys are tissue identifiers corresponding to keys in `pbs_xenium`.
+        labels_key (str): The key in `pb_xenium.obs` that contains cell type labels.
+        correction_methods (List[str]): A list of correction methods to iterate through.
+        columns (list): optional column names for the returned DataFrame
+
+    Returns:
+        pd.DataFrame: A DataFrame where each row represents a unique combination of sample
+            identifier, correction method, and cell type. The columns include sample identifiers,
+            correction method, cell type (`cti`), and the calculated cosine similarity score
+            ('cosine_sim').
+
+    Notes:
+        If a cell type is not found in the pseudobulk expression profile, a warning is printed.
+    """
+    data = []
+    for correction_method in correction_methods:
+        for k, pb_xenium in pbs_xenium[correction_method].items():
+            print(correction_method, k)
+            if pb_xenium is not None:
+                tissue = k[1]
+                pb_scrna = pbs_scrna[tissue]
+
+                genes_tissue = np.intersect1d(pb_xenium.var_names, pb_scrna.var_names)
+                unique_ctis = pb_xenium.obs_names.unique()
+                for cti in unique_ctis:
+                    if cti in pb_scrna.obs_names:
+                        x = pb_xenium[pb_xenium.obs_names == cti, genes_tissue].X.toarray().squeeze()
+                        y = pb_scrna[pb_scrna.obs_names == cti, genes_tissue].X.toarray().squeeze()
+
+                        cosine_sim = 1 - scipy.spatial.distance.cosine(x, y)
+                        data.append((*k, correction_method, cti, cosine_sim))  # Append cell type to the data
+                    else:
+                        print("Warning: cell type", cti, "not found in pseudobulk", tissue)
+
+    # Create the DataFrame from the collected data
+    df = pd.DataFrame(data, columns=columns)
+
+    if columns is not None:
+        df.columns = columns
+
+    return df
+
+
+def rename_correction_methods(df, column="correction_method"):
+    df[column] = df[column].replace(
+        {
+            "resolvi": "ResolVI",
+            "resolvi_supervised": "ResolVI supervised",
+            "ovrlpy_correction_signal_integrity_threshold=0.5": "ovrlpy 0.5",
+            "ovrlpy_correction_signal_integrity_threshold=0.7": "ovrlpy 0.7",
+            "ovrlpy_0.5": "ovrlpy 0.5",
+            "ovrlpy_0.7": "ovrlpy 0.7",
+            "split_fully_purified": "SPLIT",
+            "split": "SPLIT",
+        }
+    )
+
+
+def extract_info_cell_type_pair(series, cti, ctj, flag):
+    """Add info columns for number of cti cells being neighbor or not to ctj cells"""
+    s = series.map(
+        lambda df_: df_.query(f"label_key == '{cti}' and variable == 'has_{ctj}_neighbor' and value == {flag}")[
+            "count"
+        ].squeeze()
+    )
+    s = s.map(lambda x: 0 if isinstance(x, pd.Series) else x)  # replace empty series with 0
+
+    return s
+
+
+def get_df_summary_stats_plot(dfs, plot_metric="n_cells"):
+    """
+    Generate a summary DataFrame from a dictionary of summary statistics.
+
+    Parameters:
+    - dfs (dict): A dictionary containing summary statistics with correction methods as keys, as read by readwrite.read_diffexpr_results_samples.
+    - plot_metric (str, optional): The metric to plot. Defaults to "n_cells". Can also be "df_has_neighbor_counts"
+      or any other metric present in the summary statistics.
+
+    Returns:
+    - pd.DataFrame: A DataFrame containing the summary statistics, with columns based on the `xenium_levels`,
+      correction method, and the specified plot metric. If the plot metric is a dictionary, additional columns are
+      included for the dictionary keys and values.
+    """
+
+    data = []  # List to store data for the DataFrame
+
+    for correction_method, k_values in dfs["summary_stats"].items():  # Iterate through correction methods
+        for k, values in k_values.items():  # Iterate through keys k
+            v = values[plot_metric]
+            if plot_metric == "df_has_neighbor_counts":
+                v = pd.DataFrame(v)
+                row = list(k) + [correction_method, v]
+                data.append(row)
+
+            elif isinstance(v, dict):
+                for k1, values1 in v.items():
+                    row = list(k) + [correction_method, k1, values1]
+                    data.append(row)
+
+            else:
+                row = list(k) + [correction_method, v]  # Create a row of data
+                data.append(row)
+
+    if isinstance(v, dict):
+        columns = xenium_levels + ["correction_method", plot_metric + "_key", plot_metric + "_value"]
+    else:
+        columns = xenium_levels + ["correction_method", plot_metric]
+
+    df = pd.DataFrame(data, columns=columns)
+    rename_correction_methods(df)
+    return df
+
+
+def get_df_permutations_logreg_plot(df_permutations_logreg, correction_methods):
+    df = {}
+    for correction_method in correction_methods:
+        for k, v in df_permutations_logreg[correction_method].items():
+            for cti, ctj, _ in v.index:
+                df[(correction_method, *k, cti, ctj)] = v.loc[(cti, ctj, 0)]
+    df = pd.DataFrame(df).T.reset_index()
+    df.columns = ["correction_method"] + xenium_levels + ["cti", "ctj"] + df.columns[-5:].tolist()
+    rename_correction_methods(df)
+    return df
+
+
+def get_df_marker_rank_significance_plot(
+    dfs_marker_rank_significance,
+    rank_metric,
+    plot_metric,
+    correction_methods,
+    use_precomputed,
+):
+    """
+    Generate a DataFrame from a dictionary of DataFrames, to be used for plotting.
+
+    Parameters:
+    - dfs_marker_rank_significance (dict): A dictionary containing DataFrames with correction methods as keys, as read by readwrite.read_diffexpr_results_samples.
+    - key (str): The key to use for accessing the DataFrames in dfs.
+    - rank_metric (str): The ranking metric to use for the plot.
+    - plot_metric (str): The metric to plot.
+    - correction_methods (list): A list of correction methods to include in the plot.
+    - use_precomputed (bool): Whether to use precomputed results (True) or not (False).
+
+    Returns:
+    - pd.DataFrame: A DataFrame containing the data for the plot, with columns for the correction method, xenium levels, cell types, and plot metric.
+    """
+    df = {}
+    for correction_method in correction_methods:
+        for k, v in dfs_marker_rank_significance[correction_method].items():
+            if use_precomputed:
+                rank_metric_ = rank_metric if correction_method == "raw" else rank_metric + "_precomputed"
+            else:
+                rank_metric_ = rank_metric
+            df[(correction_method, *k)] = v.loc[rank_metric_, v.columns.get_level_values(2) == plot_metric]
+    df = pd.concat(df).reset_index()
+    df.columns = ["correction_method"] + xenium_levels + ["cti", "ctj", "plot_metric", plot_metric]
+    rename_correction_methods(df)
+    return df
+
+
+# def pseudobulk(adata, labels_key):
+#     """
+#     Generate pseudo-bulk RNA-seq data from single-cell RNA-seq datasets.
+
+#     Parameters
+#     ----------
+#     adata : Anndata
+#     labels_key : str
+#         The key in `adata.obs` used to identify cell type labels.
+
+#     Returns
+#     -------
+#     pd.DataFrame
+#         Contains pseudo-bulk expression profiles for each cell type,
+#         with cell types as columns and genes as rows.
+#     """
+
+#     pbdata = {}
+
+#     unique_cell_types = adata.obs[labels_key].unique()
+#     for ct in unique_cell_types:
+#         pb_cti_scrna = adata[adata.obs[labels_key] == ct].X.mean(0).A1
+#         pbdata[ct] = pd.Series(pb_cti_scrna, index=adata.var_names)
+#     pbdata = pd.DataFrame(pbdata)
+#     return pbdata
+
+
+def pseudobulk(ad, key, mode="sum"):
+    """
+    Generate pseudo-bulk RNA-seq data from single-cell RNA-seq datasets.
+
+    Parameters
+    ----------
+    ad : Anndata
+    key : str
+        The key in `ad.obs` used to identify cell type labels.
+    mode : str, optional
+        Whether to sum or mean the expression values across cells of the same cell type.
+        Options are "sum" (default) or "mean".
+
+    Returns
+    -------
+    Anndata
+        Contains pseudo-bulk expression profiles for each cell type,
+        with cell types as columns and genes as rows.
+    """
+
+    def _agg_obs(x):
+        val = x.mode()
+        if len(val):
+            return val[0]
+        else:
+            return None
+
+    agg = {}
+    for c in ad.obs[key].unique():
+        if pd.isna(c):
+            idx = ad.obs[key].isna()
+        else:
+            idx = ad.obs[key] == c
+        if mode == "sum":
+            agg[c] = np.asarray(ad[idx].X.sum(0)).squeeze()
+        elif mode == "mean":
+            agg[c] = np.asarray(ad[idx].X.mean(0)).squeeze()
+    ad_states = anndata.AnnData(pd.DataFrame(agg).T)
+    ad_states.var_names = ad.var_names
+    ad_states.obs = ad.obs.groupby(key).agg(_agg_obs)
+    return ad_states
