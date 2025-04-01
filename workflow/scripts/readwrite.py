@@ -1082,12 +1082,20 @@ def _read_contamination_metrics_results_sample(
     k = (segmentation.stem, condition.stem, panel.stem, donor.stem, sample.stem)
     name = "/".join(k)
 
-    folder = "contamination_metrics_diffexpr"
-    if evaluation == "logreg":
-        folder += "_logreg"
-    if correction_method != "raw":
-        folder += "_corrected_counts"
+    # folder name
+    folder_diffexpr = "contamination_metrics_diffexpr"
+    folder_logreg = "contamination_metrics_diffexpr_logreg"
 
+    if correction_method != "raw":
+        folder_diffexpr += "_corrected_counts"
+        folder_logreg += "_corrected_counts"
+
+    if evaluation == "logreg":
+        folder = folder_logreg
+    elif evaluation == "diffexpr":
+        folder = folder_diffexpr
+
+    # full path prefix
     if correction_method == "resolvi":
         name = f"{correction_method}/{name}/{mixture_k=}/{num_samples=}/"
     elif correction_method == "resolvi_supervised":
@@ -1099,11 +1107,24 @@ def _read_contamination_metrics_results_sample(
 
     prefix = (results_dir / f"{folder}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_").as_posix()
 
+    # always get it from diffexpr folder even for logreg (which does not output it)
+    prefix_ctj_marker_genes = (
+        results_dir / f"{folder_diffexpr}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_"
+    ).as_posix()
+
     # Load data
     loaded_data = {}
+
+    # markers files
+    out_file_df_ctj_marker_genes = Path(prefix_ctj_marker_genes + "marker_genes.parquet")
+
+    if out_file_df_ctj_marker_genes.exists():
+        loaded_data["df_ctj_marker_genes"] = pd.read_parquet(out_file_df_ctj_marker_genes, engine="pyarrow")
+    else:
+        print(f"File does not exist: {out_file_df_ctj_marker_genes}")
+
     if evaluation == "diffexpr":
         # diffexpr files
-        out_file_df_ctj_marker_genes = Path(prefix + "marker_genes.parquet")
         out_file_df_diffexpr = Path(prefix + "diffexpr.parquet")
         out_file_df_markers_rank_significance_diffexpr = Path(prefix + "markers_rank_significance_diffexpr.parquet")
         out_file_summary_stats = Path(prefix + "summary_stats.json")
@@ -1114,11 +1135,6 @@ def _read_contamination_metrics_results_sample(
             )
         else:
             print(f"File does not exist: {out_file_df_markers_rank_significance_diffexpr}")
-
-        if out_file_df_ctj_marker_genes.exists():
-            loaded_data["df_ctj_marker_genes"] = pd.read_parquet(out_file_df_ctj_marker_genes, engine="pyarrow")
-        else:
-            print(f"File does not exist: {out_file_df_ctj_marker_genes}")
 
         if out_file_df_diffexpr.exists():
             df_diffexpr = pd.read_parquet(out_file_df_diffexpr, engine="pyarrow")

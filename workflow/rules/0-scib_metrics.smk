@@ -8,8 +8,8 @@ cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
 n_comps = 50
 max_n_cells = 100_000
 
-normalisations = ['lognorm','sctransform']
-layers = ['data','scale_data']
+normalisations = ['lognorm']#,'sctransform']
+layers = ['data']#,'scale_data']
 references = ['matched_reference_combo']#,'external_reference']
 methods = ['rctd_class_aware']
 levels = ['Level2.1'] # condition and sample as color to plot added here in addition to levels
@@ -79,3 +79,5 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
 rule scib_metrics_panel_all:
     input:
         out_files_panel
+    output:
+        touch(results_dir / "scib_metrics.done")

@@ -3,7 +3,7 @@ xenium_processed_data_dir = Path(config['xenium_processed_data_dir'])
 results_dir = Path(config['results_dir'])
 std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
 
-# stricter params than pipeline config
+# params from pipeline config
 normalisations = ['lognorm','sctransform']
 layers = ['data','scale_data']
 min_counts = 10

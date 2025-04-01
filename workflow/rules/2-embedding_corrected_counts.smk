@@ -5,7 +5,7 @@ xenium_count_correction_dir = Path(config['xenium_count_correction_dir'])
 cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
 results_dir = Path(config['results_dir'])
 
-# stricter params than pipeline config
+# params from pipeline config
 signal_integrity_thresholds = [0.5,0.7]
 correction_methods = ['split_fully_purified','resolvi','resolvi_supervised'] + [f'ovrlpy_correction_{signal_integrity_threshold=}' for signal_integrity_threshold in signal_integrity_thresholds]
 normalisations = ['lognorm']

@@ -9,14 +9,14 @@ xenium_count_correction_dir = Path(config['xenium_count_correction_dir'])
 n_comps = 50
 max_n_cells = 100_000
 
-normalisations = ['lognorm','sctransform']
-layers = ['data','scale_data']
+normalisations = ['lognorm']#,'sctransform']
+layers = ['data']#,'scale_data']
 references = ['matched_reference_combo']#,'external_reference']
 methods = ['rctd_class_aware']
 levels = ['Level2.1'] # condition and sample as color to plot added here in addition to levels
 
 
-# stricter params than pipeline config
+# params from pipeline config
 signal_integrity_thresholds = [0.5,0.7]
 correction_methods = ['split_fully_purified','resolvi','resolvi_supervised'] + [f'ovrlpy_correction_{signal_integrity_threshold=}' for signal_integrity_threshold in signal_integrity_thresholds]
 normalisations = ['lognorm']
@@ -39,7 +39,9 @@ out_files_panel = []
 
 for correction_method in correction_methods:
     for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
-        if segmentation.stem in ['proseg_mode','10x_mm_5um']:
+        if segmentation.stem in ['proseg_mode']:
+            continue
+        if correction_method == 'split_fully_purified' and segmentation.stem in ['10x_mm_5um']:
             continue
         for condition in (conditions := segmentation.iterdir()): 
             for panel in (panels := condition.iterdir()):
@@ -130,3 +132,5 @@ for correction_method in correction_methods:
 rule scib_metrics_panel_corrected_counts_all:
     input:
         out_files_panel
+    output:
+        touch(results_dir / "scib_metrics_corrected_counts.done")
