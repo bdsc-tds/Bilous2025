@@ -45,7 +45,7 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                                     continue
 
                                 # input embedding file (doesn't depend on ref,method or color loops but more readable to have here)
-                                k = (segmentation.stem,condition.stem,panel.stem,normalisation,reference,method,level)
+                                k = (segmentation.stem,condition.stem,panel.stem,normalisation,reference,method,color)
                                 name = '/'.join(k)
                                 embed_file = results_dir / f'embed_panel_singlets/{name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}.parquet'
 
@@ -105,7 +105,7 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                                         --s {params.s} \
                                         --alpha {params.alpha} \
                                         --dpi {params.dpi} \
-                                        --points_only {params.points_only} \
+                                        {params.points_only} \
                                         
                                         echo "DONE"
                                         """

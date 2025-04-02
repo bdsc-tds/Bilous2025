@@ -89,7 +89,7 @@ for reference in (references := scrnaseq_processed_data_dir.iterdir()):
                 --s {params.s} \
                 --alpha {params.alpha} \
                 --dpi {params.dpi} \
-                --points_only {params.points_only} \
+                {params.points_only} \
 
                 echo "DONE"
                 """

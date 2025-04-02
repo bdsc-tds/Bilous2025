@@ -22,7 +22,7 @@ metric = config['umap_metric']
 # to get singlet info
 references = ['matched_reference_combo','external_reference']
 methods = ['rctd_class_aware']
-levels = ['Level2.1']#['Level1','Level2','Level3','Level4','panel','sample',] # condition and sample as color to plot added here in addition to levels
+levels = ['Level2.1',]#['Level1','Level2','Level3','Level4',] # condition and sample as color to plot added here in addition to levels
 
 
 out_files_panel = []

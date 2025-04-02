@@ -9,8 +9,8 @@ configfile: "config/config.yml"
 
 # include: "rules/0-silhouette.smk"
 # include: "rules/1-silhouette_plot.smk"
-include: "rules/0-scib_metrics.smk"
-include: "rules/1-scib_metrics_corrected_counts.smk"
+# include: "rules/0-scib_metrics.smk"
+# include: "rules/1-scib_metrics_corrected_counts.smk"
 include: "rules/2-scib_metrics_plot.smk"
 
 # include: "rules/0-embedding.smk"
@@ -39,6 +39,8 @@ include: "rules/2-scib_metrics_plot.smk"
 # include: "rules/2-contamination_metrics_logreg.smk"
 # include: "rules/2-contamination_metrics_diffexpr_corrected_counts.smk"
 # include: "rules/2-contamination_metrics_logreg_corrected_counts.smk"
+
+include: "rules/3-contamination_metrics_diffexpr_specificity_boxplot.smk"
 
 rule all:
     input:
@@ -92,4 +94,6 @@ rule all:
         # # #
         # rules.scib_metrics_panel_all.input,
         # rules.scib_metrics_panel_corrected_counts_all.input,
-        rules.scib_metrics_panel_plot_all.input,
+        # rules.scib_metrics_panel_plot_all.input,
+        # #
+        rules.contamination_metrics_specificity_boxplot_all.input,

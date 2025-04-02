@@ -105,7 +105,7 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                                         --s {params.s} \
                                         --alpha {params.alpha} \
                                         --dpi {params.dpi} \
-                                        --points_only {params.points_only} \
+                                        {params.points_only} \
                                         
                                         echo "DONE"
                                         """

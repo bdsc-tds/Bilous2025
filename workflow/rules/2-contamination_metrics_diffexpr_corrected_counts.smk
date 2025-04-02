@@ -87,14 +87,14 @@ for markers in markers_mode:
                                                 sample_normalised_counts = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/{layer}.parquet'
                                                 sample_idx = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/cells.parquet'
                                                 sample_annotation = xenium_cell_type_annotation_dir / f'{name}/{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet'
-                                                precomputed_ctj_markers = results_dir / f'contamination_metrics_{markers}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
-                                                precomputed_adata_obs = results_dir / f'contamination_metrics_{markers}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_out_file_adata_obs.parquet'
+                                                precomputed_ctj_markers = results_dir / f'contamination_metrics_{markers}_{name_params}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
+                                                precomputed_adata_obs = results_dir / f'contamination_metrics_{markers}_{name_params}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_out_file_adata_obs.parquet'
 
-                                                out_file_df_ctj_marker_genes = results_dir /  f'contamination_metrics_{markers}_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
-                                                out_file_df_diffexpr = results_dir / f'contamination_metrics_{markers}_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_diffexpr.parquet'
-                                                out_file_df_markers_rank_significance_diffexpr = results_dir / f'contamination_metrics_{markers}_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_markers_rank_significance_diffexpr.parquet'
-                                                out_file_summary_stats = results_dir / f'contamination_metrics_{markers}_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_summary_stats.json'
-                                                out_file_adata_obs = results_dir / f'contamination_metrics_{markers}_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_out_file_adata_obs.parquet'
+                                                out_file_df_ctj_marker_genes = results_dir /  f'contamination_metrics_{markers}_{name_params}_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
+                                                out_file_df_diffexpr = results_dir / f'contamination_metrics_{markers}_{name_params}_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_diffexpr.parquet'
+                                                out_file_df_markers_rank_significance_diffexpr = results_dir / f'contamination_metrics_{markers}_{name_params}_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_markers_rank_significance_diffexpr.parquet'
+                                                out_file_summary_stats = results_dir / f'contamination_metrics_{markers}_{name_params}_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_summary_stats.json'
+                                                out_file_adata_obs = results_dir / f'contamination_metrics_{markers}_{name_params}_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_out_file_adata_obs.parquet'
 
                                                 if sample_corrected_counts_path.exists():
 

@@ -56,6 +56,8 @@ for markers in markers_mode:
                                             k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
                                             name = '/'.join(k)
 
+                                            name_params = f"{radius=}_{n_permutations=}_{n_repeats=}_{top_n=}_{scoring=}"
+
                                             if 'proseg' in segmentation.stem:
                                                 k_proseg = ('proseg',condition.stem,panel.stem,donor.stem,sample.stem)
                                                 name_proseg = '/'.join(k_proseg)
@@ -67,11 +69,11 @@ for markers in markers_mode:
                                             sample_idx = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/cells.parquet'
                                             sample_annotation = xenium_cell_type_annotation_dir / f'{name}/{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet'
 
-                                            out_file_df_ctj_marker_genes = results_dir /  f'contamination_metrics_{markers}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
-                                            out_file_df_diffexpr = results_dir / f'contamination_metrics_{markers}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_diffexpr.parquet'
-                                            out_file_df_markers_rank_significance_diffexpr = results_dir / f'contamination_metrics_{markers}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_markers_rank_significance_diffexpr.parquet'
-                                            out_file_summary_stats = results_dir / f'contamination_metrics_{markers}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_summary_stats.json'
-                                            out_file_adata_obs = results_dir / f'contamination_metrics_{markers}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_out_file_adata_obs.parquet'
+                                            out_file_df_ctj_marker_genes = results_dir /  f'contamination_metrics_{markers}_{name_params}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
+                                            out_file_df_diffexpr = results_dir / f'contamination_metrics_{markers}_{name_params}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_diffexpr.parquet'
+                                            out_file_df_markers_rank_significance_diffexpr = results_dir / f'contamination_metrics_{markers}_{name_params}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_markers_rank_significance_diffexpr.parquet'
+                                            out_file_summary_stats = results_dir / f'contamination_metrics_{markers}_{name_params}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_summary_stats.json'
+                                            out_file_adata_obs = results_dir / f'contamination_metrics_{markers}_{name_params}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_out_file_adata_obs.parquet'
 
 
                                             out_files.extend([
