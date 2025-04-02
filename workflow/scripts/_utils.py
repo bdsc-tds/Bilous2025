@@ -512,6 +512,8 @@ def get_df_marker_rank_significance_plot(
     """
     df = {}
     for correction_method in correction_methods:
+        if correction_method not in dfs_marker_rank_significance.keys():
+            continue
         for k, v in dfs_marker_rank_significance[correction_method].items():
             if use_precomputed:
                 rank_metric_ = rank_metric if correction_method == "raw" else rank_metric + "_precomputed"

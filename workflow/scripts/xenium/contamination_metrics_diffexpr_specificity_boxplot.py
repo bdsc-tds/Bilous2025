@@ -113,6 +113,8 @@ dfs = readwrite.read_contamination_metrics_results(
     num_samples,
     normalisation,
     layer,
+    ref_condition=condition,
+    ref_panel=panel,
     evaluation="diffexpr",
 )
 
@@ -139,11 +141,11 @@ for rank_metric in rank_metrics:
             df["-log10pvalue"] = -np.log10(df[plot_metric].astype(float))
             plot_metric = "-log10pvalue"
 
-        df = df.query("condition == @condition and panel == @panel")
+        # df = df.query("condition == @condition and panel == @panel")
 
         for cti, ctj in df[["cti", "ctj"]].drop_duplicates().values:
-            cti_name = cti.replace("_", " ")
-            ctj_name = ctj.replace("_", " ")
+            cti_name = cti.replace(" ", "_")
+            ctj_name = ctj.replace(" ", "_")
             out_file = out_dir / f"{panel}_{cti_name}_contaminated_by_{ctj_name}_{rank_metric}_{plot_metric}.png"
 
             df_plot = df.query("cti == @cti and ctj == @ctj")

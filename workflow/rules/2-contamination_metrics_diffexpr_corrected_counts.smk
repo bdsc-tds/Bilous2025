@@ -35,7 +35,7 @@ n_permutations = 30
 n_repeats = 5
 top_n = 20
 scoring = 'f1'
-markers_mode = ['diffexpr']#,'common_markers'] #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/cellmarker_cell_types_markers.json'
+markers_modes = ['diffexpr']#,'common_markers'] #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/cellmarker_cell_types_markers.json'
 
 # resolvi params
 num_samples = 30
@@ -45,7 +45,7 @@ mixture_k = 50
 # cell_types_palette = pd.read_csv(palette_dir / 'col_palette_cell_types_combo.csv')
 
 out_files = []
-for markers in markers_mode:
+for markers_mode in markers_modes:
     for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
         if segmentation.stem == 'proseg_mode':
             continue
@@ -62,6 +62,7 @@ for markers in markers_mode:
 
                                                 k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
                                                 name = '/'.join(k)
+                                                name_params = f"{markers_mode}_{radius=}_{n_permutations=}_{n_repeats=}_{top_n=}_{scoring}"
 
                                                 if 'proseg' in segmentation.stem:
                                                     k_proseg = ('proseg',condition.stem,panel.stem,donor.stem,sample.stem)
@@ -87,14 +88,14 @@ for markers in markers_mode:
                                                 sample_normalised_counts = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/{layer}.parquet'
                                                 sample_idx = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/cells.parquet'
                                                 sample_annotation = xenium_cell_type_annotation_dir / f'{name}/{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet'
-                                                precomputed_ctj_markers = results_dir / f'contamination_metrics_{markers}_{name_params}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
-                                                precomputed_adata_obs = results_dir / f'contamination_metrics_{markers}_{name_params}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_out_file_adata_obs.parquet'
+                                                precomputed_ctj_markers = results_dir / f'contamination_metrics_{name_params}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
+                                                precomputed_adata_obs = results_dir / f'contamination_metrics_{name_params}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_out_file_adata_obs.parquet'
 
-                                                out_file_df_ctj_marker_genes = results_dir /  f'contamination_metrics_{markers}_{name_params}_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
-                                                out_file_df_diffexpr = results_dir / f'contamination_metrics_{markers}_{name_params}_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_diffexpr.parquet'
-                                                out_file_df_markers_rank_significance_diffexpr = results_dir / f'contamination_metrics_{markers}_{name_params}_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_markers_rank_significance_diffexpr.parquet'
-                                                out_file_summary_stats = results_dir / f'contamination_metrics_{markers}_{name_params}_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_summary_stats.json'
-                                                out_file_adata_obs = results_dir / f'contamination_metrics_{markers}_{name_params}_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_out_file_adata_obs.parquet'
+                                                out_file_df_ctj_marker_genes = results_dir /  f'contamination_metrics_{name_params}_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
+                                                out_file_df_diffexpr = results_dir / f'contamination_metrics_{name_params}_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_diffexpr.parquet'
+                                                out_file_df_markers_rank_significance_diffexpr = results_dir / f'contamination_metrics_{name_params}_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_markers_rank_significance_diffexpr.parquet'
+                                                out_file_summary_stats = results_dir / f'contamination_metrics_{name_params}_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_summary_stats.json'
+                                                out_file_adata_obs = results_dir / f'contamination_metrics_{name_params}_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_out_file_adata_obs.parquet'
 
                                                 if sample_corrected_counts_path.exists():
 

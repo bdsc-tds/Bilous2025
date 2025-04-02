@@ -1046,6 +1046,12 @@ def _read_contamination_metrics_results_sample(
     sample: Path,
     normalisation: str,
     layer: str,
+    markers_mode="diffexpr",
+    radius=10,
+    n_permutations=30,
+    n_repeats=5,
+    top_n=20,
+    scoring="f1",
     evaluation: list = "diffexpr",
 ):
     """
@@ -1066,6 +1072,12 @@ def _read_contamination_metrics_results_sample(
         sample (Path): Path to the sample directory.
         normalisation (str): The normalisation method used.
         layer (str): The layer used.
+        markers_mode (str): The markers mode used.
+        radius (int): The radius used.
+        n_permutations (int): The number of permutations used.
+        n_repeats (int): The number of repeats used.
+        top_n (int): The top N used.
+        scoring (str): The scoring metric used.
         evaluation (str): evaluation test to load, 'diffexpr' or 'logreg'.
 
     Returns:
@@ -1081,10 +1093,11 @@ def _read_contamination_metrics_results_sample(
 
     k = (segmentation.stem, condition.stem, panel.stem, donor.stem, sample.stem)
     name = "/".join(k)
+    name_params = f"{markers_mode}_{radius=}_{n_permutations=}_{n_repeats=}_{top_n=}_{scoring}"
 
     # folder name
-    folder_diffexpr = "contamination_metrics_diffexpr"
-    folder_logreg = "contamination_metrics_diffexpr_logreg"
+    folder_diffexpr = f"contamination_metrics_{name_params}"
+    folder_logreg = f"contamination_metrics_{name_params}_logreg"
 
     if correction_method != "raw":
         folder_diffexpr += "_corrected_counts"
@@ -1191,6 +1204,14 @@ def read_contamination_metrics_results(
     num_samples: int,
     normalisation: str,
     layer: str,
+    markers_mode="diffexpr",
+    radius=10,
+    n_permutations=30,
+    n_repeats=5,
+    top_n=20,
+    scoring="f1",
+    ref_condition: str = None,
+    ref_panel: str = None,
     evaluation: str = "diffexpr",
 ):
     """
@@ -1222,7 +1243,11 @@ def read_contamination_metrics_results(
                 if segmentation.stem == "proseg_mode":
                     continue
                 for condition in segmentation.iterdir():
+                    if ref_condition is not None and condition.name != ref_condition:
+                        continue
                     for panel in condition.iterdir():
+                        if ref_panel is not None and panel.name != ref_panel:
+                            continue
                         for donor in panel.iterdir():
                             for sample in donor.iterdir():
                                 futures.append(
@@ -1242,6 +1267,12 @@ def read_contamination_metrics_results(
                                         sample,
                                         normalisation,
                                         layer,
+                                        markers_mode,
+                                        radius,
+                                        n_permutations,
+                                        n_repeats,
+                                        top_n,
+                                        scoring,
                                         evaluation,
                                     )
                                 )

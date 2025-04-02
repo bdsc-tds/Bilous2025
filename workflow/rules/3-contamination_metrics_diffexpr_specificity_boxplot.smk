@@ -27,7 +27,7 @@ n_permutations = 30
 n_repeats = 5
 top_n = 20
 scoring = 'f1'
-markers_mode = ['diffexpr']#,'common_markers'] #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/cellmarker_cell_types_markers.json'
+markers_modes = ['diffexpr']#,'common_markers'] #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/cellmarker_cell_types_markers.json'
 
 # resolvi params
 num_samples = 30
@@ -37,7 +37,7 @@ segmentation = sorted(xenium_dir.iterdir())[0] # arbitrary segmentation just to 
 count_correction_palette = palette_dir / 'col_palette_correction_method.csv'
 
 out_files = []
-for markers in markers_mode:
+for markers_mode in markers_modes:
 
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
@@ -49,12 +49,14 @@ for markers in markers_mode:
 
                                 k = (condition.stem,panel.stem)
                                 name = '/'.join(k)
-                                out_dir = results_dir / f'contamination_metrics_{markers}_{top_n=}_boxplot/{name}/{normalisation}/{layer}_{reference}_{method}_{level}/'
+                                name_params = f"{markers_mode}_{radius=}_{n_permutations=}_{n_repeats=}_{top_n=}_{scoring}"
+
+                                out_dir = figures_dir / f'contamination_metrics_{markers}_{name_params}_boxplot/{name}/{normalisation}/{layer}_{reference}_{method}_{level}/'
                                 out_file = out_dir / '.done'
                                 out_files.append(out_file)
 
                                 rule:
-                                    name: f'contamination_metrics_{markers}_{top_n=}_boxplot/{name}/{normalisation}/{layer}_{reference}_{method}_{level}'
+                                    name: f'contamination_metrics_{markers}_{name_params}_boxplot/{name}/{normalisation}/{layer}_{reference}_{method}_{level}'
                                     input:
                                         contamination_metrics_is_done=results_dir / f"contamination_metrics_{markers}.done",
                                         contamination_metrics_corrected_counts_is_done=results_dir / f"contamination_metrics_{markers}_corrected_counts.done",
