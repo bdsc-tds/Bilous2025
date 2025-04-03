@@ -121,7 +121,10 @@ for correction_method in correction_methods:
 df = pd.concat(df).reset_index()
 df.columns = ["correction_method"] + xenium_levels
 _utils.rename_correction_methods(df)
-print(df[["correction_method", "segmentation"]].drop_duplicates())
+
+# rename proseg
+df.loc[df["segmentation"] == "proseg_expected", "segmentation"] = "proseg"
+palette = palette.rename(index={"proseg_expected": "proseg"})
 
 u_segmentations = df["segmentation"].unique()
 order = [h for h in hue_segmentation_order if h in u_segmentations]

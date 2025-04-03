@@ -173,6 +173,6 @@ rule contamination_metrics_logreg_corrected_counts_all:
     input:
         out_files
     output:
-        touch(results_dir / f"contamination_metrics_{markers}_logreg_corrected_counts.done")
+        touch(results_dir / f"contamination_metrics_{name_params}_logreg_corrected_counts.done")
 
 

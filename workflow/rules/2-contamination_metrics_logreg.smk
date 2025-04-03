@@ -142,6 +142,6 @@ rule contamination_metrics_logreg_all:
     input:
         out_files
     output:
-        touch(results_dir / f"contamination_metrics_{markers}_logreg.done")
+        touch(results_dir / f"contamination_metrics_{name_params}_logreg.done")
 
 

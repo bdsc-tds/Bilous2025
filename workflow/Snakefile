@@ -41,6 +41,7 @@ include: "rules/2-scib_metrics_plot.smk"
 # include: "rules/2-contamination_metrics_logreg_corrected_counts.smk"
 
 include: "rules/3-contamination_metrics_diffexpr_specificity_boxplot.smk"
+include: "rules/3-contamination_metrics_diffexpr_sensitivity_boxplot.smk"
 
 rule all:
     input:
@@ -97,3 +98,5 @@ rule all:
         # rules.scib_metrics_panel_plot_all.input,
         # #
         rules.contamination_metrics_specificity_boxplot_all.input,
+        rules.contamination_metrics_sensitivity_boxplot_all.input,
+

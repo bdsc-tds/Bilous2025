@@ -51,15 +51,15 @@ for markers_mode in markers_modes:
                                 name = '/'.join(k)
                                 name_params = f"{markers_mode}_{radius=}_{n_permutations=}_{n_repeats=}_{top_n=}_{scoring}"
 
-                                out_dir = figures_dir / f'contamination_metrics_{name_params}_specificity_boxplot/{name}/{normalisation}/{layer}_{reference}_{method}_{level}/'
+                                out_dir = figures_dir / f'contamination_metrics_{name_params}_sensitivity_boxplot/{name}/{normalisation}/{layer}_{reference}_{method}_{level}/'
                                 out_file = out_dir / '.done'
                                 out_files.append(out_file)
 
                                 rule:
-                                    name: f'contamination_metrics_{name_params}_specificity_boxplot/{name}/{normalisation}/{layer}_{reference}_{method}_{level}'
+                                    name: f'contamination_metrics_{name_params}_sensitivity_boxplot/{name}/{normalisation}/{layer}_{reference}_{method}_{level}'
                                     input:
-                                        contamination_metrics_is_done=results_dir / f"contamination_metrics_{markers_mode}.done",
-                                        contamination_metrics_corrected_counts_is_done=results_dir / f"contamination_metrics_{markers_mode}_corrected_counts.done",
+                                        contamination_metrics_is_done=results_dir / f"contamination_metrics_{name_params}.done",
+                                        contamination_metrics_corrected_counts_is_done=results_dir / f"contamination_metrics_{name_params}_corrected_counts.done",
                                     output:
                                         out_file = touch(out_file)
                                     params:
@@ -94,7 +94,7 @@ for markers_mode in markers_modes:
                                         """
                                         mkdir -p "$(dirname {output.out_file})"
 
-                                        python workflow/scripts/xenium/contamination_metrics_diffexpr_specificity_boxplot.py \
+                                        python workflow/scripts/xenium/contamination_metrics_diffexpr_sensitivity_boxplot.py \
                                             --condition {params.condition} \
                                             --panel {params.panel} \
                                             --correction_methods {params.correction_methods} \
@@ -121,7 +121,7 @@ for markers_mode in markers_modes:
                                         """
 
 
-rule contamination_metrics_specificity_boxplot_all:
+rule contamination_metrics_sensitivity_boxplot_all:
     input:
         out_files
 

@@ -95,8 +95,7 @@ hue_correction_order = [
 ]
 
 rank_metrics = ["logfoldchanges", "-log10pvals_x_logfoldchanges", "-log10pvals_x_sign_logfoldchanges", "mean_zscore"]
-plot_metrics = ["hypergeometric_pvalue", "NES", f"n_hits_{top_n=}", "mean_zscore_pvalue"]
-labels_key = level
+plot_metrics = ["n_cells", "mean_n_counts", "mean_n_genes", "median_n_genes"]
 
 # %% [markdown]
 # # Load results diffexpr
@@ -126,74 +125,58 @@ dfs = readwrite.read_contamination_metrics_results(
 
 df_count_correction_palette = pd.read_csv(count_correction_palette, index_col=0).iloc[:, 0]
 
-for rank_metric in rank_metrics:
-    plot_metrics_ = plot_metrics[-1:] if rank_metric == "mean_zscore" else plot_metrics[:-1]
-    for plot_metric in plot_metrics_:
-        df = _utils.get_df_marker_rank_significance_plot(
-            dfs["df_markers_rank_significance_diffexpr"],
-            rank_metric=rank_metric,
-            plot_metric=plot_metric,
-            correction_methods=correction_methods,
-            use_precomputed=use_precomputed,
-        )
 
-        # rename proseg
-        df.loc[df["segmentation"] == "proseg_expected", "segmentation"] = "proseg"
-        df_count_correction_palette = df_count_correction_palette.rename(index={"proseg_expected": "proseg"})
+for plot_metric in plot_metrics:
+    out_file = out_dir / f"{panel}_{plot_metric}.png"
 
-        if plot_metric in ["hypergeometric_pvalue", "mean_zscore_pvalue"]:
-            df["-log10pvalue"] = -np.log10(df[plot_metric].astype(float))
-            plot_metric = "-log10pvalue"
+    df = _utils.get_df_summary_stats_plot(dfs, plot_metric=plot_metric)
+    df = df.query("panel == @panel")
 
-        # df = df.query("condition == @condition and panel == @panel")
+    # rename proseg
+    df.loc[df["segmentation"] == "proseg_expected", "segmentation"] = "proseg"
+    df_count_correction_palette = df_count_correction_palette.rename(index={"proseg_expected": "proseg"})
 
-        for cti, ctj in df[["cti", "ctj"]].drop_duplicates().values:
-            cti_name = cti.replace(" ", "_")
-            ctj_name = ctj.replace(" ", "_")
-            out_file = out_dir / f"{panel}_{cti_name}_contaminated_by_{ctj_name}_{rank_metric}_{plot_metric}.png"
+    # plotting params, palette
+    unique_labels = [c for c in hue_correction_order if c in np.unique(df[hue_correction].dropna())]
+    unique_labels = unique_labels + [c for c in np.unique(df[hue_correction].dropna()) if c not in unique_labels]
+    palette = {u: df_count_correction_palette[u] for u in unique_labels}
+    legend_handles = [mpatches.Patch(color=color, label=label) for label, color in palette.items()]
 
-            df_plot = df.query("cti == @cti and ctj == @ctj")
+    ###  boxplot
+    f = plt.figure(figsize=(5, 3))
+    ax = plt.subplot()
+    g = sns.boxplot(
+        df,
+        x="segmentation",
+        y=plot_metric,
+        hue=hue_correction,
+        hue_order=unique_labels,
+        legend=False,
+        palette=palette,
+        ax=ax,
+        order=[s for s in hue_segmentation_order if s in df["segmentation"].unique()],
+        log_scale=True if plot_metric == "n_cells" else False,
+        showfliers=True,
+    )
 
-            # plotting params, palette
-            unique_labels = [c for c in hue_correction_order if c in np.unique(df_plot[hue_correction].dropna())]
-            unique_labels = unique_labels + [
-                c for c in np.unique(df_plot[hue_correction].dropna()) if c not in unique_labels
-            ]
-            palette = {u: df_count_correction_palette[u] for u in unique_labels}
-            legend_handles = [mpatches.Patch(color=color, label=label) for label, color in palette.items()]
+    if plot_metric == "n_cells":
+        ax.set_ylim(None, 1e6)
+    sns.despine(offset=10, trim=True)
+    ax.yaxis.grid(True)
+    ax.yaxis.set_tick_params(labelsize=12)  # If you also want to change the y-axis numbers
+    if plot_metric == '"-log10pvalue"':
+        ax.set.ylabel(r"$-\log_{10} \text{ p-value}$", fontsize=14)
+    else:
+        ax.set_ylabel(plot_metric, fontsize=14)
+    plt.setp(ax.get_xticklabels(), rotation=45, fontsize=12)
 
-            ### hypergeometric pvalue boxplot
-            f = plt.figure(figsize=(5, 3))
-            ax = plt.subplot()
-            g = sns.boxplot(
-                df_plot,
-                x="segmentation",
-                y=plot_metric,
-                hue=hue_correction,
-                hue_order=unique_labels,
-                legend=False,
-                palette=palette,
-                ax=ax,
-                order=[s for s in hue_segmentation_order if s in df_plot["segmentation"].unique()],
-            )
-
-            sns.despine(offset=10, trim=True)
-            ax.yaxis.grid(True)
-            ax.yaxis.set_tick_params(labelsize=12)  # If you also want to change the y-axis numbers
-            if plot_metric == '"-log10pvalue"':
-                ax.set.ylabel(r"$-\log_{10} \text{ p-value}$", fontsize=14)
-            else:
-                ax.set_ylabel(plot_metric, fontsize=14)
-            plt.setp(ax.get_xticklabels(), rotation=45, fontsize=12)
-
-            # title = f"Condition: {condition}, Panel: {panel}, Reference: {reference}, Method: {method}, Level: {level} \n{cti} contaminated by {ctj}\n rank metric: {rank_metric}, plot metric: {plot_metric}"
-            # plt.suptitle(title, y=1.05)
-            # f.legend(
-            #     handles=legend_handles,
-            #     loc="center left",
-            #     bbox_to_anchor=(1, 0.5),
-            #     title=hue_correction,
-            #     frameon=False,
-            # )
-            # plt.tight_layout(rect=[0, 0, 1, 0.95])
-            plt.savefig(out_file, dpi=dpi, bbox_inches="tight")
+    # title = f"{plot_metric} for {panel}"
+    # plt.suptitle(title)
+    # f.legend(
+    #     handles=legend_handles,
+    #     loc="center left",
+    #     bbox_to_anchor=(1, 0.5),
+    #     title=hue_correction,
+    #     frameon=False,
+    # )
+    plt.savefig(out_file, dpi=dpi, bbox_inches="tight")

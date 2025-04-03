@@ -108,7 +108,7 @@ for markers_mode in markers_modes:
                                                         ])
 
                                                     rule:
-                                                        name: f'contamination_metrics_{markers}_corrected_counts/{correction_method}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}'
+                                                        name: f'contamination_metrics_{name_params}_corrected_counts/{correction_method}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}'
                                                         input:
                                                             sample_corrected_counts_path=sample_corrected_counts_path,
                                                             sample_dir=sample_dir,
@@ -176,6 +176,6 @@ rule contamination_metrics_diffexpr_corrected_counts_all:
     input:
         out_files
     output:
-        touch(results_dir / f"contamination_metrics_{markers}_corrected_counts.done")
+        touch(results_dir / f"contamination_metrics_{name_params}_corrected_counts.done")
 
 

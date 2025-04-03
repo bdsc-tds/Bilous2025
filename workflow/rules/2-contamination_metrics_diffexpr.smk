@@ -147,6 +147,6 @@ rule contamination_metrics_diffexpr_all:
     input:
         out_files
     output:
-        touch(results_dir / f"contamination_metrics_{markers}.done")
+        touch(results_dir / f"contamination_metrics_{name_params}.done")
 
 
