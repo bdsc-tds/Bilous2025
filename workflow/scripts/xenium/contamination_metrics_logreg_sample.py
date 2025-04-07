@@ -84,6 +84,7 @@ if __name__ == "__main__":
         sys.stdout = _log
         sys.stderr = _log
 
+    list_n_markers = [10, 20, 30, 40, 50]
     obsm = "spatial"
     label_key = "label_key"
     index_diffexpr_metrics = [
@@ -132,7 +133,7 @@ if __name__ == "__main__":
             args.sample_corrected_counts_path,
         )
 
-        adata_corrected_counts.obsm["spatial"] = adata[adata_corrected_counts.obs_names].obsm["spatial"]
+        adata_corrected_counts.obsm[obsm] = adata[adata_corrected_counts.obs_names].obsm[obsm]
         adata = adata_corrected_counts
 
     # read normalised data, filter cells
@@ -161,7 +162,7 @@ if __name__ == "__main__":
     adata = adata[adata.obs[label_key].notna()]  # remove NaN annotation
 
     if "Level2.1" in args.sample_annotation:
-        # for custom Level2.1, simplify malignant subtypes to malignant
+        # for custom Level2.1, simplify subtypes
         adata.obs.loc[adata.obs[label_key].str.contains("malignant"), label_key] = "malignant cell"
         adata.obs.loc[adata.obs[label_key].str.contains("T cell"), label_key] = "T cell"
 
@@ -294,12 +295,15 @@ if __name__ == "__main__":
                 # also compute scores for precomputed marker gene list
                 dict_ctj_marker_genes["_precomputed"] = ctj_marker_genes_precomputed
 
-            for k_, markers_ in dict_ctj_marker_genes.items():
-                df_markers_rank_significance_logreg[cti, ctj][rank_metric + k_] = _utils.get_marker_rank_significance(
-                    rnk=df_importances_logreg[cti, ctj][rank_metric].sort_values(ascending=False),
-                    gene_set=markers_,
-                    top_n=args.top_n,
-                ).iloc[0]
+            for n in list_n_markers:
+                for k_, markers_ in dict_ctj_marker_genes.items():
+                    df_markers_rank_significance_logreg[cti, ctj][rank_metric + k_ + f"_{n=}"] = (
+                        _utils.get_marker_rank_significance(
+                            rnk=df_importances_logreg[cti, ctj][rank_metric].sort_values(ascending=False),
+                            gene_set=markers_,
+                            top_n=args.top_n,
+                        ).iloc[0]
+                    )
 
     ###
     ### CONCAT AND SAVE OUTPUTS

@@ -83,6 +83,7 @@ if __name__ == "__main__":
         sys.stdout = _log
         sys.stderr = _log
 
+    list_n_markers = [10, 20, 30, 40, 50]
     obsm = "spatial"
     label_key = "label_key"
     rank_metrics = ["logfoldchanges", "-log10pvals_x_logfoldchanges", "-log10pvals_x_sign_logfoldchanges"]
@@ -132,7 +133,7 @@ if __name__ == "__main__":
             args.sample_corrected_counts_path,
         )
 
-        adata_corrected_counts.obsm["spatial"] = adata[adata_corrected_counts.obs_names].obsm["spatial"]
+        adata_corrected_counts.obsm[obsm] = adata[adata_corrected_counts.obs_names].obsm[obsm]
         adata = adata_corrected_counts
 
     # read normalised data, filter cells
@@ -157,12 +158,11 @@ if __name__ == "__main__":
     )
 
     # read labels
-
     adata.obs[label_key] = pd.read_parquet(args.sample_annotation).set_index("cell_id").iloc[:, 0]
     adata = adata[adata.obs[label_key].notna()]  # remove NaN annotation
 
     if "Level2.1" in args.sample_annotation:
-        # for custom Level2.1, simplify malignant subtypes to malignant
+        # for custom Level2.1, simplify subtypes
         adata.obs.loc[adata.obs[label_key].str.contains("malignant"), label_key] = "malignant cell"
         adata.obs.loc[adata.obs[label_key].str.contains("T cell"), label_key] = "T cell"
 
@@ -194,6 +194,11 @@ if __name__ == "__main__":
     ####
     #### PREPARE DATA
     ####
+    # summary stats
+    adata.obs["n_genes"] = (adata.X > 0).sum(axis=1).A1
+    adata.obs["n_counts"] = (adata.X).sum(axis=1).A1.astype(float)
+    df_percent_expressed = _utils.get_expression_percent_per_celltype(adata=adata, label_key=label_key)
+
     # log-normalize before DE
     sc.pp.normalize_total(adata)
     sc.pp.log1p(adata)
@@ -231,7 +236,7 @@ if __name__ == "__main__":
                 ctj_marker_genes_precomputed = [g for g in ctj_marker_genes_precomputed if g in adata.var_names]
 
             sc.tl.rank_genes_groups(adata, groupby=label_key, groups=[ctj], reference="rest", method="wilcoxon")
-            ctj_marker_genes = sc.get.rank_genes_groups_df(adata, group=ctj)["names"][: args.top_n].tolist()
+            ctj_marker_genes = sc.get.rank_genes_groups_df(adata, group=ctj)["names"][: max(list_n_markers)].tolist()
         else:
             ctj_marker_genes = df_markers[df_markers["cell_type"] == ctj]["gene"].tolist()
             ctj_marker_genes = [g for g in ctj_marker_genes if g in adata.var_names]
@@ -279,21 +284,23 @@ if __name__ == "__main__":
 
             # get significance from gsea and hypergeometric test
             df_markers_rank_significance_diffexpr[cti, ctj] = pd.DataFrame(index=index_diffexpr_metrics)
-            dict_ctj_marker_genes = {"": ctj_marker_genes}
 
+            dict_ctj_marker_genes = {"": ctj_marker_genes}
             if args.precomputed_ctj_markers is not None:
                 # also compute scores for precomputed marker gene list
                 dict_ctj_marker_genes["_precomputed"] = ctj_marker_genes_precomputed
 
-            for k_, markers_ in dict_ctj_marker_genes.items():
-                for rank_metric in rank_metrics:
-                    df_markers_rank_significance_diffexpr[cti, ctj][rank_metric + k_] = (
-                        _utils.get_marker_rank_significance(
-                            rnk=df_diffexpr[cti, ctj].set_index("names")[rank_metric].sort_values(ascending=False),
-                            gene_set=markers_,
-                            top_n=args.top_n,
-                        ).iloc[0]
-                    )
+            for n in list_n_markers:
+                for k_, markers_ in dict_ctj_marker_genes.items():
+                    markers_n_ = markers_[:n]
+                    for rank_metric in rank_metrics:
+                        df_markers_rank_significance_diffexpr[cti, ctj][rank_metric + k_ + f"_{n=}"] = (
+                            _utils.get_marker_rank_significance(
+                                rnk=df_diffexpr[cti, ctj].set_index("names")[rank_metric].sort_values(ascending=False),
+                                gene_set=markers_n_,
+                                top_n=args.top_n,
+                            ).iloc[0]
+                        )
 
                 # add pvalue metrics
                 mean_zscore = df_diffexpr[cti, ctj].set_index("names")["scores"].loc[markers_].mean()
@@ -311,9 +318,6 @@ if __name__ == "__main__":
         .reset_index(name="count")
     )
 
-    adata.obs["n_genes"] = (adata.X > 0).sum(axis=1).A1
-    adata.obs["n_counts"] = (adata.X).sum(axis=1).A1.astype(float)
-
     ###
     ### CONCAT AND SAVE OUTPUTS
     ###
@@ -330,6 +334,7 @@ if __name__ == "__main__":
         "mean_n_genes": adata.obs["n_genes"].mean(),
         "median_n_genes": adata.obs["n_genes"].median(),
         "df_has_neighbor_counts": df_has_neighbor_counts.to_dict(),
+        "df_percent_expressed": df_percent_expressed.to_dict(),
     }
 
     with open(args.out_file_summary_stats, "w") as f:

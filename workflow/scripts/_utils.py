@@ -594,3 +594,87 @@ def pseudobulk(ad, key, mode="sum"):
     ad_states.var_names = ad.var_names
     ad_states.obs = ad.obs.groupby(key).agg(_agg_obs)
     return ad_states
+
+
+def get_expression_percent_per_celltype(
+    adata: anndata.AnnData,
+    label_key: str,
+    layer: str = None,
+) -> pd.DataFrame:
+    """
+    Calculates the percentage of cells expressing each gene within each cell type.
+
+    Expression is defined as having a count > 0 in the specified layer
+    (or adata.X if layer is None).
+
+    Args:
+        adata: An AnnData object containing gene expression data and cell labels.
+        label_key: The key in adata.obs where cell type labels are stored
+                    (e.g., 'cell_type', 'leiden').
+        layer: Optional name of the layer in adata to use for expression counts.
+               If None, uses adata.X.
+        gene_symbols: Optional key in adata.var where gene symbols are stored.
+                      If None, uses adata.var_names (often Ensembl IDs).
+
+    Returns:
+        A pandas DataFrame where rows are genes (using gene_symbols if provided,
+        otherwise var_names), columns are cell types, and values are the
+        percentage [0-100] of cells expressing the gene within that cell type.
+
+    """
+
+    # Get gene identifiers
+    gene_names = adata.var_names.tolist()
+    gene_index_name = "gene"  # Default index name
+
+    # Get unique cell type labels
+    cell_types = adata.obs[label_key].unique()
+    # Filter out any potential NaN/missing labels if they exist
+    cell_types = [ct for ct in cell_types if pd.notna(ct)]
+
+    # Choose the data matrix
+    if layer:
+        if layer not in adata.layers:
+            raise KeyError(f"Layer '{layer}' not found in adata.layers.")
+        expression_matrix = adata.layers[layer]
+    else:
+        expression_matrix = adata.X
+
+    # Initialize dictionary to store results (percentage vectors for each cell type)
+    results = {}
+
+    # Iterate through each cell type
+    for cell_type in cell_types:
+        cell_mask = (adata.obs[label_key] == cell_type).values
+
+        # Get the number of cells in this type
+        n_cells_in_type = np.sum(cell_mask)  # More direct than subsetting shape
+
+        if n_cells_in_type == 0:
+            # Handle cases where a category might exist but have 0 cells
+            # Assign 0% expression for all genes for this type.
+            percent_expressing = np.zeros(adata.shape[1])
+        else:
+            # Subset the expression matrix rows (cells) for the current cell type
+            subset_matrix = expression_matrix[cell_mask, :]
+
+            # Count cells with expression > 0 for each gene (column)
+            if scipy.sparse.issparse(subset_matrix):
+                expression_counts = subset_matrix.getnnz(axis=0)
+            else:
+                expression_counts = np.sum(np.asarray(subset_matrix) > 0, axis=0)
+                expression_counts = np.asarray(expression_counts).flatten()
+
+            # Calculate percentage
+            percent_expressing = (expression_counts / n_cells_in_type) * 100
+
+        # Store results for this cell type
+        results[cell_type] = percent_expressing
+
+    # Create the final DataFrame
+    percent_df = pd.DataFrame(results, index=gene_names)
+    percent_df.index.name = gene_index_name
+    percent_df.columns.name = label_key  # Set the name of the columns axis
+
+    print("Calculation complete.")
+    return percent_df

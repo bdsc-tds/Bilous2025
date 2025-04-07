@@ -46,7 +46,6 @@ for markers_mode in markers_modes:
             for panel in (panels := condition.iterdir()):
                 for donor in (donors := panel.iterdir()):
                     for sample in (samples := donor.iterdir()):
-
                         for normalisation in normalisations:
                             for layer in layers:
                                 for reference in references:
@@ -69,11 +68,11 @@ for markers_mode in markers_modes:
                                             sample_idx = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/cells.parquet'
                                             sample_annotation = xenium_cell_type_annotation_dir / f'{name}/{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet'
 
-                                            out_file_df_ctj_marker_genes = results_dir /  f'contamination_metrics_{name_params}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
-                                            out_file_df_diffexpr = results_dir / f'contamination_metrics_{name_params}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_diffexpr.parquet'
-                                            out_file_df_markers_rank_significance_diffexpr = results_dir / f'contamination_metrics_{name_params}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_markers_rank_significance_diffexpr.parquet'
-                                            out_file_summary_stats = results_dir / f'contamination_metrics_{name_params}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_summary_stats.json'
-                                            out_file_adata_obs = results_dir / f'contamination_metrics_{name_params}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_out_file_adata_obs.parquet'
+                                            out_file_df_ctj_marker_genes = results_dir /  f'contamination_metrics_{name_params}/raw/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
+                                            out_file_df_diffexpr = results_dir / f'contamination_metrics_{name_params}/raw/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_diffexpr.parquet'
+                                            out_file_df_markers_rank_significance_diffexpr = results_dir / f'contamination_metrics_{name_params}/raw/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_markers_rank_significance_diffexpr.parquet'
+                                            out_file_summary_stats = results_dir / f'contamination_metrics_{name_params}/raw/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_summary_stats.json'
+                                            out_file_adata_obs = results_dir / f'contamination_metrics_{name_params}/raw/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_adata_obs.parquet'
 
 
                                             out_files.extend([
@@ -85,7 +84,7 @@ for markers_mode in markers_modes:
                                                 ])
 
                                             rule:
-                                                name: f'contamination_metrics_{name_params}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}'
+                                                name: f'contamination_metrics_{name_params}/raw/{name}/{normalisation}/{layer}_{reference}_{method}_{level}'
                                                 input:
                                                     sample_dir=sample_dir,
                                                     sample_normalised_counts=sample_normalised_counts,
@@ -103,7 +102,7 @@ for markers_mode in markers_modes:
                                                     n_repeats=n_repeats,
                                                     top_n=top_n,
                                                     scoring=scoring,
-                                                    markers=markers,
+                                                    markers=markers_mode,
                                                     min_counts=min_counts,
                                                     min_features=min_features,
                                                     max_counts=max_counts,
@@ -112,7 +111,7 @@ for markers_mode in markers_modes:
                                                 threads: 1
                                                 resources:
                                                     mem='50GB',
-                                                    runtime='1h',
+                                                    runtime='3h',
                                                 conda:
                                                     "spatial"
                                                 shell:

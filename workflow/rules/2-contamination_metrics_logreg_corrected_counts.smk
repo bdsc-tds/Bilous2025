@@ -35,7 +35,7 @@ n_repeats = 5
 top_n = 20
 scoring = 'f1'
 markers_modes = ['diffexpr']#,'common_markers'] #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/cellmarker_cell_types_markers.json'
-max_n_cells = 50_000
+max_n_cells = 100_000
 
 # resolvi params
 num_samples = 30
@@ -89,12 +89,12 @@ for markers_mode in markers_modes:
                                                 sample_normalised_counts = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/{layer}.parquet'
                                                 sample_idx = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/cells.parquet'
                                                 sample_annotation = xenium_cell_type_annotation_dir / f'{name}/{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet'
-                                                precomputed_ctj_markers = results_dir / f'contamination_metrics_{name_params}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
-                                                precomputed_adata_obs = results_dir / f'contamination_metrics_{name_params}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_out_file_adata_obs.parquet'
-
-                                                out_file_df_permutations_logreg = results_dir / f'contamination_metrics_{name_params}_logreg_corrected_counts/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_permutations_logreg.parquet'
-                                                out_file_df_importances_logreg = results_dir / f'contamination_metrics_{name_params}_logreg_corrected_counts/{correction_method}/{name_corrected}//{normalisation}/{layer}_{reference}_{method}_{level}_importances_logreg.parquet'
-                                                out_file_df_markers_rank_significance_logreg = results_dir / f'contamination_metrics_{name_params}_logreg_corrected_counts/{correction_method}/{name_corrected}//{normalisation}/{layer}_{reference}_{method}_{level}_markers_rank_significance_logreg.json'
+                                                precomputed_ctj_markers = results_dir / f'contamination_metrics_{name_params}/raw/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
+                                                precomputed_adata_obs = results_dir / f'contamination_metrics_{name_params}/raw/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_adata_obs.parquet'
+                                                
+                                                out_file_df_permutations_logreg = results_dir / f'contamination_metrics_{name_params}_logreg/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_permutations_logreg.parquet'
+                                                out_file_df_importances_logreg = results_dir / f'contamination_metrics_{name_params}_logreg/{correction_method}/{name_corrected}//{normalisation}/{layer}_{reference}_{method}_{level}_importances_logreg.parquet'
+                                                out_file_df_markers_rank_significance_logreg = results_dir / f'contamination_metrics_{name_params}_logreg/{correction_method}/{name_corrected}//{normalisation}/{layer}_{reference}_{method}_{level}_markers_rank_significance_logreg.json'
 
                                                 if sample_corrected_counts_path.exists():
 
@@ -105,7 +105,7 @@ for markers_mode in markers_modes:
                                                         ])
 
                                                     rule:
-                                                        name: f'contamination_metrics_{markers}_logreg_corrected_counts/{correction_method}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}'
+                                                        name: f'contamination_metrics_{name_params}_logreg_corrected_counts/{correction_method}/{name}/{normalisation}/{layer}_{reference}_{method}_{level}'
                                                         input:
                                                             sample_corrected_counts_path=sample_corrected_counts_path,
                                                             sample_dir=sample_dir,
@@ -124,7 +124,7 @@ for markers_mode in markers_modes:
                                                             n_repeats=n_repeats,
                                                             top_n=top_n,
                                                             scoring=scoring,
-                                                            markers=markers,
+                                                            markers=markers_mode,
                                                             max_n_cells=max_n_cells,
                                                             min_counts=min_counts,
                                                             min_features=min_features,
