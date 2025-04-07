@@ -302,12 +302,12 @@ if __name__ == "__main__":
                             ).iloc[0]
                         )
 
-                # add pvalue metrics
-                mean_zscore = df_diffexpr[cti, ctj].set_index("names")["scores"].loc[markers_].mean()
-                mean_zscore_pvalue = scipy.stats.norm.sf(np.abs(mean_zscore)) * 2  # Two-tailed p-value
-                df_markers_rank_significance_diffexpr[cti, ctj]["mean_zscore" + k_] = pd.Series(
-                    [mean_zscore, mean_zscore_pvalue], index=["mean_zscore", "mean_zscore_pvalue"]
-                )
+                    # add pvalue metrics
+                    mean_zscore = df_diffexpr[cti, ctj].set_index("names")["scores"].loc[markers_n_].mean()
+                    mean_zscore_pvalue = scipy.stats.norm.sf(np.abs(mean_zscore)) * 2  # Two-tailed p-value
+                    df_markers_rank_significance_diffexpr[cti, ctj]["mean_zscore" + k_ + f"_{n=}"] = pd.Series(
+                        [mean_zscore, mean_zscore_pvalue], index=["mean_zscore", "mean_zscore_pvalue"]
+                    )
 
     # count number of True/False for each has_{ctj}_neighbor column
     cols = [f"has_{ctj}_neighbor" for ctj in u_cell_types if f"has_{ctj}_neighbor" in adata.obs.columns]

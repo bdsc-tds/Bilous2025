@@ -297,10 +297,12 @@ if __name__ == "__main__":
 
             for n in list_n_markers:
                 for k_, markers_ in dict_ctj_marker_genes.items():
+                    markers_n_ = markers_[:n]
+
                     df_markers_rank_significance_logreg[cti, ctj][rank_metric + k_ + f"_{n=}"] = (
                         _utils.get_marker_rank_significance(
                             rnk=df_importances_logreg[cti, ctj][rank_metric].sort_values(ascending=False),
-                            gene_set=markers_,
+                            gene_set=markers_n_,
                             top_n=args.top_n,
                         ).iloc[0]
                     )

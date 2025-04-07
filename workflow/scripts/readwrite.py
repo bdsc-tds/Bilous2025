@@ -1099,17 +1099,15 @@ def _read_contamination_metrics_results_sample(
     folder_diffexpr = f"contamination_metrics_{name_params}"
     folder_logreg = f"contamination_metrics_{name_params}_logreg"
 
-    if correction_method != "raw":
-        folder_diffexpr += "_corrected_counts"
-        folder_logreg += "_corrected_counts"
-
     if evaluation == "logreg":
         folder = folder_logreg
     elif evaluation == "diffexpr":
         folder = folder_diffexpr
 
     # full path prefix
-    if correction_method == "resolvi":
+    if correction_method == "raw":
+        name = f"{correction_method}/{name}"
+    elif correction_method == "resolvi":
         name = f"{correction_method}/{name}/{mixture_k=}/{num_samples=}/"
     elif correction_method == "resolvi_supervised":
         name = f"{correction_method}/{name}/{normalisation}/reference_based/{reference}/{method}/{level}/{mixture_k=}/{num_samples=}"

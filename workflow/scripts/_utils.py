@@ -495,17 +495,18 @@ def get_df_marker_rank_significance_plot(
     plot_metric,
     correction_methods,
     use_precomputed,
+    n=20,
 ):
     """
     Generate a DataFrame from a dictionary of DataFrames, to be used for plotting.
 
     Parameters:
     - dfs_marker_rank_significance (dict): A dictionary containing DataFrames with correction methods as keys, as read by readwrite.read_diffexpr_results_samples.
-    - key (str): The key to use for accessing the DataFrames in dfs.
     - rank_metric (str): The ranking metric to use for the plot.
     - plot_metric (str): The metric to plot.
     - correction_methods (list): A list of correction methods to include in the plot.
     - use_precomputed (bool): Whether to use precomputed results (True) or not (False).
+    - n (int): The number of ctj markers used for score computation.
 
     Returns:
     - pd.DataFrame: A DataFrame containing the data for the plot, with columns for the correction method, xenium levels, cell types, and plot metric.
@@ -516,9 +517,11 @@ def get_df_marker_rank_significance_plot(
             continue
         for k, v in dfs_marker_rank_significance[correction_method].items():
             if use_precomputed:
-                rank_metric_ = rank_metric if correction_method == "raw" else rank_metric + "_precomputed"
+                rank_metric_ = (
+                    f"{rank_metric}_{n=}" if correction_method == "raw" else f"{rank_metric}_precomputed_{n=}"
+                )
             else:
-                rank_metric_ = rank_metric
+                rank_metric_ = f"{rank_metric}_{n=}"
             df[(correction_method, *k)] = v.loc[rank_metric_, v.columns.get_level_values(2) == plot_metric]
     df = pd.concat(df).reset_index()
     df.columns = ["correction_method"] + xenium_levels + ["cti", "ctj", "plot_metric", plot_metric]
@@ -526,31 +529,36 @@ def get_df_marker_rank_significance_plot(
     return df
 
 
-# def pseudobulk(adata, labels_key):
-#     """
-#     Generate pseudo-bulk RNA-seq data from single-cell RNA-seq datasets.
+def get_df_ctj_marker_genes(
+    dfs_ctj_marker_genes,
+    correction_methods,
+):
+    df = {}
+    for correction_method in correction_methods:
+        for k, v in dfs_ctj_marker_genes[correction_method].items():
+            for ctj in v.columns:
+                df[(correction_method, *k, ctj)] = v[ctj]
 
-#     Parameters
-#     ----------
-#     adata : Anndata
-#     labels_key : str
-#         The key in `adata.obs` used to identify cell type labels.
+    df = pd.concat(df).reset_index().drop("level_7", axis=1)
+    df.columns = ["correction_method"] + xenium_levels + ["cell_type", "gene"]
+    rename_correction_methods(df)
+    return df
 
-#     Returns
-#     -------
-#     pd.DataFrame
-#         Contains pseudo-bulk expression profiles for each cell type,
-#         with cell types as columns and genes as rows.
-#     """
 
-#     pbdata = {}
+def get_df_diffexpr_cti_ctj(dfs_diffexpr, cti, ctj, ref_panel, correction_methods, rank_metric):
+    df = {}
+    for correction_method in correction_methods:
+        for k, v in dfs_diffexpr[correction_method].items():
+            if k[2] != ref_panel:
+                continue
 
-#     unique_cell_types = adata.obs[labels_key].unique()
-#     for ct in unique_cell_types:
-#         pb_cti_scrna = adata[adata.obs[labels_key] == ct].X.mean(0).A1
-#         pbdata[ct] = pd.Series(pb_cti_scrna, index=adata.var_names)
-#     pbdata = pd.DataFrame(pbdata)
-#     return pbdata
+            if (cti, ctj) in v.index:
+                df[(correction_method, *k, cti, ctj)] = v.loc[(cti, ctj)].set_index("names").loc[:, rank_metric]
+
+    df = pd.DataFrame(df).T.reset_index()
+    df.columns = ["correction_method"] + xenium_levels + ["cti", "ctj"] + df.columns[8:].tolist()
+    rename_correction_methods(df)
+    return df
 
 
 def pseudobulk(ad, key, mode="sum"):
