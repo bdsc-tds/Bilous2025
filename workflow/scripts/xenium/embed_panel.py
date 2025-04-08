@@ -30,6 +30,7 @@ parser.add_argument("--max_counts", type=float, help="QC parameter from pipeline
 parser.add_argument("--max_features", type=float, help="QC parameter from pipeline config")
 parser.add_argument("--min_cells", type=int, help="QC parameter from pipeline config")
 parser.add_argument("--genes", type=str, nargs="*", default=[], help="Restrict data to these genes for the UMAP.")
+parser.add_argument("--samples", type=str, nargs="*", default=[], help="Restrict data to these samples for the UMAP.")
 
 args = parser.parse_args()
 
@@ -49,7 +50,7 @@ max_counts = args.max_counts
 max_features = args.max_features
 min_cells = args.min_cells
 genes = args.genes
-
+samples = args.samples
 
 segmentation = panel.parents[1].stem
 condition = panel.parents[0].stem
@@ -67,8 +68,11 @@ condition = panel.parents[0].stem
 print("Reading samples")
 ads = {}
 for donor in (donors := panel.iterdir()):
-    for sample in (samples := donor.iterdir()):
-        print(donor.stem, sample.stem)
+    for sample in (samples_ := donor.iterdir()):
+        if len(samples) and sample.stem not in samples:
+            continue
+
+            print(donor.stem, sample.stem)
 
         if segmentation == "proseg_expected":
             k = ("proseg", condition, panel.stem, donor.stem, sample.stem)

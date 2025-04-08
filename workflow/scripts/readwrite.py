@@ -1048,10 +1048,12 @@ def _read_contamination_metrics_results_sample(
     layer: str,
     markers_mode="diffexpr",
     radius=10,
+    n_splits=5,
     n_permutations=30,
     n_repeats=5,
     top_n=20,
-    scoring="f1",
+    cv_mode="spatial",
+    scoring="precision",
     evaluation: list = "diffexpr",
 ):
     """
@@ -1093,11 +1095,12 @@ def _read_contamination_metrics_results_sample(
 
     k = (segmentation.stem, condition.stem, panel.stem, donor.stem, sample.stem)
     name = "/".join(k)
-    name_params = f"{markers_mode}_{radius=}_{n_permutations=}_{n_repeats=}_{top_n=}_{scoring}"
+    name_params_diffexpr = f"{markers_mode}_{radius=}_{n_permutations=}_{top_n=}_{scoring}"
+    name_params_logreg = f"{markers_mode}_{radius=}_{n_permutations=}_{n_splits=}_{top_n=}_{scoring}_{cv_mode}"
 
     # folder name
-    folder_diffexpr = f"contamination_metrics_{name_params}"
-    folder_logreg = f"contamination_metrics_{name_params}_logreg"
+    folder_diffexpr = f"contamination_metrics_{name_params_diffexpr}"
+    folder_logreg = f"contamination_metrics_{name_params_logreg}_logreg"
 
     if evaluation == "logreg":
         folder = folder_logreg

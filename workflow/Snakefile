@@ -23,6 +23,7 @@ configfile: "config/config.yml"
 # include: "rules/1-embedding_sample_plot.smk"
 
 # include: "rules/0-embedding_restricted_genes.smk"
+include: "rules/0-embedding_restricted_genes_and_samples.smk"
 # include: "rules/0-embedding_restricted_genes_scrnaseq.smk"
 # include: "rules/1-embedding_restricted_genes_plot.smk"
 # include: "rules/1-embedding_restricted_genes_scrnaseq_plot.smk"
@@ -35,10 +36,10 @@ configfile: "config/config.yml"
 # include: "rules/2-embedding_corrected_counts.smk"
 # include: "rules/3-embedding_corrected_counts_plot.smk"
 
-include: "rules/2-contamination_metrics_diffexpr.smk"
-include: "rules/2-contamination_metrics_logreg.smk"
-include: "rules/2-contamination_metrics_diffexpr_corrected_counts.smk"
-include: "rules/2-contamination_metrics_logreg_corrected_counts.smk"
+# include: "rules/2-contamination_metrics_diffexpr.smk"
+# include: "rules/2-contamination_metrics_logreg.smk"
+# include: "rules/2-contamination_metrics_diffexpr_corrected_counts.smk"
+# include: "rules/2-contamination_metrics_logreg_corrected_counts.smk"
 
 # include: "rules/3-contamination_metrics_diffexpr_specificity_boxplot.smk"
 # include: "rules/3-contamination_metrics_diffexpr_sensitivity_boxplot.smk"
@@ -68,6 +69,7 @@ rule all:
         # rules.embed_panel_singlets_plot_all.input,
         # #
         # rules.embed_panel_restricted_genes_all.input,
+        rules.embed_panel_restricted_genes_and_samples_all.input,
         # rules.embed_panel_restricted_genes_scrnaseq_all.input,
         # rules.embed_panel_restricted_genes_plot_all.input,
         # rules.embed_panel_restricted_genes_scrnaseq_plot_all.input,
@@ -87,11 +89,11 @@ rule all:
         # rules.ovrlpy_all.input,
         # rules.ovrlpy_correction_all.input,
         # #
-        rules.contamination_metrics_diffexpr_all.input,
-        rules.contamination_metrics_logreg_all.input,
-        # #
-        rules.contamination_metrics_diffexpr_corrected_counts_all.input,
-        rules.contamination_metrics_logreg_corrected_counts_all.input,
+        # rules.contamination_metrics_diffexpr_all.input,
+        # rules.contamination_metrics_logreg_all.input,
+        # # #
+        # rules.contamination_metrics_diffexpr_corrected_counts_all.input,
+        # rules.contamination_metrics_logreg_corrected_counts_all.input,
         # # #
         # rules.scib_metrics_panel_all.input,
         # rules.scib_metrics_panel_corrected_counts_all.input,

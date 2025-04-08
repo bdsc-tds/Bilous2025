@@ -20,7 +20,8 @@ n_neighbors = config['umap_n_neighbors']
 min_dist = config['umap_min_dist']
 metric = config['umap_metric']
 
-genes = pd.read_csv('/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/Xenium_hLung_v1_metadata.csv')['Gene'].tolist()
+# genes = pd.read_csv(config['markers_dir']+'Xenium_hLung_v1_metadata.csv')['Gene'].tolist()
+genes = pd.read_csv(config['markers_dir']+'Xenium_NSCLC_5k_lung_chromium_common_genes.csv')['gene'].tolist()
 
 out_files_panel = []
 

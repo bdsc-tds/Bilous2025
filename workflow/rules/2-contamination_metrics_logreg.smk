@@ -27,12 +27,14 @@ min_cells = 5
 
 
 radius = 10
-n_permutations = 30
+n_splits = 5
 n_repeats = 5
+n_permutations = 30
+cv_mode = 'spatial'
 top_n = 20
-scoring = 'f1'
+scoring = 'precision'
 markers_modes = ['diffexpr']#,'common_markers'] #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/cellmarker_cell_types_markers.json'
-max_n_cells = 100_000
+max_n_cells = 50_000
 
 # needed to get unique cell types names for each      level
 # cell_types_palette = pd.read_csv(palette_dir / 'col_palette_cell_types_combo.csv')
@@ -55,7 +57,7 @@ for markers_mode in markers_modes:
 
                                             k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
                                             name = '/'.join(k)
-                                            name_params = f"{markers_mode}_{radius=}_{n_permutations=}_{n_repeats=}_{top_n=}_{scoring}"
+                                            name_params = f"{markers_mode}_{radius=}_{n_permutations=}_{n_splits=}_{top_n=}_{scoring}_{cv_mode}"
 
                                             if 'proseg' in segmentation.stem:
                                                 k_proseg = ('proseg',condition.stem,panel.stem,donor.stem,sample.stem)
@@ -95,8 +97,10 @@ for markers_mode in markers_modes:
                                                     out_file_df_markers_rank_significance_logreg=out_file_df_markers_rank_significance_logreg,
                                                 params:
                                                     radius=radius,
+                                                    n_splits=n_splits,
                                                     n_permutations=n_permutations,
                                                     n_repeats=n_repeats,
+                                                    cv_mode=cv_mode,
                                                     top_n=top_n,
                                                     scoring=scoring,
                                                     markers=markers_mode,
@@ -127,8 +131,10 @@ for markers_mode in markers_modes:
                                                         --out_file_df_importances_logreg {output.out_file_df_importances_logreg} \
                                                         --out_file_df_markers_rank_significance_logreg {output.out_file_df_markers_rank_significance_logreg} \
                                                         --radius {params.radius} \
+                                                        --n_splits {params.n_splits} \
                                                         --n_permutations {params.n_permutations} \
                                                         --n_repeats {params.n_repeats} \
+                                                        --cv_mode {params.cv_mode} \
                                                         --top_n {params.top_n} \
                                                         --scoring {params.scoring} \
                                                         --markers {params.markers} \

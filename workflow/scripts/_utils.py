@@ -4,11 +4,15 @@ import pandas as pd
 import scipy
 import gseapy
 import anndata
-from sklearn.model_selection import train_test_split, permutation_test_score
+from sklearn.model_selection import train_test_split, permutation_test_score, StratifiedKFold, GroupKFold
 from sklearn.linear_model import LogisticRegression
 from sklearn.inspection import permutation_importance
 from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans, BisectingKMeans
+from sklearn.utils import check_random_state
+from sklearn.utils.validation import check_array
 from typing import Dict, List
+import warnings
 
 xenium_levels = ["segmentation", "condition", "panel", "donor", "sample"]
 
@@ -176,13 +180,14 @@ def logreg(
     X,
     y,
     feature_names=None,
-    scoring="f1",
+    scoring="precision",
     test_size=0.2,
     n_permutations=30,
     n_repeats=5,
-    max_iter=1000,
+    max_iter=100,
     random_state=0,
     importance_mode="coef",
+    class_weight="balanced",
 ):
     """
     Perform logistic regression with permutation test and compute feature importances.
@@ -205,7 +210,7 @@ def logreg(
     """
 
     # Initialize logistic regression model
-    model = LogisticRegression(max_iter=max_iter)
+    model = LogisticRegression(max_iter=max_iter, class_weight=class_weight)
 
     # Empirical p-value calculation using permutation test
     score, perm_scores, p_value = permutation_test_score(
@@ -686,3 +691,102 @@ def get_expression_percent_per_celltype(
 
     print("Calculation complete.")
     return percent_df
+
+
+class SpatialClusterGroupKFold:
+    """
+    Spatial K-Folds cross-validator using coordinate clustering and GroupKFold.
+
+    Creates folds by first clustering spatial coordinates (e.g., lon/lat)
+    using KMeans or BisectingKMeans. The resulting cluster labels are then
+    used as group IDs for sklearn's GroupKFold, ensuring that all points
+    within the same spatial cluster stay in the same fold (train or test).
+
+    Parameters
+    ----------
+    n_splits : int, default=5
+        Number of folds. Must be at least 2. This will also be the number
+        of clusters generated.
+
+    algorithm : {'kmeans', 'bisectingkmeans'}, default='bisectingkmeans'
+        The clustering algorithm to use on the coordinates.
+
+    random_state : int, RandomState instance or None, default=None
+        Controls the randomness of the clustering. Pass an int
+        for reproducible output. Note: GroupKFold itself is deterministic.
+
+    **kwargs : dict
+        Additional keyword arguments passed directly to the underlying
+        clustering algorithm (`KMeans` or `BisectingKMeans`).
+    """
+
+    def __init__(self, n_splits=5, *, algorithm="bisectingkmeans", random_state=None, **kwargs):
+        if n_splits < 2:
+            raise ValueError("n_splits must be at least 2.")
+        if algorithm not in ["kmeans", "bisectingkmeans"]:
+            raise ValueError("algorithm must be 'kmeans' or 'bisectingkmeans'")
+
+        self.n_splits = n_splits
+        self.algorithm = algorithm
+        self.random_state = random_state
+        self.kwargs = kwargs
+
+    def _get_cluster_labels(self, X_coords):
+        """Performs clustering and returns cluster labels."""
+        X_coords = check_array(X_coords, accept_sparse=False, ensure_2d=True, dtype="numeric")
+        rng = check_random_state(self.random_state)
+        # Pass random_state only if it's not None for reproducibility
+        clustering_random_state = rng if self.random_state is not None else None
+
+        if self.algorithm == "kmeans":
+            # Use n_init='auto' to avoid future warning with default
+            n_init = self.kwargs.pop("n_init", "auto")
+            clustering_model = KMeans(
+                n_clusters=self.n_splits, random_state=clustering_random_state, n_init=n_init, **self.kwargs
+            )
+        elif self.algorithm == "bisectingkmeans":
+            clustering_model = BisectingKMeans(
+                n_clusters=self.n_splits, random_state=clustering_random_state, **self.kwargs
+            )
+        else:
+            raise ValueError("algorithm must be 'kmeans' or 'bisectingkmeans'")
+        try:
+            # Fit and predict cluster labels
+            cluster_labels = clustering_model.fit_predict(X_coords)
+            n_clusters_found = len(np.unique(cluster_labels))
+            if n_clusters_found < self.n_splits:
+                warnings.warn(
+                    f"Clustering found only {n_clusters_found} clusters, "
+                    f"less than n_splits={self.n_splits}. GroupKFold might behave "
+                    "unexpectedly or yield fewer folds if some group IDs are missing "
+                    "or if a cluster is empty.",
+                    UserWarning,
+                )
+                # Note: GroupKFold might raise an error if a fold ends up empty.
+            return cluster_labels
+        except Exception as e:
+            raise RuntimeError(f"Clustering failed: {e}") from e
+
+    def split(self, X, y=None):
+        """Generate indices to split data into training and test set.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features_coords)
+            Spatial coordinates used for clustering to determine groups.
+            **Important**: This method expects coordinates here.
+
+        y : object, optional
+            Always ignored in this implementation, exists for compatibility.
+
+        Yields
+        ------
+        train : ndarray
+            The training set indices for that split.
+        test : ndarray
+            The testing set indices for that split.
+        """
+        X_coords = X  # Assume X passed is the coordinates
+        cluster_labels = self._get_cluster_labels(X_coords)
+        gkf = GroupKFold(n_splits=self.n_splits)
+        return gkf.split(X_coords, y, groups=cluster_labels)

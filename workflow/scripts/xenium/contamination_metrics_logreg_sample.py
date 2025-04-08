@@ -33,6 +33,8 @@ def parse_args():
         help="path to the logreg rank significance output file",
     )
     parser.add_argument("--radius", type=int, help="n° of neighbors to use to define the spatial graph")
+    parser.add_argument("--cv_mode", type=str, help="cv_mode for logreg")
+    parser.add_argument("--n_splits", type=int, help="n° of splits for logreg random prediction baseline")
     parser.add_argument("--n_permutations", type=int, help="n° of permutations for logreg random prediction baseline")
     parser.add_argument("--n_repeats", type=int, help="n° of repeats for logreg feature importances by permutations")
     parser.add_argument("--top_n", type=int, help="n° of top genes to evaluate for hypergeometric test")
@@ -279,11 +281,15 @@ if __name__ == "__main__":
                 feature_names=adata.var_names,
                 scoring=args.scoring,
                 test_size=0.2,
+                n_splits=args.n_splits,
                 n_permutations=args.n_permutations,
                 n_repeats=args.n_repeats,
                 random_state=0,
                 max_iter=500,
                 importance_mode="coef",
+                class_weight="balanced",
+                cv_mode=args.cv_mode,
+                spatial_coords=adata_cti.obsm["spatial"],
             )
 
             # get significance from gsea and hypergeometric test

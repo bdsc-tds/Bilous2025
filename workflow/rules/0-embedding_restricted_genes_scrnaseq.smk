@@ -16,8 +16,8 @@ min_cells = 5
 
 # Params
 layer = 'RNA_counts'
-genes = pd.read_csv('/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/Xenium_hLung_v1_metadata.csv')['Gene'].tolist()
-
+# genes = pd.read_csv('/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/Xenium_hLung_v1_metadata.csv')['Gene'].tolist()
+genes = pd.read_csv('/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/Xenium_NSCLC_5k_lung_chromium_common_genes.csv')['gene'].tolist()
 n_comps = config['umap_n_comps']
 n_neighbors = config['umap_n_neighbors']
 min_dist = config['umap_min_dist']

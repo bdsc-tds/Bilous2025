@@ -83,14 +83,14 @@ coordinate_df["gene"] = coordinate_df["gene"].astype("category")
 
 
 # prevent ovrlpy bug when rounding to pixels
-x_int, y_int = coordinate_df[["x", "y"]].max() == coordinate_df[["x", "y"]].max().astype(int)
-if x_int:
-    coordinate_df["x"] = coordinate_df["x"] + 1e-10
-if y_int:
-    coordinate_df["y"] = coordinate_df["y"] + 1e-10
+# x_int, y_int = coordinate_df[["x", "y"]].max() == coordinate_df[["x", "y"]].max().astype(int)
+# if x_int:
+#     coordinate_df["x"] = coordinate_df["x"] + 1e-10
+# if y_int:
+#     coordinate_df["y"] = coordinate_df["y"] + 1e-10
 
 # run ovrlpy
-signal_integrity, signal_strength, visualizer = ovrlpy.run(df=coordinate_df, cell_diameter=10, n_expected_celltypes=30)
+signal_integrity, signal_strength, visualizer = ovrlpy.run(df=coordinate_df, cell_diameter=10)
 # doublet_df = ovrlpy.detect_doublets(
 #     signal_integrity, signal_strength, minimum_signal_strength=3, integrity_sigma=2
 # )

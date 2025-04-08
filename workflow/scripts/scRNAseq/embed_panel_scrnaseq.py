@@ -45,7 +45,6 @@ max_features = args.max_features
 min_cells = args.min_cells
 genes = args.genes
 
-
 print("Reading samples")
 ad_merge = sc.read_10x_h5(reference / f"{layer}.h5")
 
