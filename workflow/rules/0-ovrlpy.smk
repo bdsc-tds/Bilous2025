@@ -17,9 +17,9 @@ for segmentation in xenium_dir.iterdir():
             for donor in (donors := panel.iterdir()):
                 for sample in (samples := donor.iterdir()):
 
-                    if panel.stem == '5k':
-                        # 5k samples fail even with 1Tb memory
-                        continue
+                    # if panel.stem == '5k':
+                    #     # 5k samples fail even with 1Tb memory
+                    #     continue
                 
                     if segmentation.stem == 'proseg':
                         sample_transcripts_path = sample / "raw_results/transcript-metadata.csv.gz"
@@ -83,9 +83,9 @@ for signal_integrity_threshold in signal_integrity_thresholds:
                 for donor in (donors := panel.iterdir()):
                     for sample in (samples := donor.iterdir()):
 
-                        if panel.stem == '5k':
-                            # 5k samples fail even with 1Tb memory
-                            continue
+                        # if panel.stem == '5k':
+                        #     # 5k samples fail even with 1Tb memory
+                        #     continue
 
                         if segmentation.stem == 'proseg':
                             sample_transcripts_path = sample / "raw_results/transcript-metadata.csv.gz"
