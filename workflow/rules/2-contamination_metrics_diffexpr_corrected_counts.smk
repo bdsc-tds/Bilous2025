@@ -62,7 +62,7 @@ for markers_mode in markers_modes:
 
                                                 k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
                                                 name = '/'.join(k)
-                                                name_params = f"{markers_mode}_{radius=}_{n_permutations=}_{top_n=}_{scoring}"
+                                                name_params = f"{markers_mode}_{radius=}_{n_permutations=}_{top_n=}"
 
                                                 if 'proseg' in segmentation.stem:
                                                     k_proseg = ('proseg',condition.stem,panel.stem,donor.stem,sample.stem)

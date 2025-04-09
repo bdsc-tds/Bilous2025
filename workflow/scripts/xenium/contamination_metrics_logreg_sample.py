@@ -159,7 +159,6 @@ if __name__ == "__main__":
     )
 
     # read labels
-    label_key = "label_key"
     adata.obs[label_key] = pd.read_parquet(args.sample_annotation).set_index("cell_id").iloc[:, 0]
     adata = adata[adata.obs[label_key].notna()]  # remove NaN annotation
 
@@ -275,9 +274,9 @@ if __name__ == "__main__":
             ####
 
             # train logreg model
-            df_permutations_logreg[cti, ctj], df_importances_logreg[cti, ctj] = _utils.logreg(
+            df_permutations_logreg_, df_importances_logreg_ = _utils.logreg(
                 X=adata_cti.X,  # adata_cti.layers["X_normalised"],
-                y=adata_cti.obs[f"has_{ctj}_neighbor"],
+                y=adata_cti.obs[f"has_{ctj}_neighbor"].values,
                 feature_names=adata.var_names,
                 scoring=args.scoring,
                 test_size=0.2,
@@ -291,6 +290,13 @@ if __name__ == "__main__":
                 cv_mode=args.cv_mode,
                 spatial_coords=adata_cti.obsm["spatial"],
             )
+
+            if df_permutations_logreg_ is None:
+                print(f"Skipping logistic regression for {cti} with {ctj} neighbors because of single class cv split")
+                continue
+            else:
+                df_permutations_logreg[cti, ctj] = df_permutations_logreg_
+                df_importances_logreg[cti, ctj] = df_importances_logreg_
 
             # get significance from gsea and hypergeometric test
             rank_metric = "importances"

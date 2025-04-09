@@ -14,12 +14,13 @@ FIGURES_BASE_DIR="/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/figures
 # --- DEFINE YOUR RELATIVE TARGET PATHS HERE ---
 # These paths are relative to FIGURES_BASE_DIR
 RELATIVE_PATHS=(
-  # xenium common genes UMAP
-  "embed_panel_restricted_genes/10x_5um/NSCLC/lung/lognorm/umap_data_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-  "embed_panel_restricted_genes/10x_mm_5um/NSCLC/5k/lognorm/umap_data_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
+  # xenium common genes and samples UMAP
+  "embed_panel_restricted_genes_and_samples/10x_5um/NSCLC/lung/lognorm/umap_data_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
+  "embed_panel_restricted_genes_and_samples/10x_mm_5um/NSCLC/5k/lognorm/umap_data_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
 
   # chromium common genes UMAP
-  "embed_panel_restricted_genes_scrnaseq/matched_combo_standard_lung_specific/umap_RNA_counts_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_rctd_class_aware_Level2.1.png"
+  "embed_panel_restricted_genes_scrnaseq/matched_lung_standard/umap_RNA_counts_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_rctd_class_aware_Level2.1.png"
+
 )
 
 # --- DEFINE YOUR ABSOLUTE TARGET PATHS HERE ---

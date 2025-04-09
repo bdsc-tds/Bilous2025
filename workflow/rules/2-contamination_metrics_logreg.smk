@@ -57,6 +57,8 @@ for markers_mode in markers_modes:
 
                                             k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
                                             name = '/'.join(k)
+
+                                            name_params_diffexpr = f"{markers_mode}_{radius=}_{n_permutations=}_{top_n=}"
                                             name_params = f"{markers_mode}_{radius=}_{n_permutations=}_{n_splits=}_{top_n=}_{scoring}_{cv_mode}"
 
                                             if 'proseg' in segmentation.stem:
@@ -69,8 +71,8 @@ for markers_mode in markers_modes:
                                             sample_normalised_counts = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/{layer}.parquet'
                                             sample_idx = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/cells.parquet'
                                             sample_annotation = xenium_cell_type_annotation_dir / f'{name}/{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet'
-                                            precomputed_ctj_markers = results_dir / f'contamination_metrics_{name_params}/raw/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
-                                            precomputed_adata_obs = results_dir / f'contamination_metrics_{name_params}/raw/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_adata_obs.parquet'
+                                            precomputed_ctj_markers = results_dir / f'contamination_metrics_{name_params_diffexpr}/raw/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
+                                            precomputed_adata_obs = results_dir / f'contamination_metrics_{name_params_diffexpr}/raw/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_adata_obs.parquet'
                                             
                                             out_file_df_permutations_logreg = results_dir / f'contamination_metrics_{name_params}_logreg/raw/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_permutations_logreg.parquet'
                                             out_file_df_importances_logreg = results_dir / f'contamination_metrics_{name_params}_logreg/raw/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_importances_logreg.parquet'

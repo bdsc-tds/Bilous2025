@@ -15,6 +15,10 @@ FIGURES_BASE_DIR="/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/figures
 # These paths are relative to FIGURES_BASE_DIR
 RELATIVE_PATHS=(
   # umaps
+  "embed_panel/10x_5um/breast/breast/lognorm/umap_data_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_external_reference_rctd_class_aware_Level2.png"
+  "embed_panel/10x_mm_5um/NSCLC/5k/lognorm/umap_data_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_external_reference_rctd_class_aware_Level2.png"
+  "embed_panel/10x_5um/NSCLC/chuvio/lognorm/umap_data_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_external_reference_rctd_class_aware_Level2.png"
+  "embed_panel/10x_5um/NSCLC/lung/lognorm/umap_data_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_external_reference_rctd_class_aware_Level2.png"
 
 )
 

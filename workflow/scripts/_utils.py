@@ -182,12 +182,16 @@ def logreg(
     feature_names=None,
     scoring="precision",
     test_size=0.2,
+    n_splits=5,
     n_permutations=30,
     n_repeats=5,
     max_iter=100,
     random_state=0,
     importance_mode="coef",
     class_weight="balanced",
+    cv_mode="spatial",
+    spatial_coords=None,
+    accept_partial_cv=False,
 ):
     """
     Perform logistic regression with permutation test and compute feature importances.
@@ -199,22 +203,51 @@ def logreg(
     - scoring (str): Scoring metric for the permutation test (e.g., 'f1', 'accuracy').
     - test_size (float): Proportion of data to use for testing.
     - max_iter (int): Maximum number of iterations for the logistic regression model.
+    - n_splits (int): Number of splits for cross-validation.
     - n_permutations (int): Number of permutations for the permutation test.
     - n_repeats (int): Number of repeats for the permutation importance calculation.
     - random_state (int): Random seed for reproducibility.
     - importance_mode (str): Mode for feature importance calculation ('permutation' or 'coef').
+    - class_weight (str): Class weight for the logistic regression model ('balanced' or None or dict).
+    - cv_mode (str): Cross-validation mode ('stratified' or 'spatial').
+    - spatial_coords (array-like): Spatial coordinates for spatial cross-validation.
+    - accept_partial_cv (bool): Whether to run the function despite at least one cross validation split only having one class (for spatial cv).
 
     Returns:
     - df_permutations (pd.DataFrame): Summary of permutation test results.
     - df_importances (pd.DataFrame): Feature importances from permutation importance.
     """
 
+    # Split data into cross validaton sets
+    if cv_mode == "stratified":
+        cv = StratifiedKFold(n_splits=n_splits, shuffle=False)
+    elif cv_mode == "spatial":
+        if spatial_coords is None:
+            raise ValueError("spatial_coords must be provided when cv_mode is 'spatial'")
+        cv = list(SpatialClusterGroupKFold(algorithm="bisectingkmeans", n_splits=n_splits).split(spatial_coords, y))
+
+        # check that all splits have more than one class
+        single_class_splits = [len(np.unique(y[train])) == 1 for (train, test) in cv]
+        if any(single_class_splits):
+            if accept_partial_cv:
+                cv = [cv[i] for i in range(len(cv)) if not single_class_splits[i]]
+                if len(cv) == 0:
+                    warnings.warn("All splits have only one class. Aborting.")
+                    return None, None
+                else:
+                    print("Some splits have only one class. Running on", len(cv), "splits.")
+            else:
+                warnings.warn("Some splits have only one class. Aborting.")
+            return None, None
+    else:
+        raise ValueError("cv_mode must be 'stratified' or 'spatial'")
+
     # Initialize logistic regression model
     model = LogisticRegression(max_iter=max_iter, class_weight=class_weight)
 
     # Empirical p-value calculation using permutation test
     score, perm_scores, p_value = permutation_test_score(
-        model, X, y, scoring=scoring, n_permutations=n_permutations, n_jobs=-1, verbose=1
+        model, X, y, scoring=scoring, n_permutations=n_permutations, cv=cv, n_jobs=-1, verbose=1
     )
 
     # Summarize permutation test results

@@ -34,7 +34,7 @@ n_permutations = 30
 n_splits= 5
 top_n = 20
 scoring = 'precision'
-cv = 'spatial'
+cv_mode = 'spatial'
 markers_modes = ['diffexpr']#,'common_markers'] #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/cellmarker_cell_types_markers.json'
 max_n_cells = 50_000
 
@@ -63,6 +63,7 @@ for markers_mode in markers_modes:
 
                                                 k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
                                                 name = '/'.join(k)
+                                                name_params_diffexpr = f"{markers_mode}_{radius=}_{n_permutations=}_{top_n=}"
                                                 name_params = f"{markers_mode}_{radius=}_{n_permutations=}_{n_splits=}_{top_n=}_{scoring}_{cv_mode}"
 
                                                 if 'proseg' in segmentation.stem:
@@ -90,8 +91,8 @@ for markers_mode in markers_modes:
                                                 sample_normalised_counts = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/{layer}.parquet'
                                                 sample_idx = xenium_std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/cells.parquet'
                                                 sample_annotation = xenium_cell_type_annotation_dir / f'{name}/{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet'
-                                                precomputed_ctj_markers = results_dir / f'contamination_metrics_{name_params}/raw/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
-                                                precomputed_adata_obs = results_dir / f'contamination_metrics_{name_params}/raw/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_adata_obs.parquet'
+                                                precomputed_ctj_markers = results_dir / f'contamination_metrics_{name_params_diffexpr}/raw/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
+                                                precomputed_adata_obs = results_dir / f'contamination_metrics_{name_params_diffexpr}/raw/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_adata_obs.parquet'
                                                 
                                                 out_file_df_permutations_logreg = results_dir / f'contamination_metrics_{name_params}_logreg/{correction_method}/{name_corrected}/{normalisation}/{layer}_{reference}_{method}_{level}_permutations_logreg.parquet'
                                                 out_file_df_importances_logreg = results_dir / f'contamination_metrics_{name_params}_logreg/{correction_method}/{name_corrected}//{normalisation}/{layer}_{reference}_{method}_{level}_importances_logreg.parquet'
@@ -121,8 +122,10 @@ for markers_mode in markers_modes:
                                                             out_file_df_markers_rank_significance_logreg=out_file_df_markers_rank_significance_logreg,
                                                         params:
                                                             radius=radius,
+                                                            n_splits=n_splits,
                                                             n_permutations=n_permutations,
                                                             n_repeats=n_repeats,
+                                                            cv_mode=cv_mode,
                                                             top_n=top_n,
                                                             scoring=scoring,
                                                             markers=markers_mode,
@@ -154,8 +157,10 @@ for markers_mode in markers_modes:
                                                                 --out_file_df_importances_logreg {output.out_file_df_importances_logreg} \
                                                                 --out_file_df_markers_rank_significance_logreg {output.out_file_df_markers_rank_significance_logreg} \
                                                                 --radius {params.radius} \
+                                                                --n_splits {params.n_splits} \
                                                                 --n_permutations {params.n_permutations} \
                                                                 --n_repeats {params.n_repeats} \
+                                                                --cv_mode {params.cv_mode} \
                                                                 --top_n {params.top_n} \
                                                                 --scoring {params.scoring} \
                                                                 --markers {params.markers} \

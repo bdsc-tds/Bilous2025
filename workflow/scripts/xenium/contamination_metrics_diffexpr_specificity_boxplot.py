@@ -80,6 +80,7 @@ hue_segmentation_order = [
     "10x_5um",
     "10x_15um",
     "baysor",
+    "proseg",
     "proseg_expected",
     "proseg_mode",
     "segger",

@@ -28,6 +28,7 @@ parser.add_argument(
     action="store_true",
     help="Remove axes, legend, title and only plot points",
 )
+parser.add_argument("--facet", action="store_true", help="Facet the plot by sample")
 
 args = parser.parse_args()
 
@@ -47,6 +48,7 @@ s = args.s
 alpha = args.alpha
 dpi = args.dpi
 points_only = args.points_only
+facet = args.facet
 
 if color == "sample":
     palette = pd.read_csv(sample_palette, index_col=0).iloc[:, 0]
@@ -147,38 +149,76 @@ print(
 
 
 # plot
-figsize = (10, 10) if points_only else (12, 10)
-f = plt.figure(figsize=figsize)
-ax = plt.subplot()
-
-sns.scatterplot(
-    data=df,
-    x="UMAP1",
-    y="UMAP2",
-    s=s,
-    alpha=alpha,
-    hue=params,
-    ax=ax,
-    palette=palette,
-    legend=False,
-)
-
-if not points_only:
-    ax.xaxis.set_ticks([])
-    ax.yaxis.set_ticks([])
-    sns.despine()
-
-    plt.title(title)
-    f.legend(
-        handles=legend_handles,
-        loc="center left",
-        bbox_to_anchor=(1, 0.5),
-        title=params if isinstance(params, str) else ", ".join(params),
-        frameon=False,
+if facet:
+    g = sns.FacetGrid(
+        df,
+        col="sample",
+        hue=params,
+        palette=palette,
+        col_wrap=4,  # Adjust based on how many samples you have (e.g., 3 columns wide)
+        height=4,  # Adjust height of each facet
+        aspect=1,  # Adjust aspect ratio (width/height) of each facet
     )
-    plt.tight_layout(rect=[0, 0, 0.85, 0.95])
+
+    g.map(
+        sns.scatterplot,
+        "UMAP1",
+        "UMAP2",
+        s=s,
+        alpha=alpha,
+    )
+    g.set_titles(col_template="{col_name}", size=14)
+    g.set(xticks=[], yticks=[])
+    g.set_axis_labels("", "")
+    g.despine(left=True, bottom=True)
+
+    if not points_only:
+        g.fig.suptitle(title)
+        g.add_legend(
+            title=params if isinstance(params, str) else ", ".join(params),
+            loc="center left",
+            bbox_to_anchor=(1, 0.5),
+            frameon=False,
+        )
+        handles = g.legend.legend_handles
+        for handle in handles:
+            if hasattr(handle, "set_sizes"):
+                handle.set_sizes([20])
+        g.tight_layout(rect=[0, 0, 0.9, 0.96])
+
 else:
-    ax.axis("off")
+    figsize = (10, 10) if points_only else (12, 10)
+    f = plt.figure(figsize=figsize)
+    ax = plt.subplot()
+
+    sns.scatterplot(
+        data=df,
+        x="UMAP1",
+        y="UMAP2",
+        s=s,
+        alpha=alpha,
+        hue=params,
+        ax=ax,
+        palette=palette,
+        legend=False,
+    )
+
+    if not points_only:
+        ax.xaxis.set_ticks([])
+        ax.yaxis.set_ticks([])
+        sns.despine()
+
+        plt.title(title)
+        f.legend(
+            handles=legend_handles,
+            loc="center left",
+            bbox_to_anchor=(1, 0.5),
+            title=params if isinstance(params, str) else ", ".join(params),
+            frameon=False,
+        )
+        plt.tight_layout(rect=[0, 0, 0.85, 0.95])
+    else:
+        ax.axis("off")
 
 plt.savefig(out_file, dpi=dpi, bbox_inches="tight")
 plt.close()
