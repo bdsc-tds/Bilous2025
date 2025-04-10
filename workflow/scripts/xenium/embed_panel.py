@@ -56,15 +56,6 @@ segmentation = panel.parents[1].stem
 condition = panel.parents[0].stem
 
 # read xenium samples
-# xenium_paths = {}
-# for donor in (donors := panel.iterdir()):
-#     for sample in (samples := donor.iterdir()):
-#         k = (segmentation, condition, panel.stem, donor.stem, sample.stem)
-#         sample_path = sample / "normalised_results/outs"
-
-#         xenium_paths[k] = sample_path
-
-# ads = readwrite.read_xenium_samples(xenium_paths, anndata_only=True, transcripts=False, sample_name_as_key=False)
 print("Reading samples")
 ads = {}
 for donor in (donors := panel.iterdir()):

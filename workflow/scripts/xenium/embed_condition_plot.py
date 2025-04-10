@@ -1,13 +1,14 @@
 import argparse
 import numpy as np
 import pandas as pd
+import scanpy as sc
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from pathlib import Path
 
 # Set up argument parser
-parser = argparse.ArgumentParser(description="Plot condition of Xenium donors.")
+parser = argparse.ArgumentParser(description="Plot panel of Xenium donors.")
 parser.add_argument("--condition", type=Path, help="Path to the condition file.")
 parser.add_argument("--embed_file", type=str, help="Path to the embedding file.")
 parser.add_argument("--cell_type_annotation_dir", type=Path, help="Path to the cell_type_annotation_dir.")
@@ -27,6 +28,7 @@ parser.add_argument(
     action="store_true",
     help="Remove axes, legend, title and only plot points",
 )
+parser.add_argument("--facet", action="store_true", help="Facet the plot by sample")
 
 args = parser.parse_args()
 
@@ -46,29 +48,40 @@ s = args.s
 alpha = args.alpha
 dpi = args.dpi
 points_only = args.points_only
+facet = args.facet
 
 if color == "sample":
     palette = pd.read_csv(sample_palette, index_col=0).iloc[:, 0]
-elif color == "panel":
-    palette = pd.read_csv(panel_palette, index_col=0).iloc[:, 0]
 else:
-    palette = pd.read_csv(cell_type_palette)[[color, f"cols_{color}"]].drop_duplicates().set_index(color).squeeze()
-
+    if color == "Level2.1":
+        palette_lvl2 = (
+            pd.read_csv(cell_type_palette)[["Level2", "cols_Level2"]].drop_duplicates().set_index("Level2").squeeze()
+        )
+        palette = pd.read_csv(cell_type_palette)[[color, f"cols_{color}"]].drop_duplicates().set_index(color).squeeze()
+        for k, v in palette_lvl2.items():
+            if k not in palette.index:
+                palette[k] = palette_lvl2[k]
+    else:
+        palette = pd.read_csv(cell_type_palette)[[color, f"cols_{color}"]].drop_duplicates().set_index(color).squeeze()
 
 # vars
 xenium_levels = ["segmentation", "condition", "panel", "donor", "sample", "cell_id"]
-segmentation = condition.parents[0]
+segmentation = condition.parents[0].stem
 
 # load umap
 obs = pd.read_parquet(embed_file)
 obs["cell_id"] = obs.index
 
+# fix name for proseg
+if "proseg" in segmentation.stem:
+    obs["segmentation"] = segmentation.stem
 
-if color in ["panel", "sample"]:
+
+if color == "sample":
     # plot sample as color, no need to load annotations
     df = obs
     params = color
-    title = f"Segmentation: {segmentation.stem}, condition: {condition.stem}"
+    title = f"Segmentation: {segmentation.stem}, condition: {condition.stem}, Panel: {panel.stem}"
 
 else:
     # read cell type annotation
@@ -136,37 +149,76 @@ print(
 
 
 # plot
-figsize = (10, 10) if points_only else (12, 10)
-f = plt.figure(figsize=figsize)
-ax = plt.subplot()
-
-sns.scatterplot(
-    data=df,
-    x="UMAP1",
-    y="UMAP2",
-    s=s,
-    alpha=alpha,
-    hue=params,
-    ax=ax,
-    palette=palette,
-    legend=False,
-)
-
-if not points_only:
-    ax.xaxis.set_ticks([])
-    ax.yaxis.set_ticks([])
-    sns.despine()
-
-    plt.title(title)
-    f.legend(
-        handles=legend_handles,
-        loc="center left",
-        bbox_to_anchor=(1, 0.5),
-        title=params if isinstance(params, str) else ", ".join(params),
-        frameon=False,
+if facet:
+    g = sns.FacetGrid(
+        df,
+        col="sample",
+        hue=params,
+        palette=palette,
+        col_wrap=6,  # Adjust based on how many samples you have
+        height=4,  # Adjust height of each facet
+        aspect=1,  # Adjust aspect ratio (width/height) of each facet
     )
-    plt.tight_layout(rect=[0, 0, 0.85, 0.95])
+
+    g.map(
+        sns.scatterplot,
+        "UMAP1",
+        "UMAP2",
+        s=s,
+        alpha=alpha,
+    )
+    g.set_titles(col_template="{col_name}", size=14)
+    g.set(xticks=[], yticks=[])
+    g.set_axis_labels("", "")
+    g.despine(left=True, bottom=True)
+
+    if not points_only:
+        g.fig.suptitle(title)
+        g.add_legend(
+            title=params if isinstance(params, str) else ", ".join(params),
+            loc="center left",
+            bbox_to_anchor=(1, 0.5),
+            frameon=False,
+        )
+        handles = g.legend.legend_handles
+        for handle in handles:
+            if hasattr(handle, "set_sizes"):
+                handle.set_sizes([20])
+        g.tight_layout(rect=[0, 0, 0.9, 0.96])
+
 else:
-    ax.axis("off")
+    figsize = (10, 10) if points_only else (12, 10)
+    f = plt.figure(figsize=figsize)
+    ax = plt.subplot()
+
+    sns.scatterplot(
+        data=df,
+        x="UMAP1",
+        y="UMAP2",
+        s=s,
+        alpha=alpha,
+        hue=params,
+        ax=ax,
+        palette=palette,
+        legend=False,
+    )
+
+    if not points_only:
+        ax.xaxis.set_ticks([])
+        ax.yaxis.set_ticks([])
+        sns.despine()
+
+        plt.title(title)
+        f.legend(
+            handles=legend_handles,
+            loc="center left",
+            bbox_to_anchor=(1, 0.5),
+            title=params if isinstance(params, str) else ", ".join(params),
+            frameon=False,
+        )
+        plt.tight_layout(rect=[0, 0, 0.85, 0.95])
+    else:
+        ax.axis("off")
+
 plt.savefig(out_file, dpi=dpi, bbox_inches="tight")
 plt.close()

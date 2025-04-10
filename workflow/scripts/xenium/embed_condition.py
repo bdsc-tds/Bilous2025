@@ -18,7 +18,7 @@ parser = argparse.ArgumentParser(description="Embed panel of Xenium donors.")
 parser.add_argument("--condition", type=Path, help="Path to the condition file.")
 parser.add_argument("--out_file", type=str, help="Path to the output file.")
 parser.add_argument("--xenium_processed_data_dir", type=Path, help="Path to the xenium processed data directories")
-parser.add_argument("--normalisation_method", type=str, help="Normalisation method")
+parser.add_argument("--normalisation", type=str, help="Normalisation method")
 parser.add_argument("--layer", type=str, help="Name of saved layer of the seurat object, data or scale_data")
 parser.add_argument("--n_comps", type=int, help="Number of components.")
 parser.add_argument("--n_neighbors", type=int, help="Number of neighbors.")
@@ -30,6 +30,7 @@ parser.add_argument("--max_counts", type=float, help="QC parameter from pipeline
 parser.add_argument("--max_features", type=float, help="QC parameter from pipeline config")
 parser.add_argument("--min_cells", type=int, help="QC parameter from pipeline config")
 parser.add_argument("--genes", type=str, nargs="*", default=[], help="Restrict data to these genes for the UMAP.")
+parser.add_argument("--samples", type=str, nargs="*", default=[], help="Restrict data to these samples for the UMAP.")
 
 args = parser.parse_args()
 
@@ -37,7 +38,7 @@ args = parser.parse_args()
 xenium_processed_data_dir = args.xenium_processed_data_dir
 condition = args.condition
 out_file = args.out_file
-normalisation_method = args.normalisation_method
+normalisation = args.normalisation
 layer = args.layer
 n_comps = args.n_comps
 n_neighbors = args.n_neighbors
@@ -49,44 +50,32 @@ max_counts = args.max_counts
 max_features = args.max_features
 min_cells = args.min_cells
 genes = args.genes
-
+samples = args.samples
 
 segmentation = condition.parents[0].stem
 
 # read xenium samples
-# xenium_paths = {}
-# for donor in (donors := panel.iterdir()):
-#     for sample in (samples := donor.iterdir()):
-#         k = (segmentation, condition, panel.stem, donor.stem, sample.stem)
-#         sample_path = sample / "normalised_results/outs"
-
-#         xenium_paths[k] = sample_path
-
-# ads = readwrite.read_xenium_samples(xenium_paths, anndata_only=True, transcripts=False, sample_name_as_key=False)
 print("Reading samples")
 ads = {}
 for panel in (panels := condition.iterdir()):
     for donor in (donors := panel.iterdir()):
-        for sample in (samples := donor.iterdir()):
-            print(panel.stem, donor.stem, sample.stem)
+        for sample in (samples_ := donor.iterdir()):
+            if len(samples) and sample.stem not in samples:
+                continue
+
+                print(donor.stem, sample.stem)
 
             if segmentation == "proseg_expected":
-                k = ("proseg", condition.stem, panel.stem, donor.stem, sample.stem)
+                k = ("proseg", condition, panel.stem, donor.stem, sample.stem)
                 name_sample = "/".join(k)
                 sample_dir = xenium_processed_data_dir / f"{name_sample}/raw_results"
             else:
-                k = (
-                    segmentation.replace("proseg_counts", "proseg"),
-                    condition.stem,
-                    panel.stem,
-                    donor.stem,
-                    sample.stem,
-                )
+                k = (segmentation.replace("proseg_mode", "proseg"), condition, panel.stem, donor.stem, sample.stem)
                 name_sample = "/".join(k)
                 sample_dir = xenium_processed_data_dir / f"{name_sample}/normalised_results/outs"
 
-            sample_normalised_counts_path = sample / f"{normalisation_method}/normalised_counts/{layer}.parquet"
-            sample_idx_path = sample / f"{normalisation_method}/normalised_counts/cells.parquet"
+            sample_normalised_counts_path = sample / f"{normalisation}/normalised_counts/{layer}.parquet"
+            sample_idx_path = sample / f"{normalisation}/normalised_counts/cells.parquet"
 
             # read normalised data
             X_normalised = pd.read_parquet(sample_normalised_counts_path)

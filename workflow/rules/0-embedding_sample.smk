@@ -27,9 +27,9 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
         for panel in (panels := condition.iterdir()):
             for donor in (donors := panel.iterdir()):
                 for sample in (samples := donor.iterdir()):
-
                     for normalisation in normalisations:
                         for layer in layers:
+                            
                             k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,normalisation)
                             name = '/'.join(k)
                             rule_name = '/'.join(k+(layer,))

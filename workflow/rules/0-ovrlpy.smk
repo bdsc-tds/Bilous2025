@@ -53,10 +53,10 @@ for segmentation in xenium_dir.iterdir():
                             # out_file_doublet_df=out_file_doublet_df,
                         params:
                             proseg_format='--proseg_format' if segmentation.stem=='proseg' else '',
-                        threads: 1
+                        threads: 8
                         resources:
                             mem='200GB',
-                            runtime='2d',
+                            runtime='3d',
                         conda:
                             "spatial"
                         shell:
