@@ -26,7 +26,7 @@ radius = 10
 n_permutations = 30
 n_splits= 5
 top_n = 20
-scoring = 'f1'
+scoring = 'precision'
 markers_modes = ['diffexpr']#,'common_markers'] #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/cellmarker_cell_types_markers.json'
 
 # resolvi params

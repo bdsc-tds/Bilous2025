@@ -155,7 +155,7 @@ if facet:
         col="sample",
         hue=params,
         palette=palette,
-        col_wrap=4,  # Adjust based on how many samples you have (e.g., 3 columns wide)
+        col_wrap=6,  # Adjust based on how many samples you have
         height=4,  # Adjust height of each facet
         aspect=1,  # Adjust aspect ratio (width/height) of each facet
     )

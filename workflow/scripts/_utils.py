@@ -390,7 +390,7 @@ def get_mean_cell_identity_score_scrna(
     return df
 
 
-def get_cosine_similarity_score(pbs_xenium, pbs_scrna, labels_key, correction_methods, columns=None):
+def get_cosine_similarity_score(pbs_xenium, pb_scrna, labels_key, correction_methods, columns=None):
     """
     Calculates the cosine similarity score between each cell type's expression profile and its
     corresponding pseudobulk expression profile.
@@ -400,8 +400,8 @@ def get_cosine_similarity_score(pbs_xenium, pbs_scrna, labels_key, correction_me
             AnnData objects. The outer dictionary's keys are correction methods, and the
             inner dictionary's keys are sample identifiers. Each inner dictionary value
             is an AnnData object. Assumes `ads[correction_method][k]` is an AnnData object.
-        pbs_scrna (Dict[str, anndata.AnnData]): A dictionary structure containing pseudobulk expression
-            profiles. The dictionary's keys are tissue identifiers corresponding to keys in `pbs_xenium`.
+        pb_scrna (anndata.AnnData): Anndata containing pseudobulk expression
+            profiles.
         labels_key (str): The key in `pb_xenium.obs` that contains cell type labels.
         correction_methods (List[str]): A list of correction methods to iterate through.
         columns (list): optional column names for the returned DataFrame
@@ -420,20 +420,18 @@ def get_cosine_similarity_score(pbs_xenium, pbs_scrna, labels_key, correction_me
         for k, pb_xenium in pbs_xenium[correction_method].items():
             print(correction_method, k)
             if pb_xenium is not None:
-                tissue = k[1]
-                pb_scrna = pbs_scrna[tissue]
-
-                genes_tissue = np.intersect1d(pb_xenium.var_names, pb_scrna.var_names)
+                common_genes = np.intersect1d(pb_xenium.var_names, pb_scrna.var_names)
                 unique_ctis = pb_xenium.obs_names.unique()
+
                 for cti in unique_ctis:
                     if cti in pb_scrna.obs_names:
-                        x = pb_xenium[pb_xenium.obs_names == cti, genes_tissue].X.toarray().squeeze()
-                        y = pb_scrna[pb_scrna.obs_names == cti, genes_tissue].X.toarray().squeeze()
+                        x = pb_xenium[pb_xenium.obs_names == cti, common_genes].X.toarray().squeeze()
+                        y = pb_scrna[pb_scrna.obs_names == cti, common_genes].X.toarray().squeeze()
 
                         cosine_sim = 1 - scipy.spatial.distance.cosine(x, y)
                         data.append((*k, correction_method, cti, cosine_sim))  # Append cell type to the data
                     else:
-                        print("Warning: cell type", cti, "not found in pseudobulk", tissue)
+                        print("Warning: cell type", cti, "not found in pseudobulk")
 
     # Create the DataFrame from the collected data
     df = pd.DataFrame(data, columns=columns)

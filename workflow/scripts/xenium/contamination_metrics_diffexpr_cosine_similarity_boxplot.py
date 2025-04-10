@@ -9,12 +9,16 @@ import pandas as pd
 import sys
 import matplotlib.patches as mpatches
 import seaborn as sns
+import scanpy as sc
 import matplotlib.pyplot as plt
+import gc
 from pathlib import Path
 
 sys.path.append("workflow/scripts/")
 import _utils
 import readwrite
+
+cfg = readwrite.config()
 
 sns.set_style("ticks")
 
@@ -24,6 +28,10 @@ parser.add_argument("--condition", type=str, help="condition name.")
 parser.add_argument("--panel", type=str, help="panel name.")
 parser.add_argument("--correction_methods", type=str, nargs="*", default=[], help="correction methods list.")
 parser.add_argument("--results_dir", type=Path, help="Path to the results dir.")
+parser.add_argument("--xenium_dir", type=Path, help="Path to the xenium dir.")
+parser.add_argument("--count_correction_dir", type=Path, help="Path to the count_correction dir.")
+parser.add_argument("--scrnaseq_processed_data_dir", type=Path, help="Path to the scrnaseq_processed_data dir.")
+parser.add_argument("--seurat_to_h5_dir", type=Path, help="Path to the seurat_to_h5 dir.")
 parser.add_argument("--std_seurat_analysis_dir", type=Path, help="Path to the std seurat analysis dir.")
 parser.add_argument("--cell_type_annotation_dir", type=Path, help="Path to the cell type annotation dir.")
 parser.add_argument("--out_dir", type=Path, help="Path to the output dir.")
@@ -32,9 +40,6 @@ parser.add_argument("--layer", type=str, help="Name of saved layer of the seurat
 parser.add_argument("--reference", type=str, help="annotation reference")
 parser.add_argument("--method", type=str, help="annotation method")
 parser.add_argument("--level", type=str, help="annotation level")
-parser.add_argument("--n_comps", type=int, help="Number of components.")
-parser.add_argument("--max_n_cells", type=int, help="Max number of cells to use.")
-parser.add_argument("--top_n", type=int, help="contamination diffexpr script parameter")
 parser.add_argument("--mixture_k", type=int, help="ResolVI parameter")
 parser.add_argument("--num_samples", type=int, help="ResolVI parameter")
 parser.add_argument("--use_precomputed", action="store_true", help="Use precomputed data.")
@@ -48,7 +53,11 @@ condition = args.condition
 panel = args.panel
 correction_methods = args.correction_methods
 results_dir = args.results_dir
+xenium_dir = args.xenium_dir
+count_correction_dir = args.count_correction_dir
+scrnaseq_processed_data_dir = args.scrnaseq_processed_data_dir
 cell_type_annotation_dir = args.cell_type_annotation_dir
+seurat_to_h5_dir = args.seurat_to_h5_dir
 std_seurat_analysis_dir = args.std_seurat_analysis_dir
 out_dir = args.out_dir
 normalisation = args.normalisation
@@ -56,19 +65,68 @@ layer = args.layer
 reference = args.reference
 method = args.method
 level = args.level
-n_comps = args.n_comps
-max_n_cells = args.max_n_cells
-top_n = args.top_n
 mixture_k = args.mixture_k
 num_samples = args.num_samples
 count_correction_palette = args.count_correction_palette
 use_precomputed = args.use_precomputed
 dpi = args.dpi
 extension = args.extension
-args = parser.parse_args()
+
+
+# condition = ""
+# panel = ""
+# correction_methods = ""
+# normalisation = "lognorm"
+# layer = "data"
+# reference = "matched_reference_combo"
+# method = ""
+# level = ""
+# mixture_k = ""
+# num_samples = ""
+# count_correction_palette = ""
+# use_precomputed = ""
+# dpi = ""
+# extension = ""
+
+
+# xenium_dir = Path(cfg["xenium_processed_data_dir"])
+# count_correction_dir = Path(cfg["xenium_count_correction_dir"])
+# std_seurat_analysis_dir = Path(cfg["xenium_std_seurat_analysis_dir"])
+# cell_type_annotation_dir = Path(cfg["xenium_cell_type_annotation_dir"])
+# scrnaseq_processed_data_dir = Path(cfg["scrnaseq_processed_data_dir"])
+# results_dir = Path(cfg["results_dir"])
+# palette_dir = Path(cfg["xenium_metadata_dir"])
+# figures_dir = Path(cfg["figures_dir"])
+# seurat_to_h5_dir = results_dir / "seurat_to_h5"
+
+# Params
+# probably only need to run for lognorm data
+signal_integrity_thresholds = [0.5, 0.7]
+correction_methods = ["raw", "split_fully_purified", "resolvi", "resolvi_supervised"] + [
+    f"ovrlpy_correction_{signal_integrity_threshold=}" for signal_integrity_threshold in signal_integrity_thresholds
+]
+normalisations = [
+    "lognorm",
+]
+layers = [
+    "data",
+]
+references = ["matched_reference_combo"]
+methods = ["rctd_class_aware"]
+levels = ["Level2.1"]
+use_precomputed = True
+dpi = 300
+extension = "png"
+
+# resolvi params
+num_samples = 30
+mixture_k = 50
+
+segmentation = sorted(xenium_dir.iterdir())[0]  # arbitrary segmentation just to loop over conditions and panels
 
 
 # Params
+layer_scrnaseq = "RNA_counts"
 xenium_levels = ["segmentation", "condition", "panel", "donor", "sample"]
 order = ["breast", "chuvio", "lung", "5k"]
 hue_segmentation = "segmentation"
@@ -95,56 +153,189 @@ hue_correction_order = [
     "SPLIT",
 ]
 
-rank_metrics = ["logfoldchanges", "-log10pvals_x_logfoldchanges", "-log10pvals_x_sign_logfoldchanges", "mean_zscore"]
-plot_metrics = ["n_cells", "mean_n_counts", "mean_n_genes", "median_n_genes"]
+plot_metric = "cosine_similarity"
 
 # %% [markdown]
-# # Load results diffexpr
+# # Load counts and corrected counts
 
-# %%
-dfs = readwrite.read_contamination_metrics_results(
-    results_dir,
-    correction_methods,
-    std_seurat_analysis_dir,
-    reference,
-    method,
-    level,
-    mixture_k,
-    num_samples,
-    normalisation,
-    layer,
-    ref_condition=condition,
-    ref_panel=panel,
-    evaluation="diffexpr",
-)
+xenium_paths = {}
+xenium_annot_paths = {}
 
+for correction_method in correction_methods:
+    xenium_paths[correction_method] = {}
+    xenium_annot_paths[correction_method] = {}
+
+    for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
+        if segmentation.stem == "proseg_mode":
+            continue
+        for condition_dir in (conditions := segmentation.iterdir()):
+            if condition_dir.stem != condition:
+                continue
+            for panel_dir in (panels := condition_dir.iterdir()):
+                if panel_dir.stem != panel:
+                    continue
+                for donor in (donors := panel_dir.iterdir()):
+                    for sample in (samples := donor.iterdir()):
+                        k = (segmentation.stem, condition_dir.stem, panel_dir.stem, donor.stem, sample.stem)
+                        name = "/".join(k)
+
+                        # raw samples
+                        if "proseg" in segmentation.stem:
+                            k_proseg = ("proseg", condition_dir.stem, panel_dir.stem, donor.stem, sample.stem)
+                            name_proseg = "/".join(k_proseg)
+                            sample_dir = xenium_dir / f"{name_proseg}/raw_results"
+                        else:
+                            sample_dir = xenium_dir / f"{name}/normalised_results/outs"
+
+                        sample_annotation = (
+                            cell_type_annotation_dir
+                            / f"{name}/{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet"
+                        )
+
+                        if correction_method == "raw":
+                            xenium_paths[correction_method][k] = sample_dir
+                            xenium_annot_paths[correction_method][k] = sample_annotation
+
+                        # corrected samples
+                        else:
+                            if correction_method == "split_fully_purified":
+                                name_corrected = f"{name}/{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/split_fully_purified/"
+                                sample_corrected_counts_path = (
+                                    count_correction_dir / f"{name_corrected}/corrected_counts.h5"
+                                )
+
+                            else:
+                                if correction_method == "resolvi":
+                                    name_corrected = f"{name}/{mixture_k=}/{num_samples=}/"
+                                elif correction_method == "resolvi_supervised":
+                                    name_corrected = f"{name}/{normalisation}/reference_based/{reference}/{method}/{level}/{mixture_k=}/{num_samples=}"
+                                elif "ovrlpy" in correction_method:
+                                    name_corrected = f"{name}"
+
+                                sample_corrected_counts_path = (
+                                    results_dir / f"{correction_method}/{name_corrected}/corrected_counts.h5"
+                                )
+                            # sample_normalised_counts = (
+                            #     std_seurat_analysis_dir / f"{name}/{normalisation}/normalised_counts/{layer}.parquet"
+                            # )
+                            # sample_idx = (
+                            #     std_seurat_analysis_dir / f"{name}/{normalisation}/normalised_counts/cells.parquet"
+                            # )
+
+                            xenium_paths[correction_method][k] = sample_corrected_counts_path
+
+
+ads = readwrite.read_count_correction_samples(xenium_paths, correction_methods[1:])
+ads["raw"] = readwrite.read_xenium_samples(xenium_paths["raw"], anndata=True, transcripts=False, max_workers=6)
+
+# fix obs names for proseg expected, load cell types, log normalize data
+# filter out cells without labels (this will apply QC thresholds as well since annotation is done after QC)
+pbs_xenium = {}
+for correction_method in correction_methods:
+    pbs_xenium[correction_method] = {}
+
+    for k, ad in ads[correction_method].items():
+        if ad is not None:
+            if correction_method == "raw":
+                if k[0] == "proseg_expected":
+                    ad.obs_names = ad.obs_names.astype(str)
+                    ad.obs_names = "proseg-" + ad.obs_names
+
+                # filter cells and read labels for raw
+                ad.obs[level] = pd.read_parquet(xenium_annot_paths["raw"][k]).set_index("cell_id").iloc[:, 0]
+
+                ad = ad[ad.obs[level].notna()]
+                if level == "Level2.1":
+                    # for custom Level2.1, simplify subtypes
+                    ad.obs.loc[ad.obs[level].str.contains("malignant"), level] = "malignant cell"
+                    ad.obs.loc[ad.obs[level].str.contains("T cell"), level] = "T cell"
+
+                # remove tissue from cell type name
+                ad.obs[level] = ad.obs[level].str.replace(r" of .+", "", regex=True)
+
+                ads["raw"][k] = ad
+
+            # filter cells and add labels from raw
+            if correction_method != "raw":
+                ad.obs[level] = ads["raw"][k].obs[level]
+                ad = ad[[c for c in ads["raw"][k].obs_names if c in ad.obs_names]]
+                ads[correction_method][k] = ad
+
+            pbs_xenium[correction_method][k] = _utils.pseudobulk(ads[correction_method][k], level)
+            sc.pp.normalize_total(pbs_xenium[correction_method][k])
+            sc.pp.log1p(pbs_xenium[correction_method][k])
+
+# %% load scRNAseq data
+pbs_scrna = {}
+for ref in (refs := scrnaseq_processed_data_dir.iterdir()):
+    ref_name = ref.stem
+    ref_dir = seurat_to_h5_dir / ref_name
+
+    if "matched_combo_standard" not in ref_name:
+        continue
+
+    print(ref_name)
+
+    ad = sc.read_10x_h5(ref_dir / f"{layer_scrnaseq}.h5")
+    ad.obs[level] = pd.read_parquet(ref_dir / "metadata.parquet").set_index("cell_id")[level]
+    ad = ad[ad.obs[level].notna()]
+
+    if level == "Level2.1":
+        # for custom Level2.1, simplify subtypes
+        ad.obs.loc[ad.obs[level].str.contains("malignant"), level] = "malignant cell"
+        ad.obs.loc[ad.obs[level].str.contains("T cell"), level] = "T cell"
+    # remove tissue from cell type name
+    ad.obs[level] = ad.obs[level].str.replace(r" of .+", "", regex=True)
+
+    # Prepare pseudo bulk data
+    pbs_scrna[ref_name] = _utils.pseudobulk(ad, level)
+    sc.pp.normalize_total(pbs_scrna[ref_name])
+    sc.pp.log1p(pbs_scrna[ref_name])
+
+    del ad
+    gc.collect()
+
+pbs_scrna["NSCLC"] = pbs_scrna.pop("matched_combo_standard_lung_specific")
+pbs_scrna["breast"] = pbs_scrna.pop("matched_combo_standard_breast_specific")
+pb_scrna = pbs_scrna[condition]
 
 # %% [markdown]
 # # Plot decontamination results diffexpr
 
 # %%
-
 df_count_correction_palette = pd.read_csv(count_correction_palette, index_col=0).iloc[:, 0]
 
+palette = pd.read_csv(count_correction_palette, index_col=0).iloc[:, 0]
 
-for plot_metric in plot_metrics:
-    out_file = out_dir / f"{panel}_{plot_metric}.png"
+# get cell identity score df
+df_all = _utils.get_cosine_similarity_score(
+    pbs_xenium,
+    pb_scrna,
+    level,
+    correction_methods,
+    columns=xenium_levels + ["correction_method", "cti", "cosine_similarity"],
+)
+_utils.rename_correction_methods(df_all)
 
-    df = _utils.get_df_summary_stats_plot(dfs, plot_metric=plot_metric)
-    df = df.query("panel == @panel")
+print(df_all.shape)
+print(df_all["cti"].unique())
 
-    # rename proseg
-    df.loc[df["segmentation"] == "proseg_expected", "segmentation"] = "proseg"
-    df_count_correction_palette = df_count_correction_palette.rename(index={"proseg_expected": "proseg"})
+for cti in df_all["cti"].unique():
+    df = df_all.query(f"panel == '{panel}' and cti == '{cti}'")
+    cti_name = cti.replace(" ", "_")
+
+    out_file = out_dir / f"{panel}_{cti_name}_{plot_metric}.png"
+    print(cti, out_file)
 
     # plotting params, palette
+    title = f"Cell type identity score for {cti=}"
     unique_labels = [c for c in hue_correction_order if c in np.unique(df[hue_correction].dropna())]
     unique_labels = unique_labels + [c for c in np.unique(df[hue_correction].dropna()) if c not in unique_labels]
-    palette = {u: df_count_correction_palette[u] for u in unique_labels}
+    palette = {u: palette[u] for u in unique_labels}
     legend_handles = [mpatches.Patch(color=color, label=label) for label, color in palette.items()]
 
-    ###  boxplot
-    f = plt.figure(figsize=(5, 3))
+    ### hypergeometric pvalue boxplot
+    f = plt.figure(figsize=(10, 4))
     ax = plt.subplot()
     g = sns.boxplot(
         df,
@@ -156,21 +347,11 @@ for plot_metric in plot_metrics:
         palette=palette,
         ax=ax,
         order=[s for s in hue_segmentation_order if s in df["segmentation"].unique()],
-        log_scale=True if plot_metric == "n_cells" else False,
-        showfliers=True,
     )
 
-    if plot_metric == "n_cells":
-        ax.set_ylim(None, 1e6)
     sns.despine(offset=10, trim=True)
     ax.yaxis.grid(True)
-    ax.yaxis.set_tick_params(labelsize=12)  # If you also want to change the y-axis numbers
-    if plot_metric == '"-log10pvalue"':
-        ax.set.ylabel(r"$-\log_{10} \text{ p-value}$", fontsize=14)
-    else:
-        ax.set_ylabel(plot_metric, fontsize=14)
-    plt.setp(ax.get_xticklabels(), rotation=45, fontsize=12)
-    # title = f"{plot_metric} for {panel}"
+
     # plt.suptitle(title)
     # f.legend(
     #     handles=legend_handles,
@@ -179,4 +360,5 @@ for plot_metric in plot_metrics:
     #     title=hue_correction,
     #     frameon=False,
     # )
+    # plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.savefig(out_file, dpi=dpi, bbox_inches="tight")
