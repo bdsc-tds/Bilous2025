@@ -30,10 +30,8 @@ max_features = float("inf")
 min_cells = 5
 
 
-radius = 10
-n_permutations = 30
+radius = 15
 top_n = 20
-scoring = 'f1'
 markers_modes = ['diffexpr']#,'common_markers'] #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/cellmarker_cell_types_markers.json'
 
 # resolvi params
@@ -62,7 +60,7 @@ for markers_mode in markers_modes:
 
                                                 k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
                                                 name = '/'.join(k)
-                                                name_params = f"{markers_mode}_{radius=}_{n_permutations=}_{top_n=}"
+                                                name_params = f"{markers_mode}_{radius=}_{top_n=}"
 
                                                 if 'proseg' in segmentation.stem:
                                                     k_proseg = ('proseg',condition.stem,panel.stem,donor.stem,sample.stem)
@@ -125,7 +123,6 @@ for markers_mode in markers_modes:
                                                             out_file_adata_obs=out_file_adata_obs,
                                                         params:
                                                             radius=radius,
-                                                            n_permutations=n_permutations,
                                                             n_repeats=n_repeats,
                                                             top_n=top_n,
                                                             scoring=scoring,

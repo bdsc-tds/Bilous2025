@@ -1095,7 +1095,7 @@ def _read_contamination_metrics_results_sample(
 
     k = (segmentation.stem, condition.stem, panel.stem, donor.stem, sample.stem)
     name = "/".join(k)
-    name_params_diffexpr = f"{markers_mode}_{radius=}_{n_permutations=}_{top_n=}_{scoring}"
+    name_params_diffexpr = f"{markers_mode}_{radius=}_{top_n=}"
     name_params_logreg = f"{markers_mode}_{radius=}_{n_permutations=}_{n_splits=}_{top_n=}_{scoring}_{cv_mode}"
 
     # folder name

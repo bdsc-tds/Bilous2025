@@ -26,7 +26,7 @@ max_features = float("inf")
 min_cells = 5
 
 
-radius = 10
+radius = 15
 n_splits = 5
 n_repeats = 5
 n_permutations = 30
@@ -58,7 +58,7 @@ for markers_mode in markers_modes:
                                             k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
                                             name = '/'.join(k)
 
-                                            name_params_diffexpr = f"{markers_mode}_{radius=}_{n_permutations=}_{top_n=}"
+                                            name_params_diffexpr = f"{markers_mode}_{radius=}_{top_n=}"
                                             name_params = f"{markers_mode}_{radius=}_{n_permutations=}_{n_splits=}_{top_n=}_{scoring}_{cv_mode}"
 
                                             if 'proseg' in segmentation.stem:

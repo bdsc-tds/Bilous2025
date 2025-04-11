@@ -40,7 +40,6 @@ def parse_args():
     parser.add_argument("--out_file_adata_obs", type=str, help="path to the adata.obs output file")
     parser.add_argument("--radius", type=int, help="n° of neighbors to use to define the spatial graph")
     parser.add_argument("--top_n", type=int, help="n° of top genes to evaluate for hypergeometric test")
-    parser.add_argument("--scoring", type=str, help="sklearn scoring metric to use for logreg")
     parser.add_argument(
         "--markers",
         type=str,

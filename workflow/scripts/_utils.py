@@ -227,7 +227,7 @@ def logreg(
         cv = list(SpatialClusterGroupKFold(algorithm="bisectingkmeans", n_splits=n_splits).split(spatial_coords, y))
 
         # check that all splits have more than one class
-        single_class_splits = [len(np.unique(y[train])) == 1 for (train, test) in cv]
+        single_class_splits = [(len(np.unique(y[train])) == 1 or len(np.unique(y[test])) == 1) for (train, test) in cv]
         if any(single_class_splits):
             if accept_partial_cv:
                 cv = [cv[i] for i in range(len(cv)) if not single_class_splits[i]]

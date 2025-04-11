@@ -22,7 +22,7 @@ methods = ['rctd_class_aware']
 levels = ['Level2.1']
 use_precomputed = True
 
-radius = 10
+radius = 15
 n_permutations = 30
 n_splits= 5
 top_n = 20

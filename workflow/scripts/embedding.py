@@ -15,11 +15,6 @@ if importlib.util.find_spec("rapids_singlecell") is not None:
 def check_gpu_availability():
     import torch
 
-    if torch.cuda.is_available():
-        return True
-    else:
-        return False
-
 
 def umap(
     adata,
@@ -37,18 +32,13 @@ def umap(
         "use_rep",
     ]
 
-    neighbors_params = dict(
-        zip(neighbors_params_keys, [n_neighbors, "umap", 0, metric, use_rep])
-    )
+    neighbors_params = dict(zip(neighbors_params_keys, [n_neighbors, "umap", 0, metric, use_rep]))
 
     if "neighbors" not in adata.uns:
         compute_neighbors = True
     else:
         compute_neighbors = any(
-            [
-                adata.uns["neighbors"]["params"][k] != neighbors_params[k]
-                for k in neighbors_params_keys
-            ]
+            [adata.uns["neighbors"]["params"][k] != neighbors_params[k] for k in neighbors_params_keys]
         )
 
     if backend == "gpu" and check_gpu_availability():
@@ -56,12 +46,8 @@ def umap(
         rsc.get.anndata_to_GPU(adata)
 
         if compute_neighbors:
-            rsc.pp.neighbors(
-                adata, use_rep=use_rep, n_neighbors=n_neighbors, metric=metric
-            )
-        adata.obsm[f"{use_rep}_umap"] = rsc.tl.umap(
-            adata, copy=True, min_dist=min_dist
-        ).obsm["X_umap"]
+            rsc.pp.neighbors(adata, use_rep=use_rep, n_neighbors=n_neighbors, metric=metric)
+        adata.obsm[f"{use_rep}_umap"] = rsc.tl.umap(adata, copy=True, min_dist=min_dist).obsm["X_umap"]
 
         print("Transferring data back to CPU...")
         rsc.get.anndata_to_CPU(adata)
@@ -70,9 +56,7 @@ def umap(
             print("GPU not available. Switching to CPU backend...")
 
         if compute_neighbors:
-            sc.pp.neighbors(
-                adata, use_rep=use_rep, n_neighbors=n_neighbors, metric=metric
-            )
+            sc.pp.neighbors(adata, use_rep=use_rep, n_neighbors=n_neighbors, metric=metric)
         sc.tl.umap(adata, min_dist=min_dist)
         adata.obsm[f"{use_rep}_umap"] = adata.obsm["X_umap"]
 
