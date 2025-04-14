@@ -125,7 +125,6 @@ for markers_mode in markers_modes:
                                                             radius=radius,
                                                             n_repeats=n_repeats,
                                                             top_n=top_n,
-                                                            scoring=scoring,
                                                             markers=markers_mode,
                                                             min_counts=min_counts,
                                                             min_features=min_features,
@@ -157,7 +156,6 @@ for markers_mode in markers_modes:
                                                                 --out_file_adata_obs {output.out_file_adata_obs} \
                                                                 --radius {params.radius} \
                                                                 --top_n {params.top_n} \
-                                                                --scoring {params.scoring} \
                                                                 --markers {params.markers} \
                                                                 --min_counts {params.min_counts} \
                                                                 --min_features {params.min_features} \

@@ -82,6 +82,12 @@ for markers_mode in markers_modes:
                                         num_samples=num_samples,
                                         use_precomputed="--use_precomputed" if use_precomputed else "",
                                         count_correction_palette=count_correction_palette,
+                                        radius=radius,
+                                        cv_mode=cv_mode,
+                                        n_splits=n_splits,
+                                        n_permutations=n_permutations,
+                                        n_repeats=n_repeats,
+                                        scoring=scoring,
                                         dpi=dpi,
                                         extension=extension,
                                     threads: 1
@@ -114,6 +120,12 @@ for markers_mode in markers_modes:
                                             --num_samples {params.num_samples} \
                                             {params.use_precomputed} \
                                             --count_correction_palette {params.count_correction_palette} \
+                                            --radius {params.radius} \
+                                            --cv_mode {params.cv_mode} \
+                                            --n_splits {params.n_splits} \
+                                            --n_permutations {params.n_permutations} \
+                                            --n_repeats {params.n_repeats} \
+                                            --scoring {params.scoring} \
                                             --dpi {params.dpi} \
                                             --extension {params.extension} \
 

@@ -36,9 +36,6 @@ for correction_method in correction_methods:
             continue
         for condition in (conditions := segmentation.iterdir()): 
             for panel in (panels := condition.iterdir()):
-                if panel.stem == '5k' and 'ovrlpy' in correction_method:
-                    # 5k samples fail even with 1Tb memory
-                    continue
                 for normalisation in normalisations:
                     for layer in layers: 
                         for reference in references:

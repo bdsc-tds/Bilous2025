@@ -113,8 +113,14 @@ dfs = readwrite.read_contamination_metrics_results(
     num_samples,
     normalisation,
     layer,
-    ref_condition=condition,
-    ref_panel=panel,
+    radius=15,
+    n_splits=5,
+    n_permutations=30,
+    n_repeats=5,
+    top_n=20,
+    markers_mode="diffexpr",
+    cv_mode="spatial",
+    scoring="precision",
     evaluation="diffexpr",
 )
 

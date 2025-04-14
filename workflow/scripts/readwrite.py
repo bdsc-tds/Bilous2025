@@ -1046,12 +1046,12 @@ def _read_contamination_metrics_results_sample(
     sample: Path,
     normalisation: str,
     layer: str,
-    markers_mode="diffexpr",
     radius=10,
     n_splits=5,
     n_permutations=30,
     n_repeats=5,
     top_n=20,
+    markers_mode="diffexpr",
     cv_mode="spatial",
     scoring="precision",
     evaluation: list = "diffexpr",
@@ -1074,11 +1074,12 @@ def _read_contamination_metrics_results_sample(
         sample (Path): Path to the sample directory.
         normalisation (str): The normalisation method used.
         layer (str): The layer used.
-        markers_mode (str): The markers mode used.
         radius (int): The radius used.
         n_permutations (int): The number of permutations used.
         n_repeats (int): The number of repeats used.
         top_n (int): The top N used.
+        markers_mode (str): The markers mode used.
+        cv_mode (str): The cross-validation mode used.
         scoring (str): The scoring metric used.
         evaluation (str): evaluation test to load, 'diffexpr' or 'logreg'.
 
@@ -1205,12 +1206,14 @@ def read_contamination_metrics_results(
     num_samples: int,
     normalisation: str,
     layer: str,
-    markers_mode="diffexpr",
     radius=10,
+    n_splits=5,
     n_permutations=30,
     n_repeats=5,
     top_n=20,
-    scoring="f1",
+    markers_mode="diffexpr",
+    cv_mode="spatial",
+    scoring="precision",
     ref_condition: str = None,
     ref_panel: str = None,
     evaluation: str = "diffexpr",
@@ -1229,8 +1232,15 @@ def read_contamination_metrics_results(
         num_samples (int): Number of samples.
         normalisation (str): The normalisation method used.
         layer (str): The layer used.
+        radius (int): The radius used.
+        n_splits (int): The number of splits used.
+        n_permutations (int): The number of permutations used.
+        n_repeats (int): The number of repeats used.
+        top_n (int): The top N used.
+        markers_mode (str): The markers mode used.
+        cv_mode (str): The cross-validation mode used.
+        scoring (str): The scoring metric used.
         evaluation (str): evaluation test to load, 'diffexpr' or 'logreg'.
-
     Returns:
         dict: A dictionary where keys are correction methods, and values are dictionaries mapping sample keys
               to DataFrames.
@@ -1268,11 +1278,13 @@ def read_contamination_metrics_results(
                                         sample,
                                         normalisation,
                                         layer,
-                                        markers_mode,
                                         radius,
+                                        n_splits,
                                         n_permutations,
                                         n_repeats,
                                         top_n,
+                                        markers_mode,
+                                        cv_mode,
                                         scoring,
                                         evaluation,
                                     )

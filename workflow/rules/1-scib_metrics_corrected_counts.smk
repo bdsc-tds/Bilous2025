@@ -41,8 +41,8 @@ for correction_method in correction_methods:
     for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
         if segmentation.stem in ['proseg_mode']:
             continue
-        if correction_method == 'split_fully_purified' and segmentation.stem in ['10x_mm_5um']:
-            continue
+        # if correction_method == 'split_fully_purified' and segmentation.stem in ['10x_mm_5um']:
+        #     continue
         for condition in (conditions := segmentation.iterdir()): 
             for panel in (panels := condition.iterdir()):
                 for normalisation in normalisations:

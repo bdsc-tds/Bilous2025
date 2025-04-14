@@ -39,6 +39,12 @@ parser.add_argument("--mixture_k", type=int, help="ResolVI parameter")
 parser.add_argument("--num_samples", type=int, help="ResolVI parameter")
 parser.add_argument("--use_precomputed", action="store_true", help="Use precomputed data.")
 parser.add_argument("--count_correction_palette", type=Path, help="Path to the count correction palette file.")
+parser.add_argument("--radius", type=int, help="n° of neighbors to use to define the spatial graph")
+parser.add_argument("--cv_mode", type=str, help="cv_mode for logreg")
+parser.add_argument("--n_splits", type=int, help="n° of splits for logreg random prediction baseline")
+parser.add_argument("--n_permutations", type=int, help="n° of permutations for logreg random prediction baseline")
+parser.add_argument("--n_repeats", type=int, help="n° of repeats for logreg feature importances by permutations")
+parser.add_argument("--scoring", type=str, help="sklearn scoring metric to use for logreg")
 parser.add_argument("--dpi", type=int, help="Figure DPI.")
 parser.add_argument("--extension", type=str, help="conservation metric to plot")
 args = parser.parse_args()
@@ -61,10 +67,18 @@ max_n_cells = args.max_n_cells
 top_n = args.top_n
 mixture_k = args.mixture_k
 num_samples = args.num_samples
-count_correction_palette = args.count_correction_palette
 use_precomputed = args.use_precomputed
+count_correction_palette = args.count_correction_palette
+radius = args.radius
+cv_mode = args.cv_mode
+n_splits = args.n_splits
+n_permutations = args.n_permutations
+n_repeats = args.n_repeats
+scoring = args.scoring
 dpi = args.dpi
 extension = args.extension
+
+
 args = parser.parse_args()
 
 
@@ -114,8 +128,14 @@ dfs = readwrite.read_contamination_metrics_results(
     num_samples,
     normalisation,
     layer,
-    ref_condition=condition,
-    ref_panel=panel,
+    radius=radius,
+    n_splits=n_splits,
+    n_permutations=n_permutations,
+    n_repeats=n_repeats,
+    top_n=top_n,
+    markers_mode="diffexpr",
+    cv_mode=cv_mode,
+    scoring=scoring,
     evaluation="diffexpr",
 )
 
