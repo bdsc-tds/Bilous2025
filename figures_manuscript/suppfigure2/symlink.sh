@@ -20,6 +20,8 @@ RELATIVE_PATHS=(
   "embed_panel/10x_5um/NSCLC/chuvio/lognorm/umap_data_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_external_reference_rctd_class_aware_Level2.png"
   "embed_panel/10x_5um/NSCLC/lung/lognorm/umap_data_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_external_reference_rctd_class_aware_Level2.png"
 
+  # cell types palette
+  "palettes/col_palette_cell_types_combo_Level2.1_legend_vertical.png"
 )
 
 

@@ -150,7 +150,7 @@ for plot_metric in plot_metrics:
     legend_handles = [mpatches.Patch(color=color, label=label) for label, color in palette.items()]
 
     ###  boxplot
-    f = plt.figure(figsize=(5, 3))
+    f = plt.figure(figsize=(6, 3))
     ax = plt.subplot()
     g = sns.boxplot(
         df,
@@ -164,6 +164,12 @@ for plot_metric in plot_metrics:
         order=[s for s in hue_segmentation_order if s in df["segmentation"].unique()],
         log_scale=True if plot_metric == "n_cells" else False,
         showfliers=True,
+        flierprops={
+            "marker": "o",
+            "color": "black",
+            "markersize": 1,
+            "markerfacecolor": "w",
+        },
     )
 
     if plot_metric == "n_cells":

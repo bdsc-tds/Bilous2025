@@ -10,6 +10,7 @@ xenium_std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
 xenium_cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
 results_dir = Path(config['results_dir'])
 palette_dir = Path(config['xenium_metadata_dir'])
+figures_dir = Path(config['figures_dir'])
 
 # Params
 # probably only need to run for lognorm data
@@ -49,7 +50,7 @@ for markers_mode in markers_modes:
 
                                 k = (condition.stem,panel.stem)
                                 name = '/'.join(k)
-                                name_params = f"{markers_mode}_{radius=}_{n_permutations=}_{n_repeats=}_{top_n=}_{scoring}"
+                                name_params = f"{markers_mode}_{radius=}_{top_n=}"
 
                                 out_dir = figures_dir / f'contamination_metrics_{name_params}_sensitivity_boxplot/{name}/{normalisation}/{layer}_{reference}_{method}_{level}/'
                                 out_file = out_dir / '.done'
@@ -75,8 +76,6 @@ for markers_mode in markers_modes:
                                         reference=reference,
                                         method=method,
                                         level=level,
-                                        n_comps=n_comps,
-                                        max_n_cells=max_n_cells,
                                         top_n=top_n,
                                         mixture_k=mixture_k,
                                         num_samples=num_samples,
@@ -107,8 +106,6 @@ for markers_mode in markers_modes:
                                             --reference {params.reference} \
                                             --method {params.method} \
                                             --level {params.level} \
-                                            --n_comps {params.n_comps} \
-                                            --max_n_cells {params.max_n_cells} \
                                             --top_n {params.top_n} \
                                             --mixture_k {params.mixture_k} \
                                             --num_samples {params.num_samples} \

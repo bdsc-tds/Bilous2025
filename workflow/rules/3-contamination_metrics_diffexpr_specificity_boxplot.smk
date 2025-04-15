@@ -5,11 +5,11 @@ import pandas as pd
 
 # cfg paths
 xenium_dir = Path(config['xenium_processed_data_dir'])
-xenium_count_correction_dir = Path(config['xenium_count_correction_dir'])
-xenium_std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
-xenium_cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
+std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
+cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
 results_dir = Path(config['results_dir'])
 palette_dir = Path(config['xenium_metadata_dir'])
+figures_dir = Path(config['figures_dir'])
 
 # Params
 # probably only need to run for lognorm data
@@ -23,10 +23,7 @@ levels = ['Level2.1']
 use_precomputed = True
 
 radius = 15
-n_permutations = 30
-n_splits= 5
 top_n = 20
-scoring = 'precision'
 markers_modes = ['diffexpr']#,'common_markers'] #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/cellmarker_cell_types_markers.json'
 
 # resolvi params
@@ -35,6 +32,9 @@ mixture_k = 50
 
 segmentation = sorted(xenium_dir.iterdir())[0] # arbitrary segmentation just to loop over conditions and panels
 count_correction_palette = palette_dir / 'col_palette_correction_method.csv'
+
+dpi = 300
+extension = 'png'
 
 out_files = []
 for markers_mode in markers_modes:
@@ -49,7 +49,7 @@ for markers_mode in markers_modes:
 
                                 k = (condition.stem,panel.stem)
                                 name = '/'.join(k)
-                                name_params = f"{markers_mode}_{radius=}_{n_permutations=}_{n_repeats=}_{top_n=}_{scoring}"
+                                name_params = f"{markers_mode}_{radius=}_{top_n=}"
 
                                 out_dir = figures_dir / f'contamination_metrics_{name_params}_specificity_boxplot/{name}/{normalisation}/{layer}_{reference}_{method}_{level}/'
                                 out_file = out_dir / '.done'
@@ -58,8 +58,8 @@ for markers_mode in markers_modes:
                                 rule:
                                     name: f'contamination_metrics_{name_params}_specificity_boxplot/{name}/{normalisation}/{layer}_{reference}_{method}_{level}'
                                     input:
-                                        contamination_metrics_is_done=results_dir / f"contamination_metrics_{markers_mode}.done",
-                                        contamination_metrics_corrected_counts_is_done=results_dir / f"contamination_metrics_{markers_mode}_corrected_counts.done",
+                                        contamination_metrics_is_done=results_dir / f"contamination_metrics_{name_params}.done",
+                                        contamination_metrics_corrected_counts_is_done=results_dir / f"contamination_metrics_{name_params}_corrected_counts.done",
                                     output:
                                         out_file = touch(out_file)
                                     params:
@@ -75,19 +75,12 @@ for markers_mode in markers_modes:
                                         reference=reference,
                                         method=method,
                                         level=level,
-                                        n_comps=n_comps,
-                                        max_n_cells=max_n_cells,
                                         top_n=top_n,
                                         mixture_k=mixture_k,
                                         num_samples=num_samples,
                                         use_precomputed="--use_precomputed" if use_precomputed else "",
                                         count_correction_palette=count_correction_palette,
                                         radius=radius,
-                                        cv_mode=cv_mode,
-                                        n_splits=n_splits,
-                                        n_permutations=n_permutations,
-                                        n_repeats=n_repeats,
-                                        scoring=scoring,
                                         dpi=dpi,
                                         extension=extension,
                                     threads: 1
@@ -113,19 +106,12 @@ for markers_mode in markers_modes:
                                             --reference {params.reference} \
                                             --method {params.method} \
                                             --level {params.level} \
-                                            --n_comps {params.n_comps} \
-                                            --max_n_cells {params.max_n_cells} \
                                             --top_n {params.top_n} \
                                             --mixture_k {params.mixture_k} \
                                             --num_samples {params.num_samples} \
                                             {params.use_precomputed} \
                                             --count_correction_palette {params.count_correction_palette} \
                                             --radius {params.radius} \
-                                            --cv_mode {params.cv_mode} \
-                                            --n_splits {params.n_splits} \
-                                            --n_permutations {params.n_permutations} \
-                                            --n_repeats {params.n_repeats} \
-                                            --scoring {params.scoring} \
                                             --dpi {params.dpi} \
                                             --extension {params.extension} \
 

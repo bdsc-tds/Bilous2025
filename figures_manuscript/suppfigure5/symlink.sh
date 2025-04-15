@@ -15,15 +15,13 @@ FIGURES_BASE_DIR="/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/figures
 # These paths are relative to FIGURES_BASE_DIR
 RELATIVE_PATHS=(
   # umaps
-  "embed_panel_singlets/10x_5um/breast/breast/lognorm/matched_reference_combo/rctd_class_aware/Level2.1/umap_data_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-  "embed_panel_singlets/10x_mm_5um/NSCLC/5k/lognorm/matched_reference_combo/rctd_class_aware/Level2.1/umap_data_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-  "embed_panel_singlets/10x_5um/NSCLC/lung/lognorm/matched_reference_combo/rctd_class_aware/Level2.1/umap_data_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-  "embed_panel_singlets/10x_5um/NSCLC/chuvio/lognorm/matched_reference_combo/rctd_class_aware/Level2.1/umap_data_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
+  "embed_panel_restricted_genes_scrnaseq/Xenium_hBreast_v1_metadata/matched_combo_standard_breast_specific/umap_RNA_counts_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_Level2.1.png"
+  "embed_panel_restricted_genes_scrnaseq/Xenium_hLung_v1_metadata/matched_combo_standard_lung_specific/umap_RNA_counts_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_Level2.1.png"
+  "embed_panel_restricted_genes_scrnaseq/CHUV_IO_340_panel/matched_combo_standard_lung_specific/umap_RNA_counts_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_Level2.1.png"
 
   # cell types palette
   "palettes/col_palette_cell_types_combo_Level2.1_legend_vertical.png"
 )
-
 
 # --- DEFINE YOUR ABSOLUTE TARGET PATHS HERE ---
 # These paths are full, absolute paths and ignore FIGURES_BASE_DIR

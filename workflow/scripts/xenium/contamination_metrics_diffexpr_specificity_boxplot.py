@@ -32,19 +32,12 @@ parser.add_argument("--layer", type=str, help="Name of saved layer of the seurat
 parser.add_argument("--reference", type=str, help="annotation reference")
 parser.add_argument("--method", type=str, help="annotation method")
 parser.add_argument("--level", type=str, help="annotation level")
-parser.add_argument("--n_comps", type=int, help="Number of components.")
-parser.add_argument("--max_n_cells", type=int, help="Max number of cells to use.")
 parser.add_argument("--top_n", type=int, help="contamination diffexpr script parameter")
 parser.add_argument("--mixture_k", type=int, help="ResolVI parameter")
 parser.add_argument("--num_samples", type=int, help="ResolVI parameter")
 parser.add_argument("--use_precomputed", action="store_true", help="Use precomputed data.")
 parser.add_argument("--count_correction_palette", type=Path, help="Path to the count correction palette file.")
 parser.add_argument("--radius", type=int, help="n° of neighbors to use to define the spatial graph")
-parser.add_argument("--cv_mode", type=str, help="cv_mode for logreg")
-parser.add_argument("--n_splits", type=int, help="n° of splits for logreg random prediction baseline")
-parser.add_argument("--n_permutations", type=int, help="n° of permutations for logreg random prediction baseline")
-parser.add_argument("--n_repeats", type=int, help="n° of repeats for logreg feature importances by permutations")
-parser.add_argument("--scoring", type=str, help="sklearn scoring metric to use for logreg")
 parser.add_argument("--dpi", type=int, help="Figure DPI.")
 parser.add_argument("--extension", type=str, help="conservation metric to plot")
 args = parser.parse_args()
@@ -62,19 +55,12 @@ layer = args.layer
 reference = args.reference
 method = args.method
 level = args.level
-n_comps = args.n_comps
-max_n_cells = args.max_n_cells
 top_n = args.top_n
 mixture_k = args.mixture_k
 num_samples = args.num_samples
 use_precomputed = args.use_precomputed
 count_correction_palette = args.count_correction_palette
 radius = args.radius
-cv_mode = args.cv_mode
-n_splits = args.n_splits
-n_permutations = args.n_permutations
-n_repeats = args.n_repeats
-scoring = args.scoring
 dpi = args.dpi
 extension = args.extension
 
@@ -129,14 +115,11 @@ dfs = readwrite.read_contamination_metrics_results(
     normalisation,
     layer,
     radius=radius,
-    n_splits=n_splits,
-    n_permutations=n_permutations,
-    n_repeats=n_repeats,
     top_n=top_n,
     markers_mode="diffexpr",
-    cv_mode=cv_mode,
-    scoring=scoring,
     evaluation="diffexpr",
+    ref_condition=condition,
+    ref_panel=panel,
 )
 
 
@@ -184,7 +167,7 @@ for rank_metric in rank_metrics:
             legend_handles = [mpatches.Patch(color=color, label=label) for label, color in palette.items()]
 
             ### hypergeometric pvalue boxplot
-            f = plt.figure(figsize=(5, 3))
+            f = plt.figure(figsize=(6, 3))
             ax = plt.subplot()
             g = sns.boxplot(
                 df_plot,
@@ -196,6 +179,12 @@ for rank_metric in rank_metrics:
                 palette=palette,
                 ax=ax,
                 order=[s for s in hue_segmentation_order if s in df_plot["segmentation"].unique()],
+                flierprops={
+                    "marker": "o",
+                    "color": "black",
+                    "markersize": 1,
+                    "markerfacecolor": "w",
+                },
             )
 
             sns.despine(offset=10, trim=True)

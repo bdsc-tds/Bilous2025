@@ -5,11 +5,11 @@ import pandas as pd
 
 # cfg paths
 xenium_dir = Path(config['xenium_processed_data_dir'])
-xenium_count_correction_dir = Path(config['xenium_count_correction_dir'])
-xenium_std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
-xenium_cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
+cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
+std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
 results_dir = Path(config['results_dir'])
 palette_dir = Path(config['xenium_metadata_dir'])
+figures_dir = Path(config['figures_dir'])
 
 # Params
 # probably only need to run for lognorm data
@@ -25,13 +25,18 @@ use_precomputed = True
 radius = 15
 n_permutations = 30
 n_splits= 5
+n_repeats = 5
 top_n = 20
 scoring = 'precision'
+cv_mode = 'spatial'
 markers_modes = ['diffexpr']#,'common_markers'] #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/cellmarker_cell_types_markers.json'
 
 # resolvi params
 num_samples = 30
 mixture_k = 50
+
+dpi = 300
+extension = 'png'
 
 segmentation = sorted(xenium_dir.iterdir())[0] # arbitrary segmentation just to loop over conditions and panels
 count_correction_palette = palette_dir / 'col_palette_correction_method.csv'
@@ -49,17 +54,17 @@ for markers_mode in markers_modes:
 
                                 k = (condition.stem,panel.stem)
                                 name = '/'.join(k)
-                                name_params = f"{markers_mode}_{radius=}_{n_permutations=}_{n_repeats=}_{top_n=}_{scoring}"
+                                name_params = f"{markers_mode}_{radius=}_{n_permutations=}_{n_splits=}_{top_n=}_{scoring}_{cv_mode}"
 
-                                out_dir = figures_dir / f'contamination_metrics_{name_params}_specificity_boxplot/{name}/{normalisation}/{layer}_{reference}_{method}_{level}/'
+                                out_dir = figures_dir / f'contamination_metrics_{name_params}_specificity_logreg_boxplot/{name}/{normalisation}/{layer}_{reference}_{method}_{level}/'
                                 out_file = out_dir / '.done'
                                 out_files.append(out_file)
 
                                 rule:
-                                    name: f'contamination_metrics_{name_params}_specificity_boxplot/{name}/{normalisation}/{layer}_{reference}_{method}_{level}'
+                                    name: f'contamination_metrics_{name_params}_specificity_logreg_boxplot/{name}/{normalisation}/{layer}_{reference}_{method}_{level}'
                                     input:
-                                        contamination_metrics_is_done=results_dir / f"contamination_metrics_{markers_mode}.done",
-                                        contamination_metrics_corrected_counts_is_done=results_dir / f"contamination_metrics_{markers_mode}_corrected_counts.done",
+                                        contamination_metrics_is_done=results_dir / f"contamination_metrics_{name_params}_logreg.done",
+                                        contamination_metrics_corrected_counts_is_done=results_dir / f"contamination_metrics_{name_params}_logreg_corrected_counts.done",
                                     output:
                                         out_file = touch(out_file)
                                     params:
@@ -75,8 +80,6 @@ for markers_mode in markers_modes:
                                         reference=reference,
                                         method=method,
                                         level=level,
-                                        n_comps=n_comps,
-                                        max_n_cells=max_n_cells,
                                         top_n=top_n,
                                         mixture_k=mixture_k,
                                         num_samples=num_samples,
@@ -100,7 +103,7 @@ for markers_mode in markers_modes:
                                         """
                                         mkdir -p "$(dirname {output.out_file})"
 
-                                        python workflow/scripts/xenium/contamination_metrics_diffexpr_specificity_boxplot.py \
+                                        python workflow/scripts/xenium/contamination_metrics_diffexpr_specificity_logreg_boxplot.py \
                                             --condition {params.condition} \
                                             --panel {params.panel} \
                                             --correction_methods {params.correction_methods} \
@@ -113,8 +116,6 @@ for markers_mode in markers_modes:
                                             --reference {params.reference} \
                                             --method {params.method} \
                                             --level {params.level} \
-                                            --n_comps {params.n_comps} \
-                                            --max_n_cells {params.max_n_cells} \
                                             --top_n {params.top_n} \
                                             --mixture_k {params.mixture_k} \
                                             --num_samples {params.num_samples} \
@@ -133,7 +134,7 @@ for markers_mode in markers_modes:
                                         """
 
 
-rule contamination_metrics_specificity_boxplot_all:
+rule contamination_metrics_specificity_logreg_boxplot_all:
     input:
         out_files
 

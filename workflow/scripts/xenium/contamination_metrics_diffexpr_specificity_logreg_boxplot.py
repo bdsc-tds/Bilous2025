@@ -44,7 +44,6 @@ parser.add_argument("--cv_mode", type=str, help="cv_mode for logreg")
 parser.add_argument("--n_splits", type=int, help="n° of splits for logreg random prediction baseline")
 parser.add_argument("--n_permutations", type=int, help="n° of permutations for logreg random prediction baseline")
 parser.add_argument("--n_repeats", type=int, help="n° of repeats for logreg feature importances by permutations")
-parser.add_argument("--top_n", type=int, help="n° of top genes to evaluate for hypergeometric test")
 parser.add_argument("--scoring", type=str, help="sklearn scoring metric to use for logreg")
 parser.add_argument("--dpi", type=int, help="Figure DPI.")
 parser.add_argument("--extension", type=str, help="conservation metric to plot")
@@ -136,6 +135,8 @@ dfs = readwrite.read_contamination_metrics_results(
     cv_mode=cv_mode,
     scoring=scoring,
     evaluation="logreg",
+    ref_condition=condition,
+    ref_panel=panel,
 )
 
 
@@ -183,7 +184,7 @@ for rank_metric in rank_metrics:
             legend_handles = [mpatches.Patch(color=color, label=label) for label, color in palette.items()]
 
             ### hypergeometric pvalue boxplot
-            f = plt.figure(figsize=(5, 3))
+            f = plt.figure(figsize=(6, 3))
             ax = plt.subplot()
             g = sns.boxplot(
                 df_plot,
@@ -195,6 +196,12 @@ for rank_metric in rank_metrics:
                 palette=palette,
                 ax=ax,
                 order=[s for s in hue_segmentation_order if s in df_plot["segmentation"].unique()],
+                flierprops={
+                    "marker": "o",
+                    "color": "black",
+                    "markersize": 1,
+                    "markerfacecolor": "w",
+                },
             )
 
             sns.despine(offset=10, trim=True)

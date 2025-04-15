@@ -335,7 +335,7 @@ for cti in df_all["cti"].unique():
     legend_handles = [mpatches.Patch(color=color, label=label) for label, color in palette.items()]
 
     ### hypergeometric pvalue boxplot
-    f = plt.figure(figsize=(10, 4))
+    f = plt.figure(figsize=(6, 3))
     ax = plt.subplot()
     g = sns.boxplot(
         df,
@@ -347,10 +347,19 @@ for cti in df_all["cti"].unique():
         palette=palette,
         ax=ax,
         order=[s for s in hue_segmentation_order if s in df["segmentation"].unique()],
+        flierprops={
+            "marker": "o",
+            "color": "black",
+            "markersize": 1,
+            "markerfacecolor": "w",
+        },
     )
 
     sns.despine(offset=10, trim=True)
     ax.yaxis.grid(True)
+    ax.yaxis.set_tick_params(labelsize=12)  # If you also want to change the y-axis numbers
+    ax.set_ylabel(plot_metric, fontsize=14)
+    plt.setp(ax.get_xticklabels(), rotation=45, fontsize=12)
 
     # plt.suptitle(title)
     # f.legend(

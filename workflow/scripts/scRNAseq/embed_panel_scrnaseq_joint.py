@@ -4,6 +4,7 @@ dask.config.set({"dataframe.query-planning": False})
 
 from pathlib import Path
 import argparse
+import numpy as np
 import pandas as pd
 import scanpy as sc
 import sys
@@ -13,7 +14,8 @@ import preprocessing
 
 # Set up argument parser
 parser = argparse.ArgumentParser(description="Embed panel of Xenium donors.")
-parser.add_argument("--reference", type=Path, help="Path to the reference folder.")
+parser.add_argument("--reference1", type=Path, help="Path to the reference1 folder.")
+parser.add_argument("--reference2", type=Path, help="Path to the reference2 folder.")
 parser.add_argument("--out_file", type=str, help="Path to the output file.")
 parser.add_argument("--layer", type=str, help="Name of data layer to load.")
 parser.add_argument("--n_comps", type=int, help="Number of components.")
@@ -30,7 +32,8 @@ parser.add_argument("--genes", type=str, nargs="*", default=[], help="Restrict d
 args = parser.parse_args()
 
 # Access the arguments
-reference = args.reference
+reference1 = args.reference1
+reference2 = args.reference2
 out_file = args.out_file
 layer = args.layer
 n_comps = args.n_comps
@@ -45,7 +48,11 @@ min_cells = args.min_cells
 genes = args.genes
 
 print("Reading samples")
-ad_merge = sc.read_10x_h5(reference / f"{layer}.h5")
+ad1 = sc.read_10x_h5(reference1 / f"{layer}.h5")
+ad2 = sc.read_10x_h5(reference2 / f"{layer}.h5")
+ad_merge = sc.concat([ad1, ad2])
+idx = np.unique(ad_merge.obs_names, return_index=True)[1]
+ad_merge = ad_merge[idx].copy()
 
 # subset to genes
 if len(genes):
@@ -60,8 +67,11 @@ if len(genes):
     print(f"Found {len(genes_found)} out of {len(genes)} genes.")
 
     # read raw counts to reapply QC
-    ad_merge_raw_counts = sc.read_10x_h5(reference / "RNA_counts.h5")
-    ad_merge_raw_counts = ad_merge[:, genes_found].copy()
+    ad1_raw_counts = sc.read_10x_h5(reference1 / "RNA_counts.h5")
+    ad2_raw_counts = sc.read_10x_h5(reference2 / "RNA_counts.h5")
+    ad_merge_raw_counts = sc.concat([ad1_raw_counts, ad2_raw_counts])
+    idx = np.unique(ad_merge.obs_names, return_index=True)[1]
+    ad_merge_raw_counts = ad_merge[idx, genes_found].copy()
 
     # reapply QC to subset of genes
     preprocessing.preprocess(

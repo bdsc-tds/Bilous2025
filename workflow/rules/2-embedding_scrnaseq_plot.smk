@@ -6,6 +6,7 @@ figures_dir = Path(config['figures_dir'])
 palette_dir = Path(config['xenium_metadata_dir'])
 cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
 seurat_to_h5_dir = results_dir / 'seurat_to_h5'
+scrnaseq_processed_data_dir = Path(config['scrnaseq_processed_data_dir'])
 
 # Params
 n_comps = config['umap_n_comps']
@@ -23,7 +24,6 @@ panel_palette = palette_dir / 'col_palette_panel.csv'
 sample_palette = palette_dir / 'col_palette_sample.csv'
 
 layer = 'RNA_counts'
-methods = ['rctd_class_aware']
 colors = ['sample','Level2.1']#['Level1','Level2','Level3','Level4','panel','sample',] # condition and sample as color to plot added here in addition to levels
 extension = 'png'
 
@@ -47,19 +47,17 @@ for reference in (references := scrnaseq_processed_data_dir.iterdir()):
         if color == 'sample':
             continue
 
-        out_file = figures_dir / f"embed_panel_scrnaseq/{reference_name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}_{method}_{color}.{extension}"
+        out_file = figures_dir / f"embed_panel_scrnaseq/{reference_name}/umap_{layer}_{n_comps=}_{n_neighbors=}_{min_dist=}_{metric}_{color}.{extension}"
         out_files_panel.append(out_file)
 
         rule:
-            name: f'embed_panel_scrnaseq_plot/{reference_name}/umap_{layer}_{method}_{color}'
+            name: f'embed_panel_scrnaseq_plot/{reference_name}/umap_{layer}_{color}'
             input:
                 embed_file=embed_file,
             output:
                 out_file=out_file,
             params:
-                normalisation=normalisation,
                 reference=reference_dir,
-                method=method,
                 color=color,
                 cell_type_palette=cell_type_palette,
                 panel_palette=panel_palette,

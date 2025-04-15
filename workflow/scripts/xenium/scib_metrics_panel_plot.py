@@ -140,7 +140,7 @@ legend_handles = [mpatches.Patch(color=color, label=label) for label, color in p
 df_score = df.query("metric == @score")
 
 sns.set(style="ticks")
-f = plt.figure(figsize=(5, 3))
+f = plt.figure(figsize=(6, 3))
 ax = plt.subplot()
 g = sns.barplot(
     df_score,

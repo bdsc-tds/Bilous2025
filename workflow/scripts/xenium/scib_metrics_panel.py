@@ -21,7 +21,7 @@ parser.add_argument("--method", type=str, help="annotation method")
 parser.add_argument("--level", type=str, help="annotation level")
 parser.add_argument("--n_comps", type=int, help="Number of components.")
 parser.add_argument("--max_n_cells", type=int, help="Max number of cells to use.")
-
+parser.add_argument("--singlets", action="store_true", help="Use only singlets.")
 args = parser.parse_args()
 
 # Access the arguments
@@ -35,6 +35,7 @@ method = args.method
 level = args.level
 n_comps = args.n_comps
 max_n_cells = args.max_n_cells
+singlets = args.singlets
 
 # variables
 segmentation = panel.parents[1].stem
@@ -71,6 +72,16 @@ for donor in (donors := panel.iterdir()):
         annot_file = sample_annotation_dir / f"{reference}/{method}/{level}/single_cell/labels.parquet"
         ads[k].obs[CT_KEY] = pd.read_parquet(annot_file).set_index("cell_id").iloc[:, 0]
 
+        if singlets:
+            # read spot class
+            spot_class_file = (
+                sample_annotation_dir / f"{reference}/{method}/{level}/single_cell/output/results_df.parquet"
+            )
+
+            ads[k].obs["spot_class"] = pd.read_parquet(spot_class_file, columns=["cell_id", "spot_class"]).set_index(
+                "cell_id"
+            )
+            ads[k] = ads[k][ads[k].obs["spot_class"] == "singlet"]
 
 # concatenate
 xenium_levels = ["segmentation", "condition", "panel", "donor", "sample"]

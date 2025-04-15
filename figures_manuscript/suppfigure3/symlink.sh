@@ -15,7 +15,10 @@ FIGURES_BASE_DIR="/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/figures
 # These paths are relative to FIGURES_BASE_DIR
 RELATIVE_PATHS=(
   # umaps
-  "embed_panel/10x_5um/breast/breast/lognorm/facet_umap_data_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_external_reference_rctd_class_aware_Level2.png"
+  "embed_panel/10x_5um/breast/breast/lognorm/facet_umap_data_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
+
+  # cell types palette
+  "palettes/col_palette_cell_types_combo_Level2.1_legend_vertical.png"
 )
 
 # --- DEFINE YOUR ABSOLUTE TARGET PATHS HERE ---

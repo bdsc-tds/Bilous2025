@@ -21,7 +21,7 @@ cell_type_palette = palette_dir / 'col_palette_cell_types_combo.csv'
 panel_palette = palette_dir / 'col_palette_panel.csv'
 sample_palette = palette_dir / 'col_palette_sample.csv'
 
-normalisations = ['lognorm','sctransform']
+normalisations = ['lognorm']#,'sctransform']
 layers = ['data','scale_data']
 references = ['matched_reference_combo','external_reference']
 methods = ['rctd_class_aware']
