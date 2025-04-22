@@ -73,18 +73,30 @@ xenium_levels = ["segmentation", "condition", "panel", "donor", "sample"]
 order = ["breast", "chuvio", "lung", "5k"]
 hue_segmentation = "segmentation"
 hue_segmentation_order = [
-    "10x_mm_0um",
-    "10x_mm_5um",
-    "10x_mm_15um",
-    "10x_0um",
-    "10x_5um",
-    "10x_15um",
-    "baysor",
-    "proseg",
-    "proseg_expected",
-    "proseg_mode",
-    "segger",
+    "MM 0µm",
+    "MM",
+    "MM 15µm",
+    "0µm",
+    "5µm",
+    "15µm",
+    "Baysor",
+    "ProSeg",
+    "ProSeg mode",
+    "Segger",
 ]
+rename_segmentations = {
+    "10x_mm_0um": "MM 0µm",
+    "10x_mm_5um": "MM",
+    "10x_mm_15um": "MM 15µm",
+    "10x_0um": "0µm",
+    "10x_5um": "5µm",
+    "10x_15um": "15µm",
+    "baysor": "Baysor",
+    "proseg_expected": "ProSeg",
+    "proseg_mode": "ProSeg mode",
+    "segger": "Segger",
+}
+
 hue_correction = "correction_method"
 hue_correction_order = [
     "raw",
@@ -141,9 +153,8 @@ for rank_metric in rank_metrics:
             use_precomputed=use_precomputed,
         )
 
-        # rename proseg
-        df.loc[df["segmentation"] == "proseg_expected", "segmentation"] = "proseg"
-        df_count_correction_palette = df_count_correction_palette.rename(index={"proseg_expected": "proseg"})
+        # rename segmentations
+        df["segmentation"] = df["segmentation"].replace(rename_segmentations)
 
         if plot_metric in ["hypergeometric_pvalue", "mean_zscore_pvalue"]:
             df["-log10pvalue"] = -np.log10(df[plot_metric].astype(float))
@@ -194,7 +205,7 @@ for rank_metric in rank_metrics:
                 ax.set.ylabel(r"$-\log_{10} \text{ p-value}$", fontsize=14)
             else:
                 ax.set_ylabel(plot_metric, fontsize=14)
-            plt.setp(ax.get_xticklabels(), rotation=45, fontsize=12)
+            plt.setp(ax.get_xticklabels(), fontsize=12)
 
             # title = f"Condition: {condition}, Panel: {panel}, Reference: {reference}, Method: {method}, Level: {level} \n{cti} contaminated by {ctj}\n rank metric: {rank_metric}, plot metric: {plot_metric}"
             # plt.suptitle(title, y=1.05)

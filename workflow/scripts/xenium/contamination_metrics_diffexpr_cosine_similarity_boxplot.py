@@ -131,18 +131,30 @@ xenium_levels = ["segmentation", "condition", "panel", "donor", "sample"]
 order = ["breast", "chuvio", "lung", "5k"]
 hue_segmentation = "segmentation"
 hue_segmentation_order = [
-    "10x_mm_0um",
-    "10x_mm_5um",
-    "10x_mm_15um",
-    "10x_0um",
-    "10x_5um",
-    "10x_15um",
-    "baysor",
-    "proseg",
-    "proseg_expected",
-    "proseg_mode",
-    "segger",
+    "MM 0µm",
+    "MM",
+    "MM 15µm",
+    "0µm",
+    "5µm",
+    "15µm",
+    "Baysor",
+    "ProSeg",
+    "ProSeg mode",
+    "Segger",
 ]
+rename_segmentations = {
+    "10x_mm_0um": "MM 0µm",
+    "10x_mm_5um": "MM",
+    "10x_mm_15um": "MM 15µm",
+    "10x_0um": "0µm",
+    "10x_5um": "5µm",
+    "10x_15um": "15µm",
+    "baysor": "Baysor",
+    "proseg_expected": "ProSeg",
+    "proseg_mode": "ProSeg mode",
+    "segger": "Segger",
+}
+
 hue_correction = "correction_method"
 hue_correction_order = [
     "raw",
@@ -152,6 +164,7 @@ hue_correction_order = [
     "ovrlpy 0.7",
     "SPLIT",
 ]
+
 
 plot_metric = "cosine_similarity"
 
@@ -305,8 +318,6 @@ pb_scrna = pbs_scrna[condition]
 # %%
 df_count_correction_palette = pd.read_csv(count_correction_palette, index_col=0).iloc[:, 0]
 
-palette = pd.read_csv(count_correction_palette, index_col=0).iloc[:, 0]
-
 # get cell identity score df
 df_all = _utils.get_cosine_similarity_score(
     pbs_xenium,
@@ -317,8 +328,8 @@ df_all = _utils.get_cosine_similarity_score(
 )
 _utils.rename_correction_methods(df_all)
 
-print(df_all.shape)
-print(df_all["cti"].unique())
+# rename segmentations
+df_all["segmentation"] = df_all["segmentation"].replace(rename_segmentations)
 
 for cti in df_all["cti"].unique():
     df = df_all.query(f"panel == '{panel}' and cti == '{cti}'")
@@ -331,7 +342,7 @@ for cti in df_all["cti"].unique():
     title = f"Cell type identity score for {cti=}"
     unique_labels = [c for c in hue_correction_order if c in np.unique(df[hue_correction].dropna())]
     unique_labels = unique_labels + [c for c in np.unique(df[hue_correction].dropna()) if c not in unique_labels]
-    palette = {u: palette[u] for u in unique_labels}
+    palette = {u: df_count_correction_palette[u] for u in unique_labels}
     legend_handles = [mpatches.Patch(color=color, label=label) for label, color in palette.items()]
 
     ### hypergeometric pvalue boxplot
@@ -359,7 +370,7 @@ for cti in df_all["cti"].unique():
     ax.yaxis.grid(True)
     ax.yaxis.set_tick_params(labelsize=12)  # If you also want to change the y-axis numbers
     ax.set_ylabel(plot_metric, fontsize=14)
-    plt.setp(ax.get_xticklabels(), rotation=45, fontsize=12)
+    plt.setp(ax.get_xticklabels(), fontsize=12)
 
     # plt.suptitle(title)
     # f.legend(

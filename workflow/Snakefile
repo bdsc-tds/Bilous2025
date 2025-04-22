@@ -13,28 +13,28 @@ configfile: "config/config.yml"
 # include: "rules/0-scib_metrics.smk"
 # include: "rules/0-scib_metrics_singlets.smk"
 # include: "rules/1-scib_metrics_corrected_counts.smk"
-# include: "rules/2-scib_metrics_plot.smk"
+include: "rules/2-scib_metrics_plot.smk"
 
 # include: "rules/0-embedding.smk"
-include: "rules/1-embedding_plot.smk"
+# include: "rules/1-embedding_plot.smk"
 
 # include: "rules/0-embedding_singlets.smk"
-include: "rules/1-embedding_singlets_plot.smk"
+# include: "rules/1-embedding_singlets_plot.smk"
 
 # include: "rules/0-embedding_sample.smk"
-include: "rules/1-embedding_sample_plot.smk"
+# include: "rules/1-embedding_sample_plot.smk"
 
 # include: "rules/1-embedding_scrnaseq.smk"
-include: "rules/2-embedding_scrnaseq_plot.smk"
+# include: "rules/2-embedding_scrnaseq_plot.smk"
 # include: "rules/1-embedding_scrnaseq_joint.smk"
-include: "rules/2-embedding_scrnaseq_joint_plot.smk"
+# include: "rules/2-embedding_scrnaseq_joint_plot.smk"
 
 # include: "rules/0-embedding_restricted_genes.smk"
 # include: "rules/0-embedding_restricted_genes_and_samples.smk"
 # include: "rules/1-embedding_restricted_genes_scrnaseq.smk"
-include: "rules/1-embedding_restricted_genes_plot.smk"
-include: "rules/1-embedding_restricted_genes_and_samples_plot.smk"
-include: "rules/2-embedding_restricted_genes_scrnaseq_plot.smk"
+# include: "rules/1-embedding_restricted_genes_plot.smk"
+# include: "rules/1-embedding_restricted_genes_and_samples_plot.smk"
+# include: "rules/2-embedding_restricted_genes_scrnaseq_plot.smk"
 
 # include: "rules/0-ovrlpy.smk"
 # include: "rules/0-resolvi.smk"
@@ -42,17 +42,17 @@ include: "rules/2-embedding_restricted_genes_scrnaseq_plot.smk"
 # include: "rules/1-coexpression_corrected_counts.smk"
 # include: "rules/1-coexpression_corrected_counts_plot.smk"
 # include: "rules/2-embedding_corrected_counts.smk"
-include: "rules/3-embedding_corrected_counts_plot.smk"
+# include: "rules/3-embedding_corrected_counts_plot.smk"
 
 # include: "rules/2-contamination_metrics_diffexpr.smk"
 # include: "rules/2-contamination_metrics_logreg.smk"
 # include: "rules/2-contamination_metrics_diffexpr_corrected_counts.smk"
 # include: "rules/2-contamination_metrics_logreg_corrected_counts.smk"
 
-# include: "rules/3-contamination_metrics_diffexpr_specificity_boxplot.smk"
-# include: "rules/3-contamination_metrics_diffexpr_specificity_logreg_boxplot.smk"
-# include: "rules/3-contamination_metrics_diffexpr_sensitivity_boxplot.smk"
-# include: "rules/3-contamination_metrics_cosine_similarity_scrnaseq.smk"
+include: "rules/3-contamination_metrics_diffexpr_specificity_boxplot.smk"
+include: "rules/3-contamination_metrics_diffexpr_specificity_logreg_boxplot.smk"
+include: "rules/3-contamination_metrics_diffexpr_sensitivity_boxplot.smk"
+include: "rules/3-contamination_metrics_cosine_similarity_scrnaseq.smk"
 
 rule all:
     input:
@@ -72,33 +72,33 @@ rule all:
         # rules.silhouette_plot_condition_all.input,
         #
         # rules.embed_panel_all.input,
-        rules.embed_panel_plot_all.input,
+        # rules.embed_panel_plot_all.input,
         # rules.embed_condition_all.input,
         # rules.embed_condition_plot_all.input,
         #
         # rules.embed_panel_singlets_all.input,
-        rules.embed_panel_singlets_plot_all.input,
-        #
+        # rules.embed_panel_singlets_plot_all.input,
+        # 
         # rules.embed_panel_scrnaseq_all.input,
-        rules.embed_panel_scrnaseq_plot_all.input,
+        # rules.embed_panel_scrnaseq_plot_all.input,
         #
         # rules.embed_panel_scrnaseq_joint.input,
-        rules.embed_panel_scrnaseq_joint_plot_all.input,
+        # rules.embed_panel_scrnaseq_joint_plot_all.input,
         #
         # rules.embed_panel_restricted_genes_all.input,
         # rules.embed_panel_restricted_genes_and_samples_all.input,
         # rules.embed_panel_restricted_genes_scrnaseq_all.input,
         #
         # rules.embed_panel_restricted_genes_plot_all.input,
-        rules.embed_panel_restricted_genes_and_samples_plot_all.input,
-        rules.embed_panel_restricted_genes_scrnaseq_plot_all.input,
+        # rules.embed_panel_restricted_genes_and_samples_plot_all.input,
+        # rules.embed_panel_restricted_genes_scrnaseq_plot_all.input,
         #
         # rules.embed_sample_all.input,
-        rules.embed_sample_plot_all.input,
+        # rules.embed_sample_plot_all.input,
         #
         # rules.embed_panel_corrected_counts_all.input,
         # rules.embed_condition_corrected_counts_all.input,
-        rules.embed_panel_corrected_counts_plot_all.input,
+        # rules.embed_panel_corrected_counts_plot_all.input,
         # rules.embed_condition_corrected_counts_plot_all.input,
         #
         # rules.resolvi_training_all.input,
@@ -112,15 +112,15 @@ rule all:
         # rules.scib_metrics_panel_all.input,
         # rules.scib_metrics_panel_singlets_all.input,
         # rules.scib_metrics_panel_corrected_counts_all.input,
-        # rules.scib_metrics_panel_plot_all.input,
+        rules.scib_metrics_panel_plot_all.input,
         #
         # rules.contamination_metrics_diffexpr_all.input,
         # rules.contamination_metrics_logreg_all.input,
         # rules.contamination_metrics_diffexpr_corrected_counts_all.input,
         # rules.contamination_metrics_logreg_corrected_counts_all.input,
         #
-        # rules.contamination_metrics_specificity_boxplot_all.input,
-        # rules.contamination_metrics_specificity_logreg_boxplot_all.input,
-        # rules.contamination_metrics_sensitivity_boxplot_all.input,
-        # rules.contamination_metrics_cosine_similarity_scrnaseq_boxplot_all.input,
+        rules.contamination_metrics_specificity_boxplot_all.input,
+        rules.contamination_metrics_specificity_logreg_boxplot_all.input,
+        rules.contamination_metrics_sensitivity_boxplot_all.input,
+        rules.contamination_metrics_cosine_similarity_scrnaseq_boxplot_all.input,
 

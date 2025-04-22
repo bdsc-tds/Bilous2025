@@ -64,19 +64,29 @@ exclude_cell_type_containing = "malignant"
 xenium_levels = ["segmentation", "condition", "panel", "normalisation", "metric", "score"]
 hue_segmentation = "segmentation"
 hue_segmentation_order = [
-    "10x_mm_0um",
-    "10x_mm_5um",
-    "10x_mm_15um",
-    "10x_0um",
-    "10x_5um",
-    "10x_15um",
-    "baysor",
-    "proseg",
-    "proseg_expected",
-    "proseg_mode",
-    "segger",
+    "MM 0µm",
+    "MM",
+    "MM 15µm",
+    "0µm",
+    "5µm",
+    "15µm",
+    "Baysor",
+    "ProSeg",
+    "ProSeg mode",
+    "Segger",
 ]
-
+rename_segmentations = {
+    "10x_mm_0um": "MM 0µm",
+    "10x_mm_5um": "MM",
+    "10x_mm_15um": "MM 15µm",
+    "10x_0um": "0µm",
+    "10x_5um": "5µm",
+    "10x_15um": "15µm",
+    "baysor": "Baysor",
+    "proseg_expected": "ProSeg",
+    "proseg_mode": "ProSeg mode",
+    "segger": "Segger",
+}
 
 hue_correction = "correction_method"
 hue_correction_order = [
@@ -123,9 +133,8 @@ df = pd.concat(df).reset_index()
 df.columns = ["correction_method"] + xenium_levels
 _utils.rename_correction_methods(df)
 
-# rename proseg
-df.loc[df["segmentation"] == "proseg_expected", "segmentation"] = "proseg"
-palette = palette.rename(index={"proseg_expected": "proseg"})
+# rename segmentations
+df["segmentation"] = df["segmentation"].replace(rename_segmentations)
 
 u_segmentations = df["segmentation"].unique()
 order = [h for h in hue_segmentation_order if h in u_segmentations]
@@ -156,7 +165,7 @@ g = sns.barplot(
 
 sns.despine(offset=10, trim=True)
 ax.yaxis.grid(True)
-ax.xaxis.set_tick_params(rotation=45)
+plt.setp(ax.get_xticklabels(), fontsize=12)
 
 # title = f"condition: {condition}, Panel: {panel}\n Reference: {reference}, Method: {method}, Level: {level}\n {score}"
 # plt.suptitle(title)

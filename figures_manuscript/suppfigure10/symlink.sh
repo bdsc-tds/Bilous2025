@@ -14,65 +14,15 @@ FIGURES_BASE_DIR="/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/figures
 # --- DEFINE YOUR RELATIVE TARGET PATHS HERE ---
 # These paths are relative to FIGURES_BASE_DIR
 RELATIVE_PATHS=(
-  # umaps lung 5um
-  "embed_panel/10x_5um/NSCLC/lung/lognorm/umap_data_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-  "resolvi_embed_panel/10x_5um/NSCLC/lung/lognorm/umap_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-  "resolvi_supervised_embed_panel/10x_5um/NSCLC/lung/lognorm/umap_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-  "ovrlpy_correction_signal_integrity_threshold=0.5_embed_panel/10x_5um/NSCLC/lung/lognorm/umap_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
+  # umaps SPLIT
+  "split_fully_purified_embed_panel/10x_5um/breast/breast/lognorm/umap_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
+  "split_fully_purified_embed_panel/10x_5um/NSCLC/chuvio/lognorm/umap_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
   "split_fully_purified_embed_panel/10x_5um/NSCLC/lung/lognorm/umap_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-  
-  # umaps 5k mm 5um
-  "embed_panel/10x_mm_5um/NSCLC/5k/lognorm/umap_data_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-  "resolvi_embed_panel/10x_mm_5um/NSCLC/5k/lognorm/umap_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-  "resolvi_supervised_embed_panel/10x_mm_5um/NSCLC/5k/lognorm/umap_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-  "ovrlpy_correction_signal_integrity_threshold=0.5_embed_panel/10x_mm_5um/NSCLC/5k/lognorm/umap_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
   "split_fully_purified_embed_panel/10x_mm_5um/NSCLC/5k/lognorm/umap_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-
-  # umaps lung proseg
-  "embed_panel/proseg_expected/NSCLC/lung/lognorm/umap_data_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-  "resolvi_embed_panel/proseg_expected/NSCLC/lung/lognorm/umap_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-  "resolvi_supervised_embed_panel/proseg_expected/NSCLC/lung/lognorm/umap_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-  "ovrlpy_correction_signal_integrity_threshold=0.5_embed_panel/proseg_expected/NSCLC/lung/lognorm/umap_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-  "split_fully_purified_embed_panel/proseg_expected/NSCLC/lung/lognorm/umap_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-  
-  # umaps 5k proseg
-  "embed_panel/proseg_expected/NSCLC/5k/lognorm/umap_data_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-  "resolvi_embed_panel/proseg_expected/NSCLC/5k/lognorm/umap_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-  "resolvi_supervised_embed_panel/proseg_expected/NSCLC/5k/lognorm/umap_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-  "ovrlpy_correction_signal_integrity_threshold=0.5_embed_panel/proseg_expected/NSCLC/5k/lognorm/umap_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-  "split_fully_purified_embed_panel/proseg_expected/NSCLC/5k/lognorm/umap_n_comps=50_n_neighbors=50_min_dist=0.5_euclidean_matched_reference_combo_rctd_class_aware_Level2.1.png"
-
-  # bio/batch conservation barplots
-  "scib_metrics_panel_plot/NSCLC/5k/lognorm/scib_metrics_Leiden_ARI_data_matched_reference_combo_rctd_class_aware_Level2.1_n_comps=50_max_n_cells=100000.png"
-  "scib_metrics_panel_plot/NSCLC/lung/lognorm/scib_metrics_Leiden_ARI_data_matched_reference_combo_rctd_class_aware_Level2.1_n_comps=50_max_n_cells=100000.png"
-
-  "scib_metrics_panel_plot/NSCLC/5k/lognorm/scib_metrics_iLISI_data_matched_reference_combo_rctd_class_aware_Level2.1_n_comps=50_max_n_cells=100000.png"
-  "scib_metrics_panel_plot/NSCLC/lung/lognorm/scib_metrics_iLISI_data_matched_reference_combo_rctd_class_aware_Level2.1_n_comps=50_max_n_cells=100000.png"
-
-  # contamination logreg boxplots
-  "contamination_metrics_diffexpr_radius=15_n_permutations=30_n_splits=5_top_n=20_precision_spatial_specificity_logreg_boxplot/NSCLC/lung/lognorm/data_matched_reference_combo_rctd_class_aware_Level2.1/lung_T_cell_contaminated_by_malignant_cell_importances_n_hits_top_n=20.png"
-  "contamination_metrics_diffexpr_radius=15_n_permutations=30_n_splits=5_top_n=20_precision_spatial_specificity_logreg_boxplot/NSCLC/5k/lognorm/data_matched_reference_combo_rctd_class_aware_Level2.1/5k_T_cell_contaminated_by_malignant_cell_importances_n_hits_top_n=20.png"
-
-  # contamination diffexpr boxplots
-  "contamination_metrics_diffexpr_radius=15_top_n=20_specificity_boxplot/NSCLC/lung/lognorm/data_matched_reference_combo_rctd_class_aware_Level2.1/lung_T_cell_contaminated_by_malignant_cell_logfoldchanges_n_hits_top_n=20.png"
-  "contamination_metrics_diffexpr_radius=15_top_n=20_specificity_boxplot/NSCLC/5k/lognorm/data_matched_reference_combo_rctd_class_aware_Level2.1/5k_T_cell_contaminated_by_malignant_cell_logfoldchanges_n_hits_top_n=20.png"
-
-  # summary stats
-  "contamination_metrics_diffexpr_radius=15_top_n=20_sensitivity_boxplot/NSCLC/lung/lognorm/data_matched_reference_combo_rctd_class_aware_Level2.1/lung_median_n_genes.png"
-  "contamination_metrics_diffexpr_radius=15_top_n=20_sensitivity_boxplot/NSCLC/lung/lognorm/data_matched_reference_combo_rctd_class_aware_Level2.1/lung_n_cells.png"
-  "contamination_metrics_diffexpr_radius=15_top_n=20_sensitivity_boxplot/NSCLC/5k/lognorm/data_matched_reference_combo_rctd_class_aware_Level2.1/5k_median_n_genes.png"
-  "contamination_metrics_diffexpr_radius=15_top_n=20_sensitivity_boxplot/NSCLC/5k/lognorm/data_matched_reference_combo_rctd_class_aware_Level2.1/5k_n_cells.png"
-  "contamination_metrics_cosine_similarity_scrnaseq_boxplot/NSCLC/lung/lognorm/data_matched_reference_combo_rctd_class_aware_Level2.1/lung_T_cell_cosine_similarity.png"
-  "contamination_metrics_cosine_similarity_scrnaseq_boxplot/NSCLC/5k/lognorm/data_matched_reference_combo_rctd_class_aware_Level2.1/5k_T_cell_cosine_similarity.png"
-
-  # count correction palette
-  "palettes/col_palette_correction_method_count_correction_legend_vertical.png"
-  "palettes/col_palette_correction_method_count_correction_legend_horizontal.png"
 
   # cell types palette
   "palettes/col_palette_cell_types_combo_Level2.1_legend_vertical.png"
   "palettes/col_palette_cell_types_combo_Level2.1_legend_horizontal.png"
-
 )
 
 # --- DEFINE YOUR ABSOLUTE TARGET PATHS HERE ---

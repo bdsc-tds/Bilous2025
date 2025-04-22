@@ -73,18 +73,30 @@ xenium_levels = ["segmentation", "condition", "panel", "donor", "sample"]
 order = ["breast", "chuvio", "lung", "5k"]
 hue_segmentation = "segmentation"
 hue_segmentation_order = [
-    "10x_mm_0um",
-    "10x_mm_5um",
-    "10x_mm_15um",
-    "10x_0um",
-    "10x_5um",
-    "10x_15um",
-    "baysor",
-    "proseg",
-    "proseg_expected",
-    "proseg_mode",
-    "segger",
+    "MM 0µm",
+    "MM",
+    "MM 15µm",
+    "0µm",
+    "5µm",
+    "15µm",
+    "Baysor",
+    "ProSeg",
+    "ProSeg mode",
+    "Segger",
 ]
+rename_segmentations = {
+    "10x_mm_0um": "MM 0µm",
+    "10x_mm_5um": "MM",
+    "10x_mm_15um": "MM 15µm",
+    "10x_0um": "0µm",
+    "10x_5um": "5µm",
+    "10x_15um": "15µm",
+    "baysor": "Baysor",
+    "proseg_expected": "ProSeg",
+    "proseg_mode": "ProSeg mode",
+    "segger": "Segger",
+}
+
 hue_correction = "correction_method"
 hue_correction_order = [
     "raw",
@@ -139,9 +151,8 @@ for plot_metric in plot_metrics:
     df = _utils.get_df_summary_stats_plot(dfs, plot_metric=plot_metric)
     df = df.query("panel == @panel")
 
-    # rename proseg
-    df.loc[df["segmentation"] == "proseg_expected", "segmentation"] = "proseg"
-    df_count_correction_palette = df_count_correction_palette.rename(index={"proseg_expected": "proseg"})
+    # rename segmentations
+    df["segmentation"] = df["segmentation"].replace(rename_segmentations)
 
     # plotting params, palette
     unique_labels = [c for c in hue_correction_order if c in np.unique(df[hue_correction].dropna())]
@@ -181,7 +192,7 @@ for plot_metric in plot_metrics:
         ax.set.ylabel(r"$-\log_{10} \text{ p-value}$", fontsize=14)
     else:
         ax.set_ylabel(plot_metric, fontsize=14)
-    plt.setp(ax.get_xticklabels(), rotation=45, fontsize=12)
+    plt.setp(ax.get_xticklabels(), fontsize=12)
 
     # title = f"{plot_metric} for {panel}"
     # plt.suptitle(title)
