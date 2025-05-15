@@ -75,18 +75,7 @@ hue_segmentation_order = [
     "ProSeg mode",
     "Segger",
 ]
-rename_segmentations = {
-    "10x_mm_0um": "MM 0µm",
-    "10x_mm_5um": "MM",
-    "10x_mm_15um": "MM 15µm",
-    "10x_0um": "0µm",
-    "10x_5um": "5µm",
-    "10x_15um": "15µm",
-    "baysor": "Baysor",
-    "proseg_expected": "ProSeg",
-    "proseg_mode": "ProSeg mode",
-    "segger": "Segger",
-}
+
 
 hue_correction = "correction_method"
 hue_correction_order = [
@@ -131,10 +120,10 @@ for correction_method in correction_methods:
             print(f"File not found: {scib_metrics_file}")
 df = pd.concat(df).reset_index()
 df.columns = ["correction_method"] + xenium_levels
-_utils.rename_correction_methods(df)
+_utils.rename_methods(df)
 
 # rename segmentations
-df["segmentation"] = df["segmentation"].replace(rename_segmentations)
+
 
 u_segmentations = df["segmentation"].unique()
 order = [h for h in hue_segmentation_order if h in u_segmentations]
@@ -149,7 +138,7 @@ legend_handles = [mpatches.Patch(color=color, label=label) for label, color in p
 df_score = df.query("metric == @score")
 
 sns.set(style="ticks")
-f = plt.figure(figsize=(6, 3))
+f = plt.figure(figsize=(7, 6))
 ax = plt.subplot()
 g = sns.barplot(
     df_score,
@@ -163,7 +152,7 @@ g = sns.barplot(
     ax=ax,
 )
 
-sns.despine(offset=10, trim=True)
+sns.despine()
 ax.yaxis.grid(True)
 plt.setp(ax.get_xticklabels(), fontsize=12)
 

@@ -96,7 +96,7 @@ for markers_mode in markers_modes:
                                     threads: 1
                                     resources:
                                         mem='30GB',
-                                        runtime='30m',
+                                        runtime='1h',
                                     conda:
                                         "spatial"
                                     shell:

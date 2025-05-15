@@ -60,6 +60,7 @@ def parse_args():
     parser.add_argument("--max_counts", type=float, help="QC parameter from pipeline config")
     parser.add_argument("--max_features", type=float, help="QC parameter from pipeline config")
     parser.add_argument("--min_cells", type=int, help="QC parameter from pipeline config")
+    parser.add_argument("--genes", type=str, nargs="*", default=[], help="Restrict data to these genes.")
     parser.add_argument(
         "-l",
         type=str,
@@ -135,6 +136,11 @@ if __name__ == "__main__":
         adata_corrected_counts.obsm[obsm] = adata[adata_corrected_counts.obs_names].obsm[obsm]
         adata = adata_corrected_counts
 
+    if len(args.genes):
+        genes_found = [g for g in args.genes if g in adata.var_names]
+        print("Subsetting to", len(genes_found), "genes found in list")
+        adata = adata[:, genes_found].copy()
+
     # read normalised data, filter cells
     # X_normalised = pd.read_parquet(args.sample_normalised_counts)
     # X_normalised.index = pd.read_parquet(args.sample_idx).iloc[:, 0]
@@ -205,7 +211,9 @@ if __name__ == "__main__":
     # define target (cell type j presence in kNN)
     if args.precomputed_adata_obs is not None:
         print("Loading precomputed adata obs. Replacing loaded labels")
-        adata.obs = pd.read_parquet(args.precomputed_adata_obs).loc[adata.obs_names]
+        obs_ = pd.read_parquet(args.precomputed_adata_obs)
+        adata = adata[[c for c in adata.obs_names if c in obs_.index]]
+        adata.obs = obs_.loc[adata.obs_names]
     else:
         knnlabels, knndis, knnidx, knn_graph = _utils.get_knn_labels(
             adata, radius=args.radius, label_key=label_key, obsm=obsm, return_sparse_neighbors=True
@@ -345,8 +353,17 @@ if __name__ == "__main__":
     df_ctj_marker_genes = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in df_ctj_marker_genes.items()]))
     df_ctj_marker_genes.to_parquet(args.out_file_df_ctj_marker_genes)
     # diffexpr
-    pd.concat(df_diffexpr).to_parquet(args.out_file_df_diffexpr)
-    pd.concat(df_markers_rank_significance_diffexpr).T.to_parquet(args.out_file_df_markers_rank_significance_diffexpr)
+    if len(df_diffexpr):
+        pd.concat(df_diffexpr).to_parquet(args.out_file_df_diffexpr)
+    else:
+        pd.DataFrame().to_parquet(args.out_file_df_diffexpr)
+
+    if len(df_markers_rank_significance_diffexpr):
+        pd.concat(df_markers_rank_significance_diffexpr).T.to_parquet(
+            args.out_file_df_markers_rank_significance_diffexpr
+        )
+    else:
+        pd.DataFrame().to_parquet(args.out_file_df_markers_rank_significance_diffexpr)
 
     if args.l is not None:
         _log.close()

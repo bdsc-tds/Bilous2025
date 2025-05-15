@@ -12,6 +12,7 @@ from sklearn.cluster import KMeans, BisectingKMeans
 from sklearn.utils import check_random_state
 from sklearn.utils.validation import check_array
 from typing import Dict, List
+from joblib import Parallel, delayed
 import warnings
 
 xenium_levels = ["segmentation", "condition", "panel", "donor", "sample"]
@@ -176,6 +177,39 @@ def get_marker_rank_significance(rnk, gene_set, top_n=None):
     return markers_rank_significance
 
 
+def _logreg_univariate(X, y, feature_names, compute_pvalue=True, **init_params):
+    def _fit_univariate(x_i, y, feature_name, compute_pvalue=True, **init_params):
+        model = LogisticRegression(penalty=None, **init_params)
+        model.fit(x_i, y)
+        if compute_pvalue:
+            try:
+                pvalue = logit_pvalue(model, x_i)[1]
+            except:
+                pvalue = np.nan
+        output = {
+            "feature_name": feature_name,
+            "importances": model.coef_[0][0],
+            "intercepts": model.intercept_[0],
+            "pvalues": pvalue,
+        }
+        return output
+
+    df_importances = pd.DataFrame(
+        Parallel(n_jobs=-1)(
+            delayed(_fit_univariate)(
+                X[:, [i]],
+                y,
+                feature_names[i],
+                compute_pvalue=compute_pvalue,
+                **init_params,
+            )
+            for i in range(X.shape[1])
+        )
+    ).set_index("feature_name")
+
+    return df_importances
+
+
 def logreg(
     X,
     y,
@@ -192,6 +226,8 @@ def logreg(
     cv_mode="spatial",
     spatial_coords=None,
     accept_partial_cv=False,
+    scale=True,
+    train_mode="multivariate",
 ):
     """
     Perform logistic regression with permutation test and compute feature importances.
@@ -212,11 +248,21 @@ def logreg(
     - cv_mode (str): Cross-validation mode ('stratified' or 'spatial').
     - spatial_coords (array-like): Spatial coordinates for spatial cross-validation.
     - accept_partial_cv (bool): Whether to run the function despite at least one cross validation split only having one class (for spatial cv).
+    - scale (bool): Whether to scale the input data.
+    - train_mode (str): Training mode ('univariate' or 'multivariate').
 
     Returns:
-    - df_permutations (pd.DataFrame): Summary of permutation test results.
+    - df_permutations (pd.DataFrame): Summary of permutation test results. For train_mode='univariate', df_permutations will be empty.
     - df_importances (pd.DataFrame): Feature importances from permutation importance.
     """
+
+    if feature_names is None:
+        feature_names = np.arange(X.shape[1])
+
+    if scipy.sparse.issparse(X):
+        X = X.toarray()
+    if scale:
+        X = StandardScaler().fit_transform(X)
 
     # Split data into cross validaton sets
     if cv_mode == "stratified":
@@ -242,50 +288,64 @@ def logreg(
     else:
         raise ValueError("cv_mode must be 'stratified' or 'spatial'")
 
-    # Initialize logistic regression model
-    model = LogisticRegression(max_iter=max_iter, class_weight=class_weight)
+    if train_mode == "multivariate":
+        # Initialize logistic regression model
+        model = LogisticRegression(max_iter=max_iter, class_weight=class_weight)
 
-    # Empirical p-value calculation using permutation test
-    score, perm_scores, p_value = permutation_test_score(
-        model, X, y, scoring=scoring, n_permutations=n_permutations, cv=cv, n_jobs=-1, verbose=1
-    )
-
-    # Summarize permutation test results
-    df_permutations = pd.DataFrame(
-        [[score, perm_scores.mean(), perm_scores.std(), p_value]],
-        columns=[f"{scoring}_score", f"perm_mean{scoring}_score", f"perm_std{scoring}_score", "p_value"],
-    )
-    df_permutations["effect_size"] = (
-        df_permutations[f"{scoring}_score"] - df_permutations[f"perm_mean{scoring}_score"]
-    ) / df_permutations[f"perm_std{scoring}_score"]
-
-    # Fit the model and compute feature importances from permutations
-
-    if importance_mode == "permutation":
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=test_size, stratify=y, random_state=random_state
-        )
-        model.fit(X_train, y_train)
-        importances = permutation_importance(
-            model, pd.DataFrame.sparse.from_spmatrix(X_test), y_test, scoring=scoring, n_repeats=n_repeats, n_jobs=-1
-        )
-        importances.pop("importances")
-        df_importances = pd.DataFrame(importances, index=feature_names).sort_values("importances_mean", ascending=False)
-
-    elif importance_mode == "coef":
-        model.fit(X, y)
-        # Feature importances from model coefs
-        # cv_results = cross_validate(model,X,y,return_estimator=True, scoring=scoring, n_jobs=-1)
-        # importances = np.std(X, axis=0) * np.vstack([m.coef_[0] for m in cv_results["estimator"]])
-        importances = StandardScaler(with_mean=False).fit(X).scale_ * model.coef_[0]
-        df_importances = pd.DataFrame(importances, index=feature_names, columns=["importances"]).sort_values(
-            "importances", ascending=False
+        # Empirical p-value calculation using permutation test
+        score, perm_scores, p_value = permutation_test_score(
+            model, X, y, scoring=scoring, n_permutations=n_permutations, cv=cv, n_jobs=-1, verbose=1
         )
 
-        # coef pvalues from formula
-        # df_importances["pvalues"] = logit_pvalue(model, X.toarray())[1:]
-    else:
-        raise ValueError("Importance mode must be 'permutation' or 'coef'")
+        # Summarize permutation test results
+        df_permutations = pd.DataFrame(
+            [[score, perm_scores.mean(), perm_scores.std(), p_value]],
+            columns=[f"{scoring}_score", f"perm_mean{scoring}_score", f"perm_std{scoring}_score", "p_value"],
+        )
+        df_permutations["effect_size"] = (
+            df_permutations[f"{scoring}_score"] - df_permutations[f"perm_mean{scoring}_score"]
+        ) / df_permutations[f"perm_std{scoring}_score"]
+
+        # Fit the model and compute feature importances from permutations
+        if importance_mode == "permutation":
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=test_size, stratify=y, random_state=random_state
+            )
+            model.fit(X_train, y_train)
+            importances = permutation_importance(
+                model,
+                pd.DataFrame.sparse.from_spmatrix(X_test),
+                y_test,
+                scoring=scoring,
+                n_repeats=n_repeats,
+                n_jobs=-1,
+            )
+            importances.pop("importances")
+            df_importances = pd.DataFrame(importances, index=feature_names).sort_values(
+                "importances_mean", ascending=False
+            )
+
+        elif importance_mode == "coef":
+            model.fit(X, y)
+            # Feature importances from model coefs
+            # cv_results = cross_validate(model,X,y,return_estimator=True, scoring=scoring, n_jobs=-1)
+            # importances = np.std(X, axis=0) * np.vstack([m.coef_[0] for m in cv_results["estimator"]])
+            # importances = StandardScaler(with_mean=False).fit(X).scale_ * model.coef_[0]
+            importances = model.coef_[0]
+            df_importances = pd.DataFrame(importances, index=feature_names, columns=["importances"]).sort_values(
+                "importances", ascending=False
+            )
+
+            # coef pvalues from formula
+            # df_importances["pvalues"] = logit_pvalue(model, X.toarray())[1:]
+        else:
+            raise ValueError("Importance mode must be 'permutation' or 'coef'")
+
+    elif train_mode == "univariate":
+        df_importances = _logreg_univariate(
+            X, y, feature_names, compute_pvalue=True, max_iter=max_iter, class_weight=class_weight
+        ).sort_values("importances", ascending=False)
+        df_permutations = pd.DataFrame()
 
     return df_permutations, df_importances
 
@@ -442,19 +502,37 @@ def get_cosine_similarity_score(pbs_xenium, pb_scrna, labels_key, correction_met
     return df
 
 
-def rename_correction_methods(df, column="correction_method"):
-    df[column] = df[column].replace(
-        {
-            "resolvi": "ResolVI",
-            "resolvi_supervised": "ResolVI supervised",
-            "ovrlpy_correction_signal_integrity_threshold=0.5": "ovrlpy 0.5",
-            "ovrlpy_correction_signal_integrity_threshold=0.7": "ovrlpy 0.7",
-            "ovrlpy_0.5": "ovrlpy 0.5",
-            "ovrlpy_0.7": "ovrlpy 0.7",
-            "split_fully_purified": "SPLIT",
-            "split": "SPLIT",
-        }
-    )
+def rename_methods(
+    df,
+    segmentation_column="segmentation",
+    correction_column="correction_method",
+    rename_segmentation={
+        "10x_mm_0um": "MM 0µm",
+        "10x_mm_5um": "MM",
+        "10x_mm_15um": "MM 15µm",
+        "10x_0um": "0µm",
+        "10x_5um": "5µm",
+        "10x_15um": "15µm",
+        "baysor": "Baysor",
+        "proseg_expected": "ProSeg",
+        "proseg_mode": "ProSeg mode",
+        "segger": "Segger",
+    },
+    rename_correction={
+        "resolvi": "ResolVI",
+        "resolvi_supervised": "ResolVI supervised",
+        "ovrlpy_correction_signal_integrity_threshold=0.5": "ovrlpy 0.5",
+        "ovrlpy_correction_signal_integrity_threshold=0.7": "ovrlpy 0.7",
+        "ovrlpy_0.5": "ovrlpy 0.5",
+        "ovrlpy_0.7": "ovrlpy 0.7",
+        "split_fully_purified": "SPLIT",
+        "split": "SPLIT",
+    },
+):
+    if segmentation_column is not None:
+        df[segmentation_column] = df[segmentation_column].replace(rename_segmentation)
+    if correction_column is not None:
+        df[correction_column] = df[correction_column].replace(rename_correction)
 
 
 def extract_info_cell_type_pair(series, cti, ctj, flag):
@@ -509,7 +587,7 @@ def get_df_summary_stats_plot(dfs, plot_metric="n_cells"):
         columns = xenium_levels + ["correction_method", plot_metric]
 
     df = pd.DataFrame(data, columns=columns)
-    rename_correction_methods(df)
+    rename_methods(df)
     return df
 
 
@@ -521,7 +599,7 @@ def get_df_permutations_logreg_plot(df_permutations_logreg, correction_methods):
                 df[(correction_method, *k, cti, ctj)] = v.loc[(cti, ctj, 0)]
     df = pd.DataFrame(df).T.reset_index()
     df.columns = ["correction_method"] + xenium_levels + ["cti", "ctj"] + df.columns[-5:].tolist()
-    rename_correction_methods(df)
+    rename_methods(df)
     return df
 
 
@@ -561,7 +639,7 @@ def get_df_marker_rank_significance_plot(
             df[(correction_method, *k)] = v.loc[rank_metric_, v.columns.get_level_values(2) == plot_metric]
     df = pd.concat(df).reset_index()
     df.columns = ["correction_method"] + xenium_levels + ["cti", "ctj", "plot_metric", plot_metric]
-    rename_correction_methods(df)
+    rename_methods(df)
     return df
 
 
@@ -577,7 +655,7 @@ def get_df_ctj_marker_genes(
 
     df = pd.concat(df).reset_index().drop("level_7", axis=1)
     df.columns = ["correction_method"] + xenium_levels + ["cell_type", "gene"]
-    rename_correction_methods(df)
+    rename_methods(df)
     return df
 
 
@@ -593,7 +671,24 @@ def get_df_diffexpr_cti_ctj(dfs_diffexpr, cti, ctj, ref_panel, correction_method
 
     df = pd.DataFrame(df).T.reset_index()
     df.columns = ["correction_method"] + xenium_levels + ["cti", "ctj"] + df.columns[8:].tolist()
-    rename_correction_methods(df)
+    rename_methods(df)
+    return df
+
+
+def get_df_importances_cti_ctj(
+    df_importances_logreg, cti, ctj, ref_panel, correction_methods, rank_metric="importances"
+):
+    df = {}
+    for correction_method in correction_methods:
+        for k, v in df_importances_logreg[correction_method].items():
+            if k[2] != ref_panel:
+                continue
+            if (cti, ctj) in v.index:
+                df[(correction_method, *k, cti, ctj)] = v.loc[(cti, ctj), rank_metric]
+
+    df = pd.DataFrame(df).T.reset_index()
+    df.columns = ["correction_method"] + xenium_levels + ["cti", "ctj"] + df.columns[8:].tolist()
+    rename_methods(df)
     return df
 
 
@@ -818,6 +913,6 @@ class SpatialClusterGroupKFold:
             The testing set indices for that split.
         """
         X_coords = X  # Assume X passed is the coordinates
-        cluster_labels = self._get_cluster_labels(X_coords)
+        self.cluster_labels_ = self._get_cluster_labels(X_coords)
         gkf = GroupKFold(n_splits=self.n_splits)
-        return gkf.split(X_coords, y, groups=cluster_labels)
+        return gkf.split(X_coords, y, groups=self.cluster_labels_)

@@ -491,7 +491,7 @@ def read_xenium_samples(
     sample_name_as_key=True,
     xeniumranger_dir=None,
     max_workers=None,
-    pool_mode="process",
+    pool_mode="thread",
 ):
     """
     Reads in a dictionary of sample directories and returns a dictionary of
@@ -530,6 +530,10 @@ def read_xenium_samples(
         otherwise returns full path as key
     xeniumranger_dir: str, optional
         Path to xeniumranger output dir (for proseg raw only)
+    max_workers : int, optional
+        Maximum number of workers to use for parallel processing, by default None
+    pool_mode : str, optional
+        Pool mode for parallel processing, "thread" or "process", by default "thread"
 
     Returns
     -------
@@ -1054,7 +1058,9 @@ def _read_contamination_metrics_results_sample(
     markers_mode="diffexpr",
     cv_mode="spatial",
     scoring="precision",
-    evaluation: list = "diffexpr",
+    evaluation: str = "diffexpr",
+    genes_name="all",
+    train_mode: str = "multivariate",
 ):
     """
     Reads contamination metrics results for a single sample
@@ -1082,6 +1088,8 @@ def _read_contamination_metrics_results_sample(
         cv_mode (str): The cross-validation mode used.
         scoring (str): The scoring metric used.
         evaluation (str): evaluation test to load, 'diffexpr' or 'logreg'.
+        genes_name (str): Load results computed on a marker genes subset with folder name 'genes_name' or all genes ('all').
+        train_mode (str): The train mode used.
 
     Returns:
         tuple or None:
@@ -1094,14 +1102,34 @@ def _read_contamination_metrics_results_sample(
                 None.
     """
 
+    def _read(out_dict, key, path):
+        if path.exists():
+            if path.suffix == ".parquet":
+                res = pd.read_parquet(path, engine="pyarrow")
+            elif path.suffix == ".json":
+                with open(path, "r") as f:
+                    res = json.load(f)
+            if len(res):
+                out_dict[key] = res
+            else:
+                print(f"File is empty: {path}")
+        else:
+            print(f"File does not exist: {path}")
+
     k = (segmentation.stem, condition.stem, panel.stem, donor.stem, sample.stem)
     name = "/".join(k)
     name_params_diffexpr = f"{markers_mode}_{radius=}_{top_n=}"
-    name_params_logreg = f"{markers_mode}_{radius=}_{n_permutations=}_{n_splits=}_{top_n=}_{scoring}_{cv_mode}"
+    name_params_logreg = (
+        f"{markers_mode}_{radius=}_{n_permutations=}_{n_splits=}_{top_n=}_{scoring}_{cv_mode}_{train_mode}"
+    )
 
     # folder name
     folder_diffexpr = f"contamination_metrics_{name_params_diffexpr}"
     folder_logreg = f"contamination_metrics_{name_params_logreg}_logreg"
+
+    if genes_name is not None:
+        folder_diffexpr += f"/{genes_name}"
+        folder_logreg += f"/{genes_name}"
 
     if evaluation == "logreg":
         folder = folder_logreg
@@ -1144,50 +1172,19 @@ def _read_contamination_metrics_results_sample(
         out_file_df_markers_rank_significance_diffexpr = Path(prefix + "markers_rank_significance_diffexpr.parquet")
         out_file_summary_stats = Path(prefix + "summary_stats.json")
 
-        if out_file_df_markers_rank_significance_diffexpr.exists():
-            loaded_data["df_markers_rank_significance_diffexpr"] = pd.read_parquet(
-                out_file_df_markers_rank_significance_diffexpr, engine="pyarrow"
-            )
-        else:
-            print(f"File does not exist: {out_file_df_markers_rank_significance_diffexpr}")
-
-        if out_file_df_diffexpr.exists():
-            df_diffexpr = pd.read_parquet(out_file_df_diffexpr, engine="pyarrow")
-            loaded_data["df_diffexpr"] = df_diffexpr
-        else:
-            print(f"File does not exist: {out_file_df_diffexpr}")
-
-        if out_file_summary_stats.exists():
-            with open(out_file_summary_stats, "r") as f:
-                summary_stats = json.load(f)
-            loaded_data["summary_stats"] = summary_stats
-        else:
-            print(f"File does not exist: {out_file_summary_stats}")
+        _read(loaded_data, "df_diffexpr", out_file_df_diffexpr)
+        _read(loaded_data, "df_markers_rank_significance_diffexpr", out_file_df_markers_rank_significance_diffexpr)
+        _read(loaded_data, "summary_stats", out_file_summary_stats)
 
     elif evaluation == "logreg":
         # logreg files
         out_file_df_permutations_logreg = Path(prefix + "permutations_logreg.parquet")
         out_file_df_importances_logreg = Path(prefix + "importances_logreg.parquet")
-        out_file_df_markers_rank_significance_logreg = Path(prefix + "markers_rank_significance_logreg.json")
-        if out_file_df_permutations_logreg.exists():
-            df_permutations_logreg = pd.read_parquet(out_file_df_permutations_logreg, engine="pyarrow")
-            loaded_data["df_permutations_logreg"] = df_permutations_logreg
-        else:
-            print(f"File does not exist: {out_file_df_permutations_logreg}")
+        out_file_df_markers_rank_significance_logreg = Path(prefix + "markers_rank_significance_logreg.parquet")
 
-        if out_file_df_importances_logreg.exists():
-            df_importances_logreg = pd.read_parquet(out_file_df_importances_logreg, engine="pyarrow")
-            loaded_data["df_importances_logreg"] = df_importances_logreg
-        else:
-            print(f"File does not exist: {out_file_df_importances_logreg}")
-
-        if out_file_df_markers_rank_significance_logreg.exists():
-            df_markers_rank_significance_logreg = pd.read_parquet(
-                out_file_df_markers_rank_significance_logreg, engine="pyarrow"
-            )
-            loaded_data["df_markers_rank_significance_logreg"] = df_markers_rank_significance_logreg
-        else:
-            print(f"File does not exist: {out_file_df_markers_rank_significance_logreg}")
+        _read(loaded_data, "df_permutations_logreg", out_file_df_permutations_logreg)
+        _read(loaded_data, "df_importances_logreg", out_file_df_importances_logreg)
+        _read(loaded_data, "df_markers_rank_significance_logreg", out_file_df_markers_rank_significance_logreg)
 
     else:
         raise ValueError(f"Unknown evaluation: {evaluation}")
@@ -1217,6 +1214,8 @@ def read_contamination_metrics_results(
     ref_condition: str = None,
     ref_panel: str = None,
     evaluation: str = "diffexpr",
+    genes_name: str = "all",
+    train_mode: str = "multivariate",
 ):
     """
     Reads contamination metrics results for multiple samples in parallel.
@@ -1241,6 +1240,9 @@ def read_contamination_metrics_results(
         cv_mode (str): The cross-validation mode used.
         scoring (str): The scoring metric used.
         evaluation (str): evaluation test to load, 'diffexpr' or 'logreg'.
+        genes_name (None or str): Load results computed on a marker genes subset with folder name genes_name rather than all genes.
+        train_mode (str): train mode to load for evaluation='logreg', 'multivariate' or 'univariate'.
+
     Returns:
         dict: A dictionary where keys are correction methods, and values are dictionaries mapping sample keys
               to DataFrames.
@@ -1287,6 +1289,8 @@ def read_contamination_metrics_results(
                                         cv_mode,
                                         scoring,
                                         evaluation,
+                                        genes_name,
+                                        train_mode,
                                     )
                                 )
 

@@ -84,18 +84,7 @@ hue_segmentation_order = [
     "ProSeg mode",
     "Segger",
 ]
-rename_segmentations = {
-    "10x_mm_0um": "MM 0µm",
-    "10x_mm_5um": "MM",
-    "10x_mm_15um": "MM 15µm",
-    "10x_0um": "0µm",
-    "10x_5um": "5µm",
-    "10x_15um": "15µm",
-    "baysor": "Baysor",
-    "proseg_expected": "ProSeg",
-    "proseg_mode": "ProSeg mode",
-    "segger": "Segger",
-}
+
 
 hue_correction = "correction_method"
 hue_correction_order = [
@@ -152,7 +141,6 @@ for plot_metric in plot_metrics:
     df = df.query("panel == @panel")
 
     # rename segmentations
-    df["segmentation"] = df["segmentation"].replace(rename_segmentations)
 
     # plotting params, palette
     unique_labels = [c for c in hue_correction_order if c in np.unique(df[hue_correction].dropna())]
@@ -161,7 +149,7 @@ for plot_metric in plot_metrics:
     legend_handles = [mpatches.Patch(color=color, label=label) for label, color in palette.items()]
 
     ###  boxplot
-    f = plt.figure(figsize=(6, 3))
+    f = plt.figure(figsize=(7, 6))
     ax = plt.subplot()
     g = sns.boxplot(
         df,
@@ -174,20 +162,38 @@ for plot_metric in plot_metrics:
         ax=ax,
         order=[s for s in hue_segmentation_order if s in df["segmentation"].unique()],
         log_scale=True if plot_metric == "n_cells" else False,
-        showfliers=True,
-        flierprops={
-            "marker": "o",
-            "color": "black",
-            "markersize": 1,
-            "markerfacecolor": "w",
-        },
+        # flierprops={
+        #     "marker": "o",
+        #     "color": "black",
+        #     "markersize": 1,
+        #     "markerfacecolor": "w",
+        # },
+        boxprops={"alpha": 0.4},
+        showfliers=False,
+    )
+    sns.stripplot(
+        df,
+        x="segmentation",
+        y=plot_metric,
+        hue=hue_correction,
+        hue_order=unique_labels,
+        legend=False,
+        palette=palette,
+        ax=ax,
+        order=[s for s in hue_segmentation_order if s in df["segmentation"].unique()],
+        log_scale=True if plot_metric == "n_cells" else False,
+        dodge=True,
+        jitter=True,
+        s=3.5,
     )
 
     if plot_metric == "n_cells":
         ax.set_ylim(None, 1e6)
-    sns.despine(offset=10, trim=True)
+
+    sns.despine()
     ax.yaxis.grid(True)
     ax.yaxis.set_tick_params(labelsize=12)  # If you also want to change the y-axis numbers
+
     if plot_metric == '"-log10pvalue"':
         ax.set.ylabel(r"$-\log_{10} \text{ p-value}$", fontsize=14)
     else:
@@ -204,3 +210,4 @@ for plot_metric in plot_metrics:
     #     frameon=False,
     # )
     plt.savefig(out_file, dpi=dpi, bbox_inches="tight")
+    plt.close()

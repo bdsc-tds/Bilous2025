@@ -73,58 +73,6 @@ dpi = args.dpi
 extension = args.extension
 
 
-# condition = ""
-# panel = ""
-# correction_methods = ""
-# normalisation = "lognorm"
-# layer = "data"
-# reference = "matched_reference_combo"
-# method = ""
-# level = ""
-# mixture_k = ""
-# num_samples = ""
-# count_correction_palette = ""
-# use_precomputed = ""
-# dpi = ""
-# extension = ""
-
-
-# xenium_dir = Path(cfg["xenium_processed_data_dir"])
-# count_correction_dir = Path(cfg["xenium_count_correction_dir"])
-# std_seurat_analysis_dir = Path(cfg["xenium_std_seurat_analysis_dir"])
-# cell_type_annotation_dir = Path(cfg["xenium_cell_type_annotation_dir"])
-# scrnaseq_processed_data_dir = Path(cfg["scrnaseq_processed_data_dir"])
-# results_dir = Path(cfg["results_dir"])
-# palette_dir = Path(cfg["xenium_metadata_dir"])
-# figures_dir = Path(cfg["figures_dir"])
-# seurat_to_h5_dir = results_dir / "seurat_to_h5"
-
-# Params
-# probably only need to run for lognorm data
-signal_integrity_thresholds = [0.5, 0.7]
-correction_methods = ["raw", "split_fully_purified", "resolvi", "resolvi_supervised"] + [
-    f"ovrlpy_correction_{signal_integrity_threshold=}" for signal_integrity_threshold in signal_integrity_thresholds
-]
-normalisations = [
-    "lognorm",
-]
-layers = [
-    "data",
-]
-references = ["matched_reference_combo"]
-methods = ["rctd_class_aware"]
-levels = ["Level2.1"]
-use_precomputed = True
-dpi = 300
-extension = "png"
-
-# resolvi params
-num_samples = 30
-mixture_k = 50
-
-segmentation = sorted(xenium_dir.iterdir())[0]  # arbitrary segmentation just to loop over conditions and panels
-
-
 # Params
 layer_scrnaseq = "RNA_counts"
 xenium_levels = ["segmentation", "condition", "panel", "donor", "sample"]
@@ -142,18 +90,7 @@ hue_segmentation_order = [
     "ProSeg mode",
     "Segger",
 ]
-rename_segmentations = {
-    "10x_mm_0um": "MM 0µm",
-    "10x_mm_5um": "MM",
-    "10x_mm_15um": "MM 15µm",
-    "10x_0um": "0µm",
-    "10x_5um": "5µm",
-    "10x_15um": "15µm",
-    "baysor": "Baysor",
-    "proseg_expected": "ProSeg",
-    "proseg_mode": "ProSeg mode",
-    "segger": "Segger",
-}
+
 
 hue_correction = "correction_method"
 hue_correction_order = [
@@ -326,10 +263,10 @@ df_all = _utils.get_cosine_similarity_score(
     correction_methods,
     columns=xenium_levels + ["correction_method", "cti", "cosine_similarity"],
 )
-_utils.rename_correction_methods(df_all)
+_utils.rename_methods(df_all)
 
 # rename segmentations
-df_all["segmentation"] = df_all["segmentation"].replace(rename_segmentations)
+
 
 for cti in df_all["cti"].unique():
     df = df_all.query(f"panel == '{panel}' and cti == '{cti}'")
@@ -346,7 +283,7 @@ for cti in df_all["cti"].unique():
     legend_handles = [mpatches.Patch(color=color, label=label) for label, color in palette.items()]
 
     ### hypergeometric pvalue boxplot
-    f = plt.figure(figsize=(6, 3))
+    f = plt.figure(figsize=(7, 6))
     ax = plt.subplot()
     g = sns.boxplot(
         df,
@@ -358,15 +295,31 @@ for cti in df_all["cti"].unique():
         palette=palette,
         ax=ax,
         order=[s for s in hue_segmentation_order if s in df["segmentation"].unique()],
-        flierprops={
-            "marker": "o",
-            "color": "black",
-            "markersize": 1,
-            "markerfacecolor": "w",
-        },
+        # flierprops={
+        #     "marker": "o",
+        #     "color": "black",
+        #     "markersize": 1,
+        #     "markerfacecolor": "w",
+        # },
+        boxprops={"alpha": 0.4},
+        showfliers=False,
+    )
+    sns.stripplot(
+        df,
+        x="segmentation",
+        y=plot_metric,
+        hue=hue_correction,
+        hue_order=unique_labels,
+        legend=False,
+        palette=palette,
+        ax=ax,
+        order=[s for s in hue_segmentation_order if s in df["segmentation"].unique()],
+        dodge=True,
+        jitter=True,
+        s=3.5,
     )
 
-    sns.despine(offset=10, trim=True)
+    sns.despine()
     ax.yaxis.grid(True)
     ax.yaxis.set_tick_params(labelsize=12)  # If you also want to change the y-axis numbers
     ax.set_ylabel(plot_metric, fontsize=14)

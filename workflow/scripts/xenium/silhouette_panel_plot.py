@@ -95,7 +95,7 @@ sns.set(style="ticks")
 f = plt.figure(figsize=(6, df["sample"].nunique() // 2))
 g = sns.stripplot(data=df, x="silhouette", y="sample", hue=hue, hue_order=unique_labels, legend=False, palette=palette)
 
-sns.despine(offset=10, trim=True)
+sns.despine()
 plt.gca().xaxis.grid(True)
 plt.axvline(0, c="k", linestyle="-", alpha=0.4)
 

@@ -224,7 +224,7 @@ g = sns.boxplot(
     ax=ax,
 )
 
-# sns.despine(offset=10, trim=True)
+# sns.despine()
 
 if log_scale:
     ax.set_xticklabels([format_ticks(x) for x in ax.get_xticks(minor=True)], minor=True)

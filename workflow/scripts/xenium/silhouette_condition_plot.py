@@ -98,7 +98,7 @@ g = sns.boxplot(
     palette=palette,
 )  # , cut=0, width=1,inner='quart')
 
-sns.despine(offset=10, trim=True)
+sns.despine()
 plt.gca().xaxis.grid(True)
 plt.axvline(0, c="k", linestyle="-", zorder=0, alpha=0.6)
 

@@ -24,10 +24,7 @@ levels = ['Level2.1']
 use_precomputed = True
 
 radius = 15
-n_permutations = 30
-n_splits= 5
 top_n = 20
-scoring = 'precision'
 markers_modes = ['diffexpr']#,'common_markers'] #'/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/xenium_paper/data/markers/cellmarker_cell_types_markers.json'
 
 # resolvi params

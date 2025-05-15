@@ -1,0 +1,2 @@
+[tool.ty.environment]
+python = "/work/PRTNR/CHUV/DIR/rgottar1/spatial/env/jbac/miniforge3/envs/resolvi/bin/python"

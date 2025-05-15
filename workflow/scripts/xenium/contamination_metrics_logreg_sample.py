@@ -64,6 +64,10 @@ def parse_args():
         type=int,
         help="max_n_cells to use",
     )
+    parser.add_argument("--genes", type=str, nargs="*", default=[], help="Restrict data to these genes.")
+    parser.add_argument(
+        "--train_mode", type=str, help="Train all genes at once ('multivariate') or one by one ('univariate')"
+    )
     parser.add_argument(
         "-l",
         type=str,
@@ -138,6 +142,11 @@ if __name__ == "__main__":
         adata_corrected_counts.obsm[obsm] = adata[adata_corrected_counts.obs_names].obsm[obsm]
         adata = adata_corrected_counts
 
+    if len(args.genes):
+        genes_found = [g for g in args.genes if g in adata.var_names]
+        print("Subsetting to", len(genes_found), "genes found in list")
+        adata = adata[:, genes_found].copy()
+
     # read normalised data, filter cells
     # X_normalised = pd.read_parquet(args.sample_normalised_counts)
     # X_normalised.index = pd.read_parquet(args.sample_idx).iloc[:, 0]
@@ -202,7 +211,9 @@ if __name__ == "__main__":
     # define target (cell type j presence in kNN)
     if args.precomputed_adata_obs is not None:
         print("Loading precomputed adata obs. Replacing loaded labels")
-        adata.obs = pd.read_parquet(args.precomputed_adata_obs).loc[adata.obs_names]
+        obs_ = pd.read_parquet(args.precomputed_adata_obs)
+        adata = adata[[c for c in adata.obs_names if c in obs_.index]]
+        adata.obs = obs_.loc[adata.obs_names]
     else:
         obsm = "spatial"
         knnlabels, knndis, knnidx, knn_graph = _utils.get_knn_labels(
@@ -289,6 +300,8 @@ if __name__ == "__main__":
                 class_weight="balanced",
                 cv_mode=args.cv_mode,
                 spatial_coords=adata_cti.obsm["spatial"],
+                scale=True,
+                train_mode=args.train_mode,
             )
 
             if df_permutations_logreg_ is None:
@@ -324,9 +337,20 @@ if __name__ == "__main__":
     ###
 
     # logreg
-    pd.concat(df_permutations_logreg).to_parquet(args.out_file_df_permutations_logreg)
-    pd.concat(df_importances_logreg).to_parquet(args.out_file_df_importances_logreg)
-    pd.concat(df_markers_rank_significance_logreg).T.to_parquet(args.out_file_df_markers_rank_significance_logreg)
+    if len(df_permutations_logreg):
+        pd.concat(df_permutations_logreg).to_parquet(args.out_file_df_permutations_logreg)
+    else:
+        pd.DataFrame().to_parquet(args.out_file_df_permutations_logreg)
+
+    if len(df_importances_logreg):
+        pd.concat(df_importances_logreg).to_parquet(args.out_file_df_importances_logreg)
+    else:
+        pd.DataFrame().to_parquet(args.out_file_df_importances_logreg)
+
+    if len(df_markers_rank_significance_logreg):
+        pd.concat(df_markers_rank_significance_logreg).T.to_parquet(args.out_file_df_markers_rank_significance_logreg)
+    else:
+        pd.DataFrame().T.to_parquet(args.out_file_df_markers_rank_significance_logreg)
 
     if args.l is not None:
         _log.close()

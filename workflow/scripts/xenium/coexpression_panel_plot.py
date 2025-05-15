@@ -95,7 +95,6 @@ hue_order = [
 ]
 
 
-
 # Read coexpression results
 cc_paths = []
 for segmentation in (segmentations := coexpression_dir.iterdir()):
@@ -214,7 +213,7 @@ for y in ["sample", "panel"]:
         ax=ax,
     )
 
-    # sns.despine(offset=10, trim=True)
+    # sns.despine()
 
     if log_scale:
         ax.set_xticklabels([format_ticks(x) for x in ax.get_xticks(minor=True)], minor=True)
