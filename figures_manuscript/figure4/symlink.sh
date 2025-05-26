@@ -65,6 +65,10 @@ RELATIVE_PATHS=(
   "contamination_metrics_cosine_similarity_scrnaseq_boxplot/NSCLC/lung/lognorm/data_matched_reference_combo_rctd_class_aware_Level2.1/lung_T_cell_cosine_similarity.png"
   "contamination_metrics_cosine_similarity_scrnaseq_boxplot/NSCLC/5k/lognorm/data_matched_reference_combo_rctd_class_aware_Level2.1/5k_T_cell_cosine_similarity.png"
 
+  # gsea heatmaps
+  "heatmap_diffexpr_gsea/heatmap_ref_panel='lung'_ref_segmentation='5µm'.png"
+  "heatmap_diffexpr_gsea/heatmap_ref_panel='lung'_ref_segmentation='ProSeg'.png"
+
   # count correction palette
   "palettes/col_palette_correction_method_count_correction_legend_vertical.png"
   "palettes/col_palette_correction_method_count_correction_legend_horizontal.png"

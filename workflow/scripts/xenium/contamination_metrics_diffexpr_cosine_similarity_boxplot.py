@@ -321,6 +321,8 @@ for cti in df_all["cti"].unique():
 
     sns.despine()
     ax.yaxis.grid(True)
+    ax.set_ylim(top=1)
+    ax.set_yticks(ax.get_yticks().tolist() + [1] if 1 not in ax.get_yticks() else ax.get_yticks())
     ax.yaxis.set_tick_params(labelsize=12)  # If you also want to change the y-axis numbers
     ax.set_ylabel(plot_metric, fontsize=14)
     plt.setp(ax.get_xticklabels(), fontsize=12)

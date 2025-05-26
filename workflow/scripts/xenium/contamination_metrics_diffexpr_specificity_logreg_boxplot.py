@@ -81,6 +81,9 @@ args = parser.parse_args()
 
 
 # Params
+min_sample_size = 100
+min_sample_size_mode = "specific"
+
 xenium_levels = ["segmentation", "condition", "panel", "donor", "sample"]
 order = ["breast", "chuvio", "lung", "5k"]
 hue_segmentation = "segmentation"
@@ -114,6 +117,25 @@ labels_key = level
 
 # %% [markdown]
 # # Load results diffexpr
+dfs_diffexpr = readwrite.read_contamination_metrics_results(
+    results_dir,
+    correction_methods,
+    std_seurat_analysis_dir,
+    reference,
+    method,
+    level,
+    mixture_k,
+    num_samples,
+    normalisation,
+    layer,
+    markers_mode="diffexpr",
+    radius=radius,
+    top_n=top_n,
+    evaluation="diffexpr",
+    genes_name="all",  #'Xenium_hLung_v1_metadata',
+    ref_condition=condition,
+    ref_panel=panel,
+)
 
 # %%
 dfs = readwrite.read_contamination_metrics_results(
@@ -148,6 +170,10 @@ dfs = readwrite.read_contamination_metrics_results(
 
 df_count_correction_palette = pd.read_csv(count_correction_palette, index_col=0).iloc[:, 0]
 
+if min_sample_size is not None:
+    plot_metric_summary_stats = "df_has_neighbor_counts"
+    df_sample_sizes = _utils.get_df_summary_stats_plot(dfs_diffexpr, plot_metric=plot_metric_summary_stats)
+
 for rank_metric in rank_metrics:
     plot_metrics_ = plot_metrics[-1:] if rank_metric == "mean_zscore" else plot_metrics
     for plot_metric in plot_metrics_:
@@ -173,6 +199,26 @@ for rank_metric in rank_metrics:
             out_file = out_dir / f"{panel}_{cti_name}_contaminated_by_{ctj_name}_{rank_metric}_{plot_metric}.png"
 
             df_plot = df.query("cti == @cti and ctj == @ctj")
+
+            if min_sample_size is not None:
+                df_sample_sizes[f"{cti}_has_{ctj}_neighbor"] = _utils.extract_info_cell_type_pair(
+                    df_sample_sizes[plot_metric_summary_stats], cti, ctj, True
+                )
+                df_sample_sizes[f"{cti}_has_no_{ctj}_neighbor"] = _utils.extract_info_cell_type_pair(
+                    df_sample_sizes[plot_metric_summary_stats], cti, ctj, False
+                )
+                df_sample_sizes["min_class_sample_size"] = df_sample_sizes[
+                    [f"{cti}_has_{ctj}_neighbor", f"{cti}_has_no_{ctj}_neighbor"]
+                ].min(1)
+
+                if min_sample_size_mode == "all":
+                    result = df_sample_sizes.groupby(xenium_levels[1:])["min_class_sample_size"].min().reset_index()
+                    df_plot = df_plot.merge(result, on=xenium_levels[1:])
+                    df_plot = df_plot.query("min_class_sample_size >= @min_sample_size")
+
+                elif min_sample_size_mode == "specific":
+                    df_plot = df_plot.merge(df_sample_sizes, on=xenium_levels + ["correction_method"])
+                    df_plot = df_plot.query("min_class_sample_size >= @min_sample_size")
 
             # plotting params, palette
             unique_labels = [c for c in hue_correction_order if c in np.unique(df_plot[hue_correction].dropna())]
