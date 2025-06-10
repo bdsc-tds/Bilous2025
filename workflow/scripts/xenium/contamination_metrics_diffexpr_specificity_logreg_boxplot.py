@@ -267,12 +267,13 @@ for rank_metric in rank_metrics:
 
             sns.despine()
             ax.yaxis.grid(True)
-            ax.yaxis.set_tick_params(labelsize=12)  # If you also want to change the y-axis numbers
+            ax.tick_params(axis='x', labelsize=14)
+            ax.tick_params(axis='y', labelsize=16)
             if plot_metric == '"-log10pvalue"':
                 ax.set.ylabel(r"$-\log_{10} \text{ p-value}$", fontsize=14)
             else:
                 ax.set_ylabel(plot_metric, fontsize=14)
-            plt.setp(ax.get_xticklabels(), fontsize=12)
+            
 
             # title = f"Condition: {condition}, Panel: {panel}, Reference: {reference}, Method: {method}, Level: {level} \n{cti} contaminated by {ctj}\n rank metric: {rank_metric}, plot metric: {plot_metric}"
             # plt.suptitle(title, y=1.05)

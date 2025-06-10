@@ -154,7 +154,8 @@ g = sns.barplot(
 
 sns.despine()
 ax.yaxis.grid(True)
-plt.setp(ax.get_xticklabels(), fontsize=12)
+ax.tick_params(axis="x", labelsize=14)
+ax.tick_params(axis="y", labelsize=16)
 
 # title = f"condition: {condition}, Panel: {panel}\n Reference: {reference}, Method: {method}, Level: {level}\n {score}"
 # plt.suptitle(title)
