@@ -45,7 +45,7 @@ out_files = []
 for genes_name, genes in genes_dict.items():
     for markers_mode in markers_modes:
         for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
-            if segmentation.stem == 'proseg_mode':
+            if segmentation.stem in ['proseg_mode','bats_normalised','bats_expected']:
                 continue
             for condition in (conditions := segmentation.iterdir()): 
                 for panel in (panels := condition.iterdir()):
@@ -121,7 +121,7 @@ for genes_name, genes in genes_dict.items():
                                                         mem='50GB',
                                                         runtime='3h',
                                                     conda:
-                                                        "spatial"
+                                                        "general_cuda"
                                                     shell:
                                                         """
                                                         mkdir -p "$(dirname {output.out_file_df_diffexpr})"

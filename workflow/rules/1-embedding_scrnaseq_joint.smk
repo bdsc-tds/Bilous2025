@@ -60,7 +60,7 @@ rule embed_panel_scrnaseq_joint:
         # slurm_partition = "gpu",
         # slurm_extra = '--gres=gpu:1',
     conda:
-        "spatial"
+        "general_cuda"
     shell:
         """
         mkdir -p "$(dirname {output.out_file})"

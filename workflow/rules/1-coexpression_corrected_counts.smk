@@ -51,7 +51,7 @@ for correction_method in correction_methods:
                                         mem='60GB' if panel.stem == '5k' else '20GB',
                                         runtime='20m' if panel.stem == '5k' else '10m',
                                     conda:
-                                        "spatial"
+                                        "general_cuda"
                                     shell:
                                         """
                                         mkdir -p "$(dirname {output.out_file_coexpr})"

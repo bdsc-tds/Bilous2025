@@ -87,7 +87,7 @@ for condition in (conditions := segmentation.iterdir()):
                                     mem='100GB',
                                     runtime='30m',
                                 conda:
-                                    "spatial"
+                                    "general_cuda"
                                 shell:
                                     """
                                     mkdir -p "$(dirname {output.out_file})"

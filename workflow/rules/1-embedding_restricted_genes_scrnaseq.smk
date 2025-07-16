@@ -68,7 +68,7 @@ for genes_name, genes in genes_dict.items():
                 # slurm_partition = "gpu",
                 # slurm_extra = '--gres=gpu:1',
             conda:
-                "spatial"
+                "general_cuda"
             shell:
                 """
                 mkdir -p "$(dirname {output.out_file})"

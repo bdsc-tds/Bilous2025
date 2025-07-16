@@ -58,7 +58,7 @@ for segmentation in xenium_dir.iterdir():
                             mem='200GB',
                             runtime='3d',
                         conda:
-                            "spatial"
+                            "general_cuda"
                         shell:
                             """
                             mkdir -p "$(dirname {output.out_file_signal_integrity})"
@@ -78,6 +78,8 @@ for segmentation in xenium_dir.iterdir():
 out_files_ovrlpy_correction = []
 for signal_integrity_threshold in signal_integrity_thresholds:
     for segmentation in (segmentations := xenium_dir.iterdir()):
+        if segmentation.stem in ['bats']:
+            continue
         for condition in (conditions := segmentation.iterdir()): 
             for panel in (panels := condition.iterdir()):
                 for donor in (donors := panel.iterdir()):
@@ -127,7 +129,7 @@ for signal_integrity_threshold in signal_integrity_thresholds:
                                 mem='100GB',
                                 runtime='20m',
                             conda:
-                                "spatial"
+                                "general_cuda"
                             shell:
                                 """
                                 mkdir -p "$(dirname {output.out_file_corrected_counts})"

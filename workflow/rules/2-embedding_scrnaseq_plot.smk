@@ -71,7 +71,7 @@ for reference in (references := scrnaseq_processed_data_dir.iterdir()):
                 mem='30GB',
                 runtime='10m',
             conda:
-                "spatial"
+                "general_cuda"
             shell:
                 """
                 mkdir -p "$(dirname {output.out_file})"

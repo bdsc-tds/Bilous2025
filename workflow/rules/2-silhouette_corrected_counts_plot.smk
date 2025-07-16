@@ -55,7 +55,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                         mem='5GB',
                                         runtime='5m',
                                     conda:
-                                        "spatial"
+                                        "general_cuda"
                                     shell:
                                         """
                                         mkdir -p "$(dirname {output.out_file})"
@@ -114,7 +114,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 mem='5GB',
                                 runtime='5m',
                             conda:
-                                "spatial"
+                                "general_cuda"
                             shell:
                                 """
                                 mkdir -p "$(dirname {output.out_file})"

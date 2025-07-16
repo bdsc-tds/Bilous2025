@@ -52,7 +52,7 @@ for train_mode in train_modes:
     for genes_name, genes in genes_dict.items():
         for markers_mode in markers_modes:
             for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
-                if segmentation.stem == 'proseg_mode':
+                if segmentation.stem in ['proseg_mode','bats_normalised','bats_expected']:
                     continue
                 for condition in (conditions := segmentation.iterdir()): 
                     for panel in (panels := condition.iterdir()):
@@ -134,7 +134,7 @@ for train_mode in train_modes:
                                                             mem='50GB',
                                                             runtime='2d',
                                                         conda:
-                                                            "spatial"
+                                                            "general_cuda"
                                                         shell:
                                                             """
                                                             mkdir -p "$(dirname {output.out_file_df_permutations_logreg})"

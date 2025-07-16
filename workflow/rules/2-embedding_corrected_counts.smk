@@ -7,10 +7,11 @@ results_dir = Path(config['results_dir'])
 
 # params from pipeline config
 signal_integrity_thresholds = [0.5,0.7]
-correction_methods = ['split_fully_purified','resolvi','resolvi_supervised'] + [f'ovrlpy_correction_{signal_integrity_threshold=}' for signal_integrity_threshold in signal_integrity_thresholds]
+# correction_methods = ['split_fully_purified','resolvi','resolvi_supervised'] + [f'ovrlpy_correction_{signal_integrity_threshold=}' for signal_integrity_threshold in signal_integrity_thresholds]
+correction_methods = ['split_fully_purified']
 normalisations = ['lognorm']
 layers = ['data']#,'scale_data']
-references = ['matched_reference_combo']
+references = ['matched_reference_combo','external_reference']
 methods = ['rctd_class_aware']
 levels = ['Level2.1']
 cell_type_normalisation = 'lognorm'
@@ -36,13 +37,17 @@ out_files_panel = []
 
 for correction_method in correction_methods:
     for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
-        if segmentation.stem == 'proseg_mode':
+        if segmentation.stem in ['proseg_mode','bats_normalised','bats_expected']:
             continue
         for condition in (conditions := segmentation.iterdir()): 
             for panel in (panels := condition.iterdir()):
                 for reference in references:
+                    if reference == 'external_reference' and condition.stem == 'mesothelioma_pilot':
+                        continue
                     for method in methods:
                         for level in levels:
+                            if level == 'Level2.1' and reference == 'external_reference':
+                                continue
                             for normalisation in normalisations: 
                                 for layer in layers:
                                     k = (segmentation.stem,condition.stem,panel.stem)
@@ -57,7 +62,7 @@ for correction_method in correction_methods:
                                     out_files_panel.append(out_file)
 
                                     rule:
-                                        name: f'{correction_method}_embed_panel/{name}/{normalisation}_{layer}'
+                                        name: f'{correction_method}_embed_panel/{name}/{normalisation}_{layer}_{reference}'
                                         input:
                                             count_correction_is_done=results_dir / f"{correction_method}.done"
                                         output:
@@ -94,7 +99,7 @@ for correction_method in correction_methods:
                                             # slurm_partition = "gpu",
                                             # slurm_extra = '--gres=gpu:1',
                                         conda:
-                                            "spatial"
+                                            "general_cuda"
                                         shell:
                                             """
                                             mkdir -p "$(dirname {output.out_file})"

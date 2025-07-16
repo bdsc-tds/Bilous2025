@@ -94,7 +94,7 @@ for correction_method in correction_methods:
                                             mem='80GB',
                                             runtime='5h',
                                         conda:
-                                            "spatial"
+                                            "general_cuda"
                                         shell:
                                             """
                                             mkdir -p "$(dirname {output.out_file})"

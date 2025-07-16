@@ -21,23 +21,26 @@ mixture_k = 50
 # params supervised
 normalisation = 'lognorm'
 mode = 'reference_based'
-references = ['matched_reference_combo']
+references = ['external_reference','matched_reference_combo']
 methods = ['rctd_class_aware']
-levels = ['Level2.1']
+levels = ['Level1','Level2.1']
 
 out_files_training = []
 for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
-    if segmentation.stem == 'proseg_mode':
+    if segmentation.stem in ['proseg_mode','bats_normalised','bats_expected']:
         continue
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
             for donor in (donors := panel.iterdir()):
                 for sample in (samples := donor.iterdir()):
-
                     for reference in references:
                         for method in methods:
                             for level in levels:
-                                
+                                if level == 'Level2.1' and reference == 'external_reference':
+                                    continue
+                                if level in ['Level1','Level2'] and reference == 'matched_reference_combo':
+                                    continue
+
                                 if segmentation.stem == 'proseg_expected':
                                     name_sample =  '/'.join(('proseg',condition.stem,panel.stem,donor.stem,sample.stem,))
                                     path = xenium_dir / f'{name_sample}/raw_results'
@@ -101,7 +104,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
 
 out_files_inference = []
 for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
-    if segmentation.stem == 'proseg_mode':
+    if segmentation.stem in ['proseg_mode','bats_normalised','bats_expected']:
         continue
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):

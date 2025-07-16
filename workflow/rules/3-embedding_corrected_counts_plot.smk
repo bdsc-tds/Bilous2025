@@ -20,10 +20,11 @@ panel_palette = palette_dir / 'col_palette_panel.csv'
 sample_palette = palette_dir / 'col_palette_sample.csv'
 
 signal_integrity_thresholds = [0.5,0.7]
-correction_methods = ['split_fully_purified','resolvi','resolvi_supervised'] + [f'ovrlpy_correction_{signal_integrity_threshold=}' for signal_integrity_threshold in signal_integrity_thresholds]
+# correction_methods = ['split_fully_purified','resolvi','resolvi_supervised'] + [f'ovrlpy_correction_{signal_integrity_threshold=}' for signal_integrity_threshold in signal_integrity_thresholds]
+correction_methods = ['split_fully_purified']
 normalisations = ['lognorm']#,'sctransform']
 layers = ['data']#,'scale_data']
-references = ['matched_reference_combo']#,'external_reference']
+references = ['matched_reference_combo','external_reference']#,'external_reference']
 methods = ['rctd_class_aware']
 colors = ['sample','Level2.1']#['Level1','Level2','Level3','Level4','panel','sample',] # condition and sample as color to plot added here in addition to levels
 extension = 'png'
@@ -32,16 +33,17 @@ out_files_panel = []
 
 for correction_method in correction_methods:
     for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
-        if segmentation.stem == 'proseg_mode':
+        if segmentation.stem in ['proseg_mode','bats_normalised','bats_expected']:
             continue
         for condition in (conditions := segmentation.iterdir()): 
             for panel in (panels := condition.iterdir()):
                 for normalisation in normalisations:
                     for layer in layers: 
                         for reference in references:
+                            if reference == 'external_reference' and condition.stem == 'mesothelioma_pilot':
+                                continue
                             for method in methods:
                                 for color in colors:
-
                                     if color == 'Level2.1' and reference == 'external_reference':
                                         continue
 
@@ -85,7 +87,7 @@ for correction_method in correction_methods:
                                             mem='30GB',
                                             runtime='10m',
                                         conda:
-                                            "spatial"
+                                            "general_cuda"
                                         shell:
                                             """
                                             mkdir -p "$(dirname {output.out_file})"

@@ -56,7 +56,7 @@ for condition in (conditions := segmentation.iterdir()):
                                     mem='5GB',
                                     runtime='5m',
                                 conda:
-                                    "spatial"
+                                    "general_cuda"
                                 shell:
                                     """
                                     mkdir -p "$(dirname {output.out_file})"
@@ -119,7 +119,7 @@ for condition in (conditions := list(segmentation.iterdir())+[Path('all')]):
                                     mem='5GB',
                                     runtime='5m',
                                 conda:
-                                    "spatial"
+                                    "general_cuda"
                                 shell:
                                     """
                                     mkdir -p "$(dirname {output.out_file})"

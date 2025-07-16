@@ -85,7 +85,7 @@ for condition in (conditions := (coexpression_dir / segmentation).iterdir()):
                         mem=mem,
                         runtime=runtime,
                     conda:
-                        "spatial"
+                        "general_cuda"
                     shell:
                         """
                         mkdir -p "$(dirname {output.out_file_plot_sample})"
@@ -164,7 +164,7 @@ for method in methods:
                 mem=mem,
                 runtime=runtime,
             conda:
-                "spatial"
+                "general_cuda"
             shell:
                 """
                 mkdir -p "$(dirname {output.out_file_plot})"

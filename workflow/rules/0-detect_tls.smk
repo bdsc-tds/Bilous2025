@@ -26,7 +26,7 @@ levels = ['Level2.1']
 
 out_files = []
 for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
-    if segmentation.stem == 'proseg_mode':
+    if segmentation.stem in ['proseg_mode','bats_normalised','bats_expected']:
         continue
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
@@ -76,7 +76,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                             mem='50GB',# if panel.stem == '5k' else '10GB',
                                             runtime='15m',
                                         conda:
-                                            "spatial"
+                                            "general_cuda"
                                         shell:
                                             """
                                             mkdir -p "$(dirname {output.out_file})"

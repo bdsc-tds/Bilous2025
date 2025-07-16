@@ -6,6 +6,9 @@ import h5py
 import numpy as np
 import scipy
 import geopandas as gpd
+import dask
+
+dask.config.set({"dataframe.query-planning": False})
 import dask.dataframe as dd
 import spatialdata
 import spatialdata_io

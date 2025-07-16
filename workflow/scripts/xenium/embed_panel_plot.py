@@ -61,6 +61,7 @@ else:
         for k, v in palette_lvl2.items():
             if k not in palette.index:
                 palette[k] = palette_lvl2[k]
+
     else:
         palette = pd.read_csv(cell_type_palette)[[color, f"cols_{color}"]].drop_duplicates().set_index(color).squeeze()
 
@@ -124,7 +125,7 @@ else:
     params = (reference, method, color)
 
     if color == "Level2.1":
-        if condition.stem == "NSCLC":
+        if condition.stem in ["NSCLC","mesothelioma_pilot"]:
             name_malignant = "malignant cell of lung"
         elif condition.stem == "breast":
             name_malignant = "malignant cell of breast"
@@ -140,6 +141,9 @@ else:
 
 # plotting params, palette
 unique_labels = np.unique(df[params].dropna())
+
+print(palette)
+print(unique_labels)
 palette = {u: palette[u] for u in unique_labels}
 legend_handles = [mpatches.Patch(color=color, label=label) for label, color in palette.items()]
 

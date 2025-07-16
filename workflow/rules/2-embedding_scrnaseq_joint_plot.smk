@@ -74,7 +74,7 @@ for color in colors:
             mem='30GB',
             runtime='10m',
         conda:
-            "spatial"
+            "general_cuda"
         shell:
             """
             mkdir -p "$(dirname {output.out_file})"

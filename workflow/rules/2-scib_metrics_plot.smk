@@ -11,7 +11,7 @@ palette_dir = Path(config['xenium_metadata_dir'])
 # Params
 normalisations = ['lognorm']#,'sctransform']
 layers = ['data']#,'scale_data']
-references = ['matched_reference_combo']#,'external_reference']
+references = ['matched_reference_combo','external_reference']
 methods = ['rctd_class_aware']
 levels = ['Level2.1'] # condition and sample as color to plot added here in addition to levels
 dpi = 300
@@ -59,6 +59,10 @@ for condition in (conditions := segmentation.iterdir()):
                 for reference in references:
                     for method in methods:
                         for level in levels:
+                            if level == 'Level2.1' and reference == 'external_reference':
+                                continue
+                            if level in ['Level1','Level2'] and reference == 'matched_reference_combo':
+                                continue
                             for score in scores:
 
                                 # input embedding file (doesn't depend on ref,method or color loops but more readable to have here)
@@ -99,7 +103,7 @@ for condition in (conditions := segmentation.iterdir()):
                                         mem='80GB',
                                         runtime='5h',
                                     conda:
-                                        "spatial"
+                                        "general_cuda"
                                     shell:
                                         """
                                         mkdir -p "$(dirname {output.out_file})"

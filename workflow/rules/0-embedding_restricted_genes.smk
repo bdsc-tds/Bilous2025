@@ -26,7 +26,7 @@ genes = pd.read_csv(config['markers_dir']+'Xenium_NSCLC_5k_lung_chromium_common_
 out_files_panel = []
 
 for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
-    if segmentation.stem == 'proseg_mode':
+    if segmentation.stem in ['proseg_mode','bats_normalised','bats_expected']:
         continue
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
@@ -67,7 +67,7 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                             # slurm_partition = "gpu",
                             # slurm_extra = '--gres=gpu:1',
                         conda:
-                            "spatial"
+                            "general_cuda"
                         shell:
                             """
                             mkdir -p "$(dirname {output.out_file})"

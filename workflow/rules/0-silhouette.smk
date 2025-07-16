@@ -53,7 +53,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                     mem='30GB',
                                     runtime='30m',
                                 conda:
-                                    "spatial"
+                                    "general_cuda"
                                 shell:
                                     """
                                     mkdir -p "$(dirname {output.out_file})"

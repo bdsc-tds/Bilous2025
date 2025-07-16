@@ -19,7 +19,7 @@ mixture_k = 50
 
 out_files_training = []
 for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
-    if segmentation.stem == 'proseg_mode':
+    if segmentation.stem in ['proseg_mode','bats_normalised','bats_expected']:
         continue
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
@@ -85,7 +85,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
 
 out_files_inference = []
 for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
-    if segmentation.stem == 'proseg_mode':
+    if segmentation.stem in ['proseg_mode','bats_normalised','bats_expected']:
         continue
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):

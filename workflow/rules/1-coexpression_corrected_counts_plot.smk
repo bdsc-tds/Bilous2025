@@ -88,7 +88,7 @@ for correction_method in correction_methods:
                             mem=mem,
                             runtime=runtime,
                         conda:
-                            "spatial"
+                            "general_cuda"
                         shell:
                             """
                             mkdir -p "$(dirname {output.out_file_plot_sample})"
@@ -169,7 +169,7 @@ for correction_method in correction_methods:
                     mem=mem,
                     runtime=runtime,
                 conda:
-                    "spatial"
+                    "general_cuda"
                 shell:
                     """
                     mkdir -p "$(dirname {output.out_file_plot})"

@@ -10,14 +10,14 @@ max_n_cells = 100_000
 
 normalisations = ['lognorm']#,'sctransform']
 layers = ['data']#,'scale_data']
-references = ['matched_reference_combo']#,'external_reference']
+references = ['external_reference','matched_reference_combo']#,'external_reference']
 methods = ['rctd_class_aware']
-levels = ['Level2.1'] # condition and sample as color to plot added here in addition to levels
+levels = ['Level1','Level2.1'] # condition and sample as color to plot added here in addition to levels
 
 out_files_panel = []
 
 for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
-    if segmentation.stem == 'proseg_mode':
+    if segmentation.stem in ['proseg_mode','bats_normalised','bats_expected']:
         continue
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
@@ -26,7 +26,11 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                     for reference in references:
                         for method in methods:
                             for level in levels:
-
+                                if level == 'Level2.1' and reference == 'external_reference':
+                                    continue
+                                if level in ['Level1','Level2'] and reference == 'matched_reference_combo':
+                                    continue
+                                    
                                 # input embedding file (doesn't depend on ref,method or color loops but more readable to have here)
                                 k = (segmentation.stem,condition.stem,panel.stem,normalisation)
                                 name = '/'.join(k)
@@ -54,7 +58,7 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                                         mem='80GB',
                                         runtime='5h',
                                     conda:
-                                        "spatial"
+                                        "general_cuda"
                                     shell:
                                         """
                                         mkdir -p "$(dirname {output.out_file})"

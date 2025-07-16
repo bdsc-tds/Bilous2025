@@ -88,7 +88,7 @@ for markers_mode in markers_modes:
                                         mem='30GB',
                                         runtime='2h',
                                     conda:
-                                        "spatial"
+                                        "general_cuda"
                                     shell:
                                         """
                                         mkdir -p "$(dirname {output.out_file})"
