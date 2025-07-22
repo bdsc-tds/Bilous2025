@@ -1,25 +1,3 @@
-import pandas as pd
-
-# cfg paths
-xenium_processed_data_dir = Path(config['xenium_processed_data_dir'])
-results_dir = Path(config['results_dir'])
-std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
-
-# params from pipeline config
-normalisations = ['lognorm','sctransform']
-layers = ['data','scale_data']
-min_counts = 10
-min_features = 5
-max_counts = float("inf")
-max_features = float("inf")
-min_cells = 5
-
-# Params
-n_comps = config['umap_n_comps']
-n_neighbors = config['umap_n_neighbors']
-min_dist = config['umap_min_dist']
-metric = config['umap_metric']
-
 # genes = pd.read_csv(config['markers_dir']+'Xenium_hLung_v1_metadata.csv')['Gene'].tolist()
 genes = pd.read_csv(config['markers_dir']+'Xenium_NSCLC_5k_lung_chromium_common_genes.csv')['gene'].tolist()
 
@@ -67,7 +45,7 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                             # slurm_partition = "gpu",
                             # slurm_extra = '--gres=gpu:1',
                         conda:
-                            "general_cuda"
+                            "spatial"
                         shell:
                             """
                             mkdir -p "$(dirname {output.out_file})"

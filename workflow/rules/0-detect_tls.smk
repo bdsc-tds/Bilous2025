@@ -1,7 +1,7 @@
 from pathlib import Path
 
 # cfg paths
-xenium_dir = Path(config['xenium_processed_data_dir'])
+xenium_processed_data_dir = Path(config['xenium_processed_data_dir'])
 xenium_std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
 results_dir = Path(config['results_dir'])
 cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
@@ -39,10 +39,10 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                 
                                 if segmentation.stem == 'proseg_expected':
                                     name_sample =  '/'.join(('proseg',condition.stem,panel.stem,donor.stem,sample.stem,))
-                                    path = xenium_dir / f'{name_sample}/raw_results'
+                                    path = xenium_processed_data_dir / f'{name_sample}/raw_results'
                                 else:
                                     name_sample =  '/'.join((segmentation.stem.replace('proseg_mode','proseg'),condition.stem,panel.stem,donor.stem,sample.stem,))
-                                    path = xenium_dir / f'{name_sample}/normalised_results/outs'
+                                    path = xenium_processed_data_dir / f'{name_sample}/normalised_results/outs'
 
                                 k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,
                                      normalisation,mode,reference,method,level)
@@ -76,7 +76,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                             mem='50GB',# if panel.stem == '5k' else '10GB',
                                             runtime='15m',
                                         conda:
-                                            "general_cuda"
+                                            "spatial"
                                         shell:
                                             """
                                             mkdir -p "$(dirname {output.out_file})"

@@ -1,15 +1,7 @@
-from pathlib import Path
-
-# cfg paths
-xenium_dir = Path(config['xenium_processed_data_dir'])
-results_dir = Path(config['results_dir'])
-
-# Params
-signal_integrity_thresholds = [0.5,0.7]
-ref_segmentations = [sorted(xenium_dir.iterdir())[0].stem,'proseg'] # ovrlpy output does not depend on segmentation (except for proseg), just run for 10x_0um
+ref_segmentations = [sorted(xenium_processed_data_dir.iterdir())[0].stem,'proseg'] # ovrlpy output does not depend on segmentation (except for proseg), just run for 10x_0um
 
 out_files_ovrlpy = []
-for segmentation in xenium_dir.iterdir():
+for segmentation in xenium_processed_data_dir.iterdir():
     if segmentation.stem not in ref_segmentations:
         continue
     for condition in (conditions := segmentation.iterdir()): 
@@ -58,7 +50,7 @@ for segmentation in xenium_dir.iterdir():
                             mem='200GB',
                             runtime='3d',
                         conda:
-                            "general_cuda"
+                            "spatial"
                         shell:
                             """
                             mkdir -p "$(dirname {output.out_file_signal_integrity})"
@@ -77,7 +69,7 @@ for segmentation in xenium_dir.iterdir():
 
 out_files_ovrlpy_correction = []
 for signal_integrity_threshold in signal_integrity_thresholds:
-    for segmentation in (segmentations := xenium_dir.iterdir()):
+    for segmentation in (segmentations := xenium_processed_data_dir.iterdir()):
         if segmentation.stem in ['bats']:
             continue
         for condition in (conditions := segmentation.iterdir()): 
@@ -129,7 +121,7 @@ for signal_integrity_threshold in signal_integrity_thresholds:
                                 mem='100GB',
                                 runtime='20m',
                             conda:
-                                "general_cuda"
+                                "spatial"
                             shell:
                                 """
                                 mkdir -p "$(dirname {output.out_file_corrected_counts})"

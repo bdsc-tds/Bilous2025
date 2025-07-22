@@ -1,11 +1,3 @@
-from pathlib import Path
-
-# cfg paths
-xenium_dir = Path(config['xenium_processed_data_dir'])
-results_dir = Path(config['results_dir']) 
-scrnaseq_processed_data_dir = Path(config['scrnaseq_processed_data_dir'])
-seurat_to_h5_dir = results_dir / 'seurat_to_h5'
-
 # Params
 genes = 'conditions'
 methods = ['conditional','jaccard']#,'pearson','spearman']
@@ -40,7 +32,7 @@ for reference in (references := scrnaseq_processed_data_dir.iterdir()):
                     mem='50GB',
                     runtime='30m',
                 conda:
-                    "general_cuda"
+                    "spatial"
                 shell:
                     """
                     mkdir -p "$(dirname {output.out_file_coexpr})"

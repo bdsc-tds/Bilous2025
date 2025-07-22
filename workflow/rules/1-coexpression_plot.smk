@@ -1,14 +1,6 @@
-from pathlib import Path
-
-# cfg paths
-xenium_dir = Path(config['xenium_processed_data_dir'])
-results_dir = Path(config['results_dir'])
-figures_dir = Path(config['figures_dir'])
-palette_dir = Path(config['xenium_metadata_dir'])
-
 # take arbitrary segmentation just to loop over all conditions and panel combinations
-segmentation = list(xenium_dir.iterdir())[0].stem 
-coexpression_dir = results_dir / 'coexpression/'
+segmentation = list(xenium_processed_data_dir.iterdir())[0].stem 
+coexpression_dir = results_dir / 'coexpression'
 
 # Params
 methods = ['conditional','jaccard']#,'pearson','spearman']
@@ -19,12 +11,9 @@ min_cond_coex_mode = 'both'
 cc_cutoff = 1.5
 ref_segmentation = '10x_0um'
 ref_oversegmentation = '10x_15um'
-segmentation_palette = palette_dir / 'col_palette_segmentation.csv'
-extension = 'png'
-dpi = 300
 showfliers = False
 log_scale = True
-n_top_gene_pairs = 100_000_000_000 # big number to plot all gene pairs
+n_top_gene_pairs = 100_000_000 # big number to plot all gene pairs
 
 out_files_panel = []
 
@@ -85,7 +74,7 @@ for condition in (conditions := (coexpression_dir / segmentation).iterdir()):
                         mem=mem,
                         runtime=runtime,
                     conda:
-                        "general_cuda"
+                        "spatial"
                     shell:
                         """
                         mkdir -p "$(dirname {output.out_file_plot_sample})"
@@ -164,7 +153,7 @@ for method in methods:
                 mem=mem,
                 runtime=runtime,
             conda:
-                "general_cuda"
+                "spatial"
             shell:
                 """
                 mkdir -p "$(dirname {output.out_file_plot})"

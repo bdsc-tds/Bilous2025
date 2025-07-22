@@ -114,13 +114,13 @@ if __name__ == "__main__":
     if args.g in ["condition", "conditions"]:
         if "raw_results" in args.i.as_posix():
             # proseg expected counts directory
-            xenium_dir = args.i.parents[5]
+            xenium_processed_data_dir = args.i.parents[5]
             sample_condition = args.i.parents[4].stem
         else:
-            xenium_dir = args.i.parents[6]
+            xenium_processed_data_dir = args.i.parents[6]
             sample_condition = args.i.parents[5].stem
 
-        ref_segmentation = list(xenium_dir.iterdir())[0]  # get any segmentation
+        ref_segmentation = list(xenium_processed_data_dir.iterdir())[0]  # get any segmentation
 
         panels_genes = {}
         for condition in ref_segmentation.iterdir():

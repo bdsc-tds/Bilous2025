@@ -1,30 +1,3 @@
-from pathlib import Path
-
-# cfg paths
-xenium_dir = Path(config['xenium_processed_data_dir'])
-xenium_std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
-results_dir = Path(config['results_dir'])
-cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
-
-# params from pipeline config
-min_counts = 10
-min_features = 5
-max_counts = float("inf")
-max_features = float("inf")
-min_cells = 5
-
-# params
-num_samples = 30
-batch_size = 1000
-mixture_k = 50
-
-# params supervised
-normalisation = 'lognorm'
-mode = 'reference_based'
-references = ['external_reference','matched_reference_combo']
-methods = ['rctd_class_aware']
-levels = ['Level1','Level2.1']
-
 out_files_training = []
 for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
     if segmentation.stem in ['proseg_mode','bats_normalised','bats_expected']:
@@ -36,17 +9,18 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                     for reference in references:
                         for method in methods:
                             for level in levels:
-                                if level == 'Level2.1' and reference == 'external_reference':
+                                if level not in CONDITIONS_LEVELS[condition.stem]:
                                     continue
-                                if level in ['Level1','Level2'] and reference == 'matched_reference_combo':
+                                if reference not in CONDITIONS_REFERENCES[condition.stem]:
                                     continue
+
 
                                 if segmentation.stem == 'proseg_expected':
                                     name_sample =  '/'.join(('proseg',condition.stem,panel.stem,donor.stem,sample.stem,))
-                                    path = xenium_dir / f'{name_sample}/raw_results'
+                                    path = xenium_processed_data_dir / f'{name_sample}/raw_results'
                                 else:
                                     name_sample =  '/'.join((segmentation.stem.replace('proseg_mode','proseg'),condition.stem,panel.stem,donor.stem,sample.stem,))
-                                    path = xenium_dir / f'{name_sample}/normalised_results/outs'
+                                    path = xenium_processed_data_dir / f'{name_sample}/normalised_results/outs'
 
                                 k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,
                                      normalisation,mode,reference,method,level,f'{mixture_k=}')
@@ -110,19 +84,22 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
         for panel in (panels := condition.iterdir()):
             for donor in (donors := panel.iterdir()):
                 for sample in (samples := donor.iterdir()):
-
                     for reference in references:
                         for method in methods:
                             for level in levels:
-                                
+                                if level not in CONDITIONS_LEVELS[condition.stem]:
+                                    continue
+                                if reference not in CONDITIONS_REFERENCES[condition.stem]:
+                                    continue
+                                    
                                 if segmentation.stem == 'proseg_expected':
                                     k_sample_dir = ('proseg',condition.stem,panel.stem,donor.stem,sample.stem,)
                                     name_sample =  '/'.join(k_sample_dir)
-                                    path = xenium_dir / f'{name_sample}/raw_results'
+                                    path = xenium_processed_data_dir / f'{name_sample}/raw_results'
                                 else:
                                     k_sample_dir = (segmentation.stem.replace('proseg_mode','proseg'),condition.stem,panel.stem,donor.stem,sample.stem,)
                                     name_sample =  '/'.join(k_sample_dir)
-                                    path = xenium_dir / f'{name_sample}/normalised_results/outs'
+                                    path = xenium_processed_data_dir / f'{name_sample}/normalised_results/outs'
 
                                 k_sample = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem)
                                 k_model = k_sample+(normalisation,mode,reference,method,level,f'{mixture_k=}',)

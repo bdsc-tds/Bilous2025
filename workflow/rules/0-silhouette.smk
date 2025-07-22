@@ -1,19 +1,7 @@
-from pathlib import Path
-import yaml
-
-# cfg paths
-xenium_std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
-xenium_cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
-results_dir = Path(config['results_dir'])
-
-# Params
-normalisations = ['lognorm','sctransform']
-layers = ['data','scale_data']
-max_sample_size = 50_000
-metric = 'euclidean'
+silhouette_max_sample_size = 50_000
 
 out_files = []
-for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
+for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
             for donor in (donors := panel.iterdir()):
@@ -29,7 +17,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
 
                             sample_pca = sample / f'{normalisation}/preprocessed/pca.parquet'
                             sample_idx = sample / f'{normalisation}/preprocessed/cells.parquet'
-                            sample_annotation_dir = xenium_cell_type_annotation_dir / f'{name_annot}/reference_based'
+                            sample_annotation_dir = cell_type_annotation_dir / f'{name_annot}/reference_based'
 
                             if not sample_annotation_dir.exists():
                                 continue
@@ -46,14 +34,14 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                 output:
                                     out_file=out_file,
                                 params:
-                                    max_sample_size=max_sample_size,
+                                    max_sample_size=silhouette_max_sample_size,
                                     metric=metric,
                                 threads: 1
                                 resources:
                                     mem='30GB',
                                     runtime='30m',
                                 conda:
-                                    "general_cuda"
+                                    "spatial"
                                 shell:
                                     """
                                     mkdir -p "$(dirname {output.out_file})"

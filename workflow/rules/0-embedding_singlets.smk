@@ -1,30 +1,3 @@
-# cfg paths
-xenium_processed_data_dir = Path(config['xenium_processed_data_dir'])
-results_dir = Path(config['results_dir'])
-std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
-cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
-
-# params from pipeline config
-normalisations = ['lognorm','sctransform']
-layers = ['data','scale_data']
-min_counts = 10
-min_features = 5
-max_counts = float("inf")
-max_features = float("inf")
-min_cells = 5
-
-# Params
-n_comps = config['umap_n_comps']
-n_neighbors = config['umap_n_neighbors']
-min_dist = config['umap_min_dist']
-metric = config['umap_metric']
-
-# to get singlet info
-references = ['matched_reference_combo','external_reference']
-methods = ['rctd_class_aware']
-levels = ['Level2.1',]#['Level1','Level2','Level3','Level4',] # condition and sample as color to plot added here in addition to levels
-
-
 out_files_panel = []
 
 for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
@@ -78,7 +51,7 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                                         # slurm_partition = "gpu",
                                         # slurm_extra = '--gres=gpu:1',
                                     conda:
-                                        "general_cuda"
+                                        "spatial"
                                     shell:
                                         """
                                         mkdir -p "$(dirname {output.out_file})"

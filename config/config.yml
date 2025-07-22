@@ -18,8 +18,3 @@ xenium_cell_type_annotation_dir: "data/xenium/processed/cell_type_annotation/"
 scrnaseq_processed_data_dir: "data/scRNAseq/processed/"
 visium_raw_data_dir: "data/visium/raw/"
 visium_processed_data_dir: "data/visium/processed/"
-
-umap_n_comps: 50
-umap_n_neighbors: 50
-umap_min_dist: 0.5
-umap_metric: 'euclidean'

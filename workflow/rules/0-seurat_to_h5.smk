@@ -1,10 +1,3 @@
-from pathlib import Path
-
-# cfg paths
-scrnaseq_dir = Path(config['scrnaseq_processed_data_dir'])
-results_dir = Path(config['results_dir'])
-seurat_to_h5_dir = results_dir / 'seurat_to_h5'
-
 # Params
 out_files = []
 

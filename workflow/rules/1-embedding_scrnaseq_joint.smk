@@ -1,26 +1,5 @@
-import pandas as pd
-
-# cfg paths
-xenium_dir = Path(config['xenium_processed_data_dir'])
-results_dir = Path(config['results_dir'])
-std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
-scrnaseq_processed_data_dir = Path(config['scrnaseq_processed_data_dir'])
-seurat_to_h5_dir = results_dir / 'seurat_to_h5'
-
-# params from pipeline config
-min_counts = 10
-min_features = 5
-max_counts = float("inf")
-max_features = float("inf")
-min_cells = 5
-
 # Params
 layer = 'RNA_counts'
-
-n_comps = config['umap_n_comps']
-n_neighbors = config['umap_n_neighbors']
-min_dist = config['umap_min_dist']
-metric = config['umap_metric']
 
 reference1 = scrnaseq_processed_data_dir / 'matched_combo_standard_lung_specific'
 reference1_name = reference1.stem
@@ -60,7 +39,7 @@ rule embed_panel_scrnaseq_joint:
         # slurm_partition = "gpu",
         # slurm_extra = '--gres=gpu:1',
     conda:
-        "general_cuda"
+        "spatial"
     shell:
         """
         mkdir -p "$(dirname {output.out_file})"

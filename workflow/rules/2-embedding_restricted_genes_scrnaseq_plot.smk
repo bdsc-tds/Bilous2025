@@ -1,43 +1,5 @@
-import pandas as pd
-
-# cfg paths
-xenium_dir = Path(config['xenium_processed_data_dir'])
-std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
-results_dir = Path(config['results_dir'])
-figures_dir = Path(config['figures_dir'])
-palette_dir = Path(config['xenium_metadata_dir'])
-cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
-seurat_to_h5_dir = results_dir / 'seurat_to_h5'
-scrnaseq_processed_data_dir = Path(config['scrnaseq_processed_data_dir'])
-
-# Params
-n_comps = config['umap_n_comps']
-n_neighbors = config['umap_n_neighbors']
-min_dist = config['umap_min_dist']
-metric = config['umap_metric']
-
-
-genes_dict = {
-    'Xenium_NSCLC_5k_lung_chromium_common_genes':pd.read_csv(config['markers_dir']+'Xenium_NSCLC_5k_lung_chromium_common_genes.csv')['gene'].tolist(),
-    'Xenium_hLung_v1_metadata':pd.read_csv(config['markers_dir']+'Xenium_hLung_v1_metadata.csv')['Gene'].tolist(),
-    'CHUV_IO_340_panel':pd.read_csv(config['markers_dir']+'CHUV_IO_340_panel.csv')['Gene ID'].tolist(),
-    'Xenium_hBreast_v1_metadata':pd.read_csv(config['markers_dir']+'Xenium_hBreast_v1_metadata.csv')['Gene'].tolist()
-}
-
-
 s=3
-alpha=0.5
-dpi = 300
-points_only = True
-
-cell_type_palette = palette_dir / 'col_palette_cell_types_combo.csv'
-panel_palette = palette_dir / 'col_palette_panel.csv'
-sample_palette = palette_dir / 'col_palette_sample.csv'
-
 layer = 'RNA_counts'
-methods = ['rctd_class_aware']
-colors = ['sample','Level2.1']#['Level1','Level2','Level3','Level4','panel','sample',] # condition and sample as color to plot added here in addition to levels
-extension = 'png'
 
 out_files_panel = []
 
@@ -85,7 +47,7 @@ for genes_name, genes in genes_dict.items():
                     mem='30GB',
                     runtime='10m',
                 conda:
-                    "general_cuda"
+                    "spatial"
                 shell:
                     """
                     mkdir -p "$(dirname {output.out_file})"

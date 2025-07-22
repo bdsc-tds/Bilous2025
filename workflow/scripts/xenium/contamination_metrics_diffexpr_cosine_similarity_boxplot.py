@@ -28,8 +28,8 @@ parser.add_argument("--condition", type=str, help="condition name.")
 parser.add_argument("--panel", type=str, help="panel name.")
 parser.add_argument("--correction_methods", type=str, nargs="*", default=[], help="correction methods list.")
 parser.add_argument("--results_dir", type=Path, help="Path to the results dir.")
-parser.add_argument("--xenium_dir", type=Path, help="Path to the xenium dir.")
-parser.add_argument("--count_correction_dir", type=Path, help="Path to the count_correction dir.")
+parser.add_argument("--xenium_processed_data_dir", type=Path, help="Path to the xenium dir.")
+parser.add_argument("--xenium_count_correction_dir", type=Path, help="Path to the count_correction dir.")
 parser.add_argument("--scrnaseq_processed_data_dir", type=Path, help="Path to the scrnaseq_processed_data dir.")
 parser.add_argument("--seurat_to_h5_dir", type=Path, help="Path to the seurat_to_h5 dir.")
 parser.add_argument("--std_seurat_analysis_dir", type=Path, help="Path to the std seurat analysis dir.")
@@ -53,8 +53,8 @@ condition = args.condition
 panel = args.panel
 correction_methods = args.correction_methods
 results_dir = args.results_dir
-xenium_dir = args.xenium_dir
-count_correction_dir = args.count_correction_dir
+xenium_processed_data_dir = args.xenium_processed_data_dir
+xenium_count_correction_dir = args.xenium_count_correction_dir
 scrnaseq_processed_data_dir = args.scrnaseq_processed_data_dir
 cell_type_annotation_dir = args.cell_type_annotation_dir
 seurat_to_h5_dir = args.seurat_to_h5_dir
@@ -133,9 +133,9 @@ for correction_method in correction_methods:
                         if "proseg" in segmentation.stem:
                             k_proseg = ("proseg", condition_dir.stem, panel_dir.stem, donor.stem, sample.stem)
                             name_proseg = "/".join(k_proseg)
-                            sample_dir = xenium_dir / f"{name_proseg}/raw_results"
+                            sample_dir = xenium_processed_data_dir / f"{name_proseg}/raw_results"
                         else:
-                            sample_dir = xenium_dir / f"{name}/normalised_results/outs"
+                            sample_dir = xenium_processed_data_dir / f"{name}/normalised_results/outs"
 
                         sample_annotation = (
                             cell_type_annotation_dir
@@ -151,7 +151,7 @@ for correction_method in correction_methods:
                             if correction_method == "split_fully_purified":
                                 name_corrected = f"{name}/{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/split_fully_purified/"
                                 sample_corrected_counts_path = (
-                                    count_correction_dir / f"{name_corrected}/corrected_counts.h5"
+                                    xenium_count_correction_dir / f"{name_corrected}/corrected_counts.h5"
                                 )
 
                             else:
@@ -323,8 +323,8 @@ for cti in df_all["cti"].unique():
     ax.yaxis.grid(True)
     ax.set_ylim(top=1)
     ax.set_yticks(ax.get_yticks().tolist() + [1] if 1 not in ax.get_yticks() else ax.get_yticks())
-    ax.tick_params(axis='x', labelsize=14)
-    ax.tick_params(axis='y', labelsize=16)
+    ax.tick_params(axis="x", labelsize=14)
+    ax.tick_params(axis="y", labelsize=16)
     ax.set_ylabel(plot_metric, fontsize=14)
 
     # plt.suptitle(title)

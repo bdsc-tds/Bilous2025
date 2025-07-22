@@ -1,31 +1,4 @@
-# cfg paths
-xenium_dir = Path(config['xenium_processed_data_dir'])
-std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
-results_dir = Path(config['results_dir'])
-figures_dir = Path(config['figures_dir'])
-palette_dir = Path(config['xenium_metadata_dir'])
-cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
-seurat_to_h5_dir = results_dir / 'seurat_to_h5'
-scrnaseq_processed_data_dir = Path(config['scrnaseq_processed_data_dir'])
-
-# Params
-n_comps = config['umap_n_comps']
-n_neighbors = config['umap_n_neighbors']
-min_dist = config['umap_min_dist']
-metric = config['umap_metric']
-
 s=3
-alpha=0.5
-dpi = 300
-points_only = True
-
-cell_type_palette = palette_dir / 'col_palette_cell_types_combo.csv'
-panel_palette = palette_dir / 'col_palette_panel.csv'
-sample_palette = palette_dir / 'col_palette_sample.csv'
-
-layer = 'RNA_counts'
-colors = ['sample','Level2.1']#['Level1','Level2','Level3','Level4','panel','sample',] # condition and sample as color to plot added here in addition to levels
-extension = 'png'
 
 out_files_panel = []
 for reference in (references := scrnaseq_processed_data_dir.iterdir()):
@@ -71,7 +44,7 @@ for reference in (references := scrnaseq_processed_data_dir.iterdir()):
                 mem='30GB',
                 runtime='10m',
             conda:
-                "general_cuda"
+                "spatial"
             shell:
                 """
                 mkdir -p "$(dirname {output.out_file})"

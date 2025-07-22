@@ -1,23 +1,5 @@
-from pathlib import Path
-
-# cfg paths
-xenium_dir = Path(config['xenium_processed_data_dir'])
-silhouette_dir = Path(config['results_dir']) / 'silhouette'
-figures_dir = Path(config['figures_dir'])
-palette_dir = Path(config['xenium_metadata_dir'])
-
-# Params
-metric = 'euclidean'
-segmentation_palette = palette_dir / 'col_palette_segmentation.csv'
-normalisations = ['lognorm','sctransform']
-layers = ['data','scale_data']
-references = ['matched_reference','external_reference']
-methods = ['rctd_class_aware']
-levels = ['Level2.1'] 
-extension = 'png'
-
 out_files_panel = []
-for segmentation in (segmentations := xenium_dir.iterdir()):
+for segmentation in (segmentations := xenium_processed_data_dir.iterdir()):
     if segmentation.stem == 'proseg_v1':
         continue
     for condition in (conditions := segmentation.iterdir()): 
@@ -55,7 +37,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                         mem='5GB',
                                         runtime='5m',
                                     conda:
-                                        "general_cuda"
+                                        "spatial"
                                     shell:
                                         """
                                         mkdir -p "$(dirname {output.out_file})"
@@ -79,7 +61,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
 
 
 out_files_condition = []
-for segmentation in (segmentations := xenium_dir.iterdir()):
+for segmentation in (segmentations := xenium_processed_data_dir.iterdir()):
     if segmentation.stem == 'proseg_v1':
         continue
     for condition in (conditions := segmentation.iterdir()): 
@@ -114,7 +96,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                 mem='5GB',
                                 runtime='5m',
                             conda:
-                                "general_cuda"
+                                "spatial"
                             shell:
                                 """
                                 mkdir -p "$(dirname {output.out_file})"

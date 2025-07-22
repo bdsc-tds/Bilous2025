@@ -1,15 +1,9 @@
-from pathlib import Path
-
-# cfg paths
-xenium_dir = Path(config['xenium_processed_data_dir'])
-results_dir = Path(config['results_dir'])
-
 # Params
 methods = ['conditional','jaccard']#,'pearson','spearman']
 target_counts = [30,50,200]
 out_files = []
 
-for segmentation in (segmentations := xenium_dir.iterdir()):
+for segmentation in (segmentations := xenium_processed_data_dir.iterdir()):
     for condition in (conditions := segmentation.iterdir()): 
         for panel in (panels := condition.iterdir()):
             for donor in (donors := panel.iterdir()):
@@ -53,7 +47,7 @@ for segmentation in (segmentations := xenium_dir.iterdir()):
                                         mem='40GB' if panel.stem == '5k' else '20GB',
                                         runtime='20m' if panel.stem == '5k' else '10m',
                                     conda:
-                                        "general_cuda"
+                                        "spatial"
                                     shell:
                                         """
                                         mkdir -p "$(dirname {output.out_file_coexpr})"

@@ -1,22 +1,3 @@
-from pathlib import Path
-
-# cfg paths
-xenium_dir = Path(config['xenium_processed_data_dir'])
-xenium_std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
-results_dir = Path(config['results_dir'])
-
-# params from pipeline config
-min_counts = 10
-min_features = 5
-max_counts = float("inf")
-max_features = float("inf")
-min_cells = 5
-
-# params
-num_samples = 30
-batch_size = 1000
-mixture_k = 50
-
 out_files_training = []
 for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
     if segmentation.stem in ['proseg_mode','bats_normalised','bats_expected']:
@@ -29,10 +10,10 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                     
                     if segmentation.stem == 'proseg_expected':
                         name_sample =  '/'.join(('proseg',condition.stem,panel.stem,donor.stem,sample.stem,))
-                        path = xenium_dir / f'{name_sample}/raw_results'
+                        path = xenium_processed_data_dir / f'{name_sample}/raw_results'
                     else:
                         name_sample =  '/'.join((segmentation.stem.replace('proseg_mode','proseg'),condition.stem,panel.stem,donor.stem,sample.stem,))
-                        path = xenium_dir / f'{name_sample}/normalised_results/outs'
+                        path = xenium_processed_data_dir / f'{name_sample}/normalised_results/outs'
 
                     k = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,f'{mixture_k=}')
                     name = '/'.join(k)
@@ -96,11 +77,11 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                     if segmentation.stem == 'proseg_expected':
                         k_sample = ('proseg',condition.stem,panel.stem,donor.stem,sample.stem,)
                         name_sample =  '/'.join(k_sample)
-                        path = xenium_dir / f'{name_sample}/raw_results'
+                        path = xenium_processed_data_dir / f'{name_sample}/raw_results'
                     else:
                         k_sample = (segmentation.stem.replace('proseg_mode','proseg'),condition.stem,panel.stem,donor.stem,sample.stem,)
                         name_sample =  '/'.join(k_sample)
-                        path = xenium_dir / f'{name_sample}/normalised_results/outs'
+                        path = xenium_processed_data_dir / f'{name_sample}/normalised_results/outs'
 
                     k_model = (segmentation.stem,condition.stem,panel.stem,donor.stem,sample.stem,f'{mixture_k=}')
                     k = k_model + (f'{num_samples=}',)

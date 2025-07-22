@@ -1,18 +1,3 @@
-# cfg paths
-xenium_dir = Path(config['xenium_processed_data_dir'])
-std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
-results_dir = Path(config['results_dir'])
-cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
-
-# Params
-n_comps = 50
-max_n_cells = 100_000
-
-normalisations = ['lognorm']#,'sctransform']
-layers = ['data']#,'scale_data']
-references = ['matched_reference_combo']#,'external_reference']
-methods = ['rctd_class_aware']
-levels = ['Level2.1'] # condition and sample as color to plot added here in addition to levels
 singlets = True
 
 out_files_panel = []
@@ -56,7 +41,7 @@ for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
                                         mem='80GB',
                                         runtime='5h',
                                     conda:
-                                        "general_cuda"
+                                        "spatial"
                                     shell:
                                         """
                                         mkdir -p "$(dirname {output.out_file})"

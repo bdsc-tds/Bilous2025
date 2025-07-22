@@ -1,4 +1,5 @@
 configfile: "config/config.yml"
+include: "parameters.smk"
 
 # include: "rules/0-seurat_to_h5.smk"
 # include: "rules/1-coexpression_scrnaseq_references.smk"
@@ -12,7 +13,7 @@ configfile: "config/config.yml"
 
 include: "rules/0-scib_metrics.smk"
 # include: "rules/0-scib_metrics_singlets.smk"
-# include: "rules/1-scib_metrics_corrected_counts.smk"
+include: "rules/1-scib_metrics_corrected_counts.smk"
 include: "rules/2-scib_metrics_plot.smk"
 
 # include: "rules/0-detect_tls.smk"
@@ -38,9 +39,9 @@ include: "rules/2-scib_metrics_plot.smk"
 # include: "rules/1-embedding_restricted_genes_and_samples_plot.smk"
 # include: "rules/2-embedding_restricted_genes_scrnaseq_plot.smk"
 
-include: "rules/0-ovrlpy.smk"
-include: "rules/0-resolvi.smk"
-include: "rules/0-resolvi_supervised.smk"
+# include: "rules/0-ovrlpy.smk"
+# include: "rules/0-resolvi.smk"
+# include: "rules/0-resolvi_supervised.smk"
 # include: "rules/1-coexpression_corrected_counts.smk"
 # include: "rules/1-coexpression_corrected_counts_plot.smk"
 # include: "rules/2-embedding_corrected_counts.smk"
@@ -105,23 +106,23 @@ rule all:
         # rules.embed_condition_corrected_counts_all.input,
         # rules.embed_condition_corrected_counts_plot_all.input,
         #
-        rules.resolvi_training_all.input,
-        rules.resolvi_training_supervised_all.input,
-        rules.resolvi_inference_all.input,
-        rules.resolvi_inference_supervised_all.input,
-        #
-        rules.ovrlpy_all.input,
-        rules.ovrlpy_correction_all.input,
+        # rules.resolvi_training_all.input,
+        # rules.resolvi_training_supervised_all.input,
+        # rules.resolvi_inference_all.input,
+        # rules.resolvi_inference_supervised_all.input,
+        # #
+        # rules.ovrlpy_all.input,
+        # rules.ovrlpy_correction_all.input,
         #
         # rules.scib_metrics_panel_all.input,
         # rules.scib_metrics_panel_singlets_all.input,
         # rules.scib_metrics_panel_corrected_counts_all.input,
         # rules.scib_metrics_panel_plot_all.input,
         #
-        # rules.contamination_metrics_diffexpr_all.input,
-        # rules.contamination_metrics_logreg_all.input,
-        # rules.contamination_metrics_diffexpr_corrected_counts_all.input,
-        # rules.contamination_metrics_logreg_corrected_counts_all.input,
+        rules.contamination_metrics_diffexpr_all.input,
+        rules.contamination_metrics_logreg_all.input,
+        rules.contamination_metrics_diffexpr_corrected_counts_all.input,
+        rules.contamination_metrics_logreg_corrected_counts_all.input,
         #
         # rules.contamination_metrics_specificity_boxplot_all.input,
         # rules.contamination_metrics_specificity_logreg_boxplot_all.input,
