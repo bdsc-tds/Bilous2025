@@ -105,6 +105,14 @@ hue_correction_order = [
 
 plot_metric = "cosine_similarity"
 
+CONDITIONS_REFS = {
+    "breast": "matched_combo_standard_breast_specific.rds",
+    "melanoma": "external_melanoma.rds",
+    "NSCLC": "matched_combo_standard_lung_specific.rds",
+    "mesothelioma_pilot": "matched_combo_standard_lung_specific.rds",
+}
+
+
 # %% [markdown]
 # # Load counts and corrected counts
 
@@ -116,7 +124,7 @@ for correction_method in correction_methods:
     xenium_annot_paths[correction_method] = {}
 
     for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
-        if segmentation.stem == "proseg_mode":
+        if segmentation.stem in ["proseg_mode", "bats_expected", "bats_normalised"]:
             continue
         for condition_dir in (conditions := segmentation.iterdir()):
             if condition_dir.stem != condition:
@@ -216,38 +224,31 @@ for correction_method in correction_methods:
             sc.pp.log1p(pbs_xenium[correction_method][k])
 
 # %% load scRNAseq data
-pbs_scrna = {}
-for ref in (refs := scrnaseq_processed_data_dir.iterdir()):
-    ref_name = ref.stem
-    ref_dir = seurat_to_h5_dir / ref_name
+ref = seurat_to_h5_dir / CONDITIONS_REFS[condition]
+ref_name = ref.stem
+ref_dir = seurat_to_h5_dir / ref_name
 
-    if "matched_combo_standard" not in ref_name:
-        continue
+print("loading scRNAseq data", ref_name)
 
-    print(ref_name)
+ad = sc.read_10x_h5(ref_dir / f"{layer_scrnaseq}.h5")
+ad.obs[level] = pd.read_parquet(ref_dir / "metadata.parquet").set_index("cell_id")[level]
+ad = ad[ad.obs[level].notna()]
 
-    ad = sc.read_10x_h5(ref_dir / f"{layer_scrnaseq}.h5")
-    ad.obs[level] = pd.read_parquet(ref_dir / "metadata.parquet").set_index("cell_id")[level]
-    ad = ad[ad.obs[level].notna()]
+if level == "Level2.1" and level in ad.obs.columns:
+    # for custom Level2.1, simplify subtypes
+    ad.obs.loc[ad.obs[level].str.contains("malignant"), level] = "malignant cell"
+    ad.obs.loc[ad.obs[level].str.contains("T cell"), level] = "T cell"
 
-    if level == "Level2.1":
-        # for custom Level2.1, simplify subtypes
-        ad.obs.loc[ad.obs[level].str.contains("malignant"), level] = "malignant cell"
-        ad.obs.loc[ad.obs[level].str.contains("T cell"), level] = "T cell"
-    # remove tissue from cell type name
-    ad.obs[level] = ad.obs[level].str.replace(r" of .+", "", regex=True)
+# remove tissue from cell type name
+ad.obs[level] = ad.obs[level].str.replace(r" of .+", "", regex=True)
 
-    # Prepare pseudo bulk data
-    pbs_scrna[ref_name] = _utils.pseudobulk(ad, level)
-    sc.pp.normalize_total(pbs_scrna[ref_name])
-    sc.pp.log1p(pbs_scrna[ref_name])
+# Prepare pseudo bulk data
+pb_scrna = _utils.pseudobulk(ad, level)
+sc.pp.normalize_total(pb_scrna)
+sc.pp.log1p(pb_scrna)
 
-    del ad
-    gc.collect()
-
-pbs_scrna["NSCLC"] = pbs_scrna.pop("matched_combo_standard_lung_specific")
-pbs_scrna["breast"] = pbs_scrna.pop("matched_combo_standard_breast_specific")
-pb_scrna = pbs_scrna[condition]
+del ad
+gc.collect()
 
 # %% [markdown]
 # # Plot decontamination results diffexpr

@@ -1119,6 +1119,14 @@ def _read_contamination_metrics_results_sample(
         else:
             print(f"File does not exist: {path}")
 
+    if condition.stem == "melanoma":
+        if level == "Level2.1":
+            level = "Level1"
+            print("Using Level1 for melanoma\t")
+        if reference == "matched_reference_combo":
+            reference = "external_reference"
+            print("Using external_reference for melanoma\t")
+
     k = (segmentation.stem, condition.stem, panel.stem, donor.stem, sample.stem)
     name = "/".join(k)
     name_params_diffexpr = f"{markers_mode}_{radius=}_{top_n=}"

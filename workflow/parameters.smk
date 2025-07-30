@@ -10,7 +10,6 @@ std_seurat_analysis_dir = Path(config['xenium_std_seurat_analysis_dir'])
 cell_type_annotation_dir = Path(config['xenium_cell_type_annotation_dir'])
 scrnaseq_processed_data_dir = Path(config['scrnaseq_processed_data_dir'])
 palette_dir = Path(config['xenium_metadata_dir'])
-scrnaseq_dir = Path(config['scrnaseq_processed_data_dir'])
 
 # Output paths
 results_dir = Path(config['results_dir'])
@@ -50,9 +49,11 @@ s=0.5
 alpha=0.5
 points_only = True
 extension = 'png'
+dpi=300
 
 # list params
-correction_methods = ['split_fully_purified','resolvi','resolvi_supervised'] + [f'ovrlpy_correction_{signal_integrity_threshold=}' for signal_integrity_threshold in signal_integrity_thresholds]
+signal_integrity_thresholds = [0.5,0.7]
+correction_methods = ['raw','split_fully_purified','resolvi','resolvi_supervised'] + [f'ovrlpy_correction_{signal_integrity_threshold=}' for signal_integrity_threshold in signal_integrity_thresholds]
 normalisations = ['lognorm']#,'sctransform']
 layers = ['data']#,'scale_data']
 references = ['matched_reference_combo','external_reference']
@@ -77,6 +78,7 @@ genes_dict = {
     'CHUV_IO_340_panel':pd.read_csv(config['markers_dir']+'CHUV_IO_340_panel.csv')['Gene ID'].tolist(),
     'Xenium_hBreast_v1_metadata':pd.read_csv(config['markers_dir']+'Xenium_hBreast_v1_metadata.csv')['Gene'].tolist()
 }
+train_modes = ['multivariate']#,'univariate']
 
 # scib metrics params
 max_n_cells = 100_000

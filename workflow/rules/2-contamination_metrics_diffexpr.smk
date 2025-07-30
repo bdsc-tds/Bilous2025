@@ -36,7 +36,7 @@ for genes_name, genes in genes_dict.items():
 
                                 sample_normalised_counts = std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/{layer}.parquet'
                                 sample_idx = std_seurat_analysis_dir / f'{name}/{normalisation}/normalised_counts/cells.parquet'
-                                sample_annotation = xenium_cell_type_annotation_dir / f'{name}/{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet'
+                                sample_annotation = cell_type_annotation_dir / f'{name}/{normalisation}/reference_based/{reference}/{method}/{level}/single_cell/labels.parquet'
 
                                 out_file_df_ctj_marker_genes = results_dir /  f'{output_dir}/raw/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_marker_genes.parquet'
                                 out_file_df_diffexpr = results_dir / f'{output_dir}/raw/{name}/{normalisation}/{layer}_{reference}_{method}_{level}_diffexpr.parquet'

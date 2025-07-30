@@ -25,7 +25,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                         out_files_training.append(out_file_resolvi_model)
 
                         rule:
-                            name: f'resolvi/{name}'
+                            name: f'resolvi_training/{name}'
                             input:
                                 path=path,
                             output:

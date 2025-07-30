@@ -1,7 +1,7 @@
 # Params
 out_files = []
 
-for scrnaseq_reference_rds in (scrnaseq_references := scrnaseq_dir.iterdir()):
+for scrnaseq_reference_rds in (scrnaseq_references := scrnaseq_processed_data_dir.iterdir()):
     name = scrnaseq_reference_rds.stem
 
     out_dir = results_dir / f'seurat_to_h5/{name}' 
