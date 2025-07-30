@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import scanpy as sc
 import scvi
+import torch
 import argparse
 import os
 import sys
@@ -15,14 +16,17 @@ sys.path.append("workflow/scripts/")
 import preprocessing
 import readwrite
 
+torch.set_float32_matmul_precision("medium")
+
 
 # Set up argument parser
 def parse_args():
     parser = argparse.ArgumentParser(description="Run RESOLVI on a Xenium sample.")
-    parser.add_argument("--panel", type=Path, help="Path to the args.panel file.")
+    parser.add_argument("--panel", type=Path, help="Path to the panel file.")
     parser.add_argument("--xenium_processed_data_dir", type=Path, help="Path to the xenium processed data directories")
     parser.add_argument("--cell_type_annotation_dir", type=Path, help="Path to the cell_type_annotation_dir.")
-    parser.add_argument("--normalisation", type=str, help="annotation normalisation args.method")
+    parser.add_argument("--annotation_mode", type=str, help="annotation mode")
+    parser.add_argument("--normalisation", type=str, help="annotation normalisation method")
     parser.add_argument("--reference", type=str, help="annotation reference")
     parser.add_argument("--method", type=str, help="annotation method")
     parser.add_argument("--level", type=str, help="annotation level")
@@ -35,10 +39,9 @@ def parse_args():
     parser.add_argument(
         "--max_epochs",
         type=int,
-        default=50,
+        default=100,
         help="Maximum number of epochs to train the model.",
     )
-    parser.add_argument("--cell_type_labels", type=str, help="optional cell_type_labels for semi-supervised mode")
     parser.add_argument("--mixture_k", type=int, help="mixture_k parameter for unsupervised RESOLVI")
     parser.add_argument("--use_batch", action="store_true", help="whether to use batch parameter for RESOLVI")
     parser.add_argument(
@@ -49,16 +52,14 @@ def parse_args():
     )
 
     ret = parser.parse_args()
-    if not os.path.isdir(ret.path):
-        raise RuntimeError(f"Error! Input directory does not exist: {ret.path}")
-    if ret.max_epochs <= 0:
-        ret.max_epochs = 50
 
     return ret
 
 
 if __name__ == "__main__":
     args = parse_args()
+
+    print(args)
 
     if args.l is not None:
         old_stdout = sys.stdout
@@ -69,6 +70,7 @@ if __name__ == "__main__":
         sys.stdout = _log
         sys.stderr = _log
 
+    # process params
     if args.level is not None:
         print("Reading samples and cell type annotation")
         labels_key = "labels_key"
@@ -84,21 +86,25 @@ if __name__ == "__main__":
     else:
         batch_key = None
 
+    condition = args.panel.parents[0].stem
+    segmentation = args.panel.parents[1].stem
+
+    # load data
     ads = {}
     for donor in (donors := args.panel.iterdir()):
         for sample in (samples_ := donor.iterdir()):
             print(donor.stem, sample.stem)
 
-            if args.segmentation == "proseg_expected":
-                k = ("proseg", args.condition, args.panel.stem, donor.stem, sample.stem)
-                k_annot = (args.segmentation, args.condition, args.panel.stem, donor.stem, sample.stem)
+            if segmentation == "proseg_expected":
+                k = ("proseg", condition, args.panel.stem, donor.stem, sample.stem)
+                k_annot = (segmentation, condition, args.panel.stem, donor.stem, sample.stem)
                 name = "/".join(k)
                 name_annot = "/".join(k_annot)
                 sample_dir = args.xenium_processed_data_dir / f"{name}/raw_results"
             else:
                 k = (
-                    args.segmentation.replace("proseg_mode", "proseg"),
-                    args.condition,
+                    segmentation.replace("proseg_mode", "proseg"),
+                    condition,
                     args.panel.stem,
                     donor.stem,
                     sample.stem,
@@ -106,23 +112,13 @@ if __name__ == "__main__":
                 name = name_annot = "/".join(k)
                 sample_dir = args.xenium_processed_data_dir / f"{name}/normalised_results/outs"
 
-            # load raw data to reapply lower bounds QC filters
-            ads[k] = readwrite.read_xenium_sample(
-                args.sample_dir,
-                cells_as_circles=False,
-                cells_boundaries=False,
-                cells_boundaries_layers=False,
-                nucleus_boundaries=False,
-                cells_labels=False,
-                nucleus_labels=False,
-                transcripts=False,
-                morphology_mip=False,
-                morphology_focus=False,
-                aligned_images=False,
-                anndata=True,
-            )
-            if args.segmentation == "proseg_expected":
-                ads[k].obs_names = "proseg-" + ads[k].obs_names.astype(str)
+            ads[k] = readwrite.read_xenium_sample(sample_dir, anndata=True)
+            ads[k].obs_names = ads[k].obs_names.astype(str)
+
+            if segmentation == "proseg_expected":
+                ads[k].obs_names = "proseg-" + ads[k].obs_names
+                # need to round proseg expected counts for resolVI to run
+                ads[k].X.data = ads[k].X.data.round()
 
             if args.level is not None:
                 annot_file = (
@@ -131,6 +127,7 @@ if __name__ == "__main__":
                     / f"{args.normalisation}/reference_based/{args.reference}/{args.method}/{args.level}/single_cell/labels.parquet"
                 )
                 ads[k].obs[labels_key] = pd.read_parquet(annot_file).set_index("cell_id").iloc[:, 0]
+                ads[k] = ads[k][ads[k].obs[labels_key].notna()].copy()
 
     print("Concatenating")
     # concatenate
@@ -139,16 +136,9 @@ if __name__ == "__main__":
         for i, lvl in enumerate(xenium_levels):
             ads[k].obs[lvl] = k[i]
     adata = sc.concat(ads)
-    adata = adata[adata.obs[labels_key].notna()].copy()
     print("Done")
 
     adata.X.data = adata.X.data.astype(np.float32)
-    adata.obs_names = adata.obs_names.astype(str)
-
-    if "proseg" in args.path and "raw_results" in args.path:
-        # need to round proseg expected counts for resolVI to run
-        adata.X.data = adata.X.data.round()
-        adata.obs_names = "proseg-" + adata.obs_names
 
     # preprocess (QC filters only)
     # resolvi requires at least 5 counts in each cell

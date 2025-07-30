@@ -1,7 +1,7 @@
 configfile: "config/config.yml"
 include: "parameters.smk"
 
-include: "rules/0-seurat_to_h5.smk"
+# include: "rules/0-seurat_to_h5.smk"
 # include: "rules/1-coexpression_scrnaseq_references.smk"
 
 # include: "rules/0-coexpression.smk"
@@ -42,6 +42,8 @@ include: "rules/0-seurat_to_h5.smk"
 # include: "rules/0-ovrlpy.smk"
 # include: "rules/0-resolvi.smk"
 # include: "rules/0-resolvi_supervised.smk"
+include: "rules/0-resolvi_panel.smk"
+include: "rules/0-resolvi_panel_supervised.smk"
 # include: "rules/1-coexpression_corrected_counts.smk"
 # include: "rules/1-coexpression_corrected_counts_plot.smk"
 # include: "rules/2-embedding_corrected_counts.smk"
@@ -52,10 +54,10 @@ include: "rules/0-seurat_to_h5.smk"
 # include: "rules/2-contamination_metrics_diffexpr_corrected_counts.smk"
 # include: "rules/2-contamination_metrics_logreg_corrected_counts.smk"
 
-include: "rules/3-contamination_metrics_diffexpr_specificity_boxplot.smk"
-include: "rules/3-contamination_metrics_diffexpr_specificity_logreg_boxplot.smk"
-include: "rules/3-contamination_metrics_diffexpr_sensitivity_boxplot.smk"
-include: "rules/3-contamination_metrics_cosine_similarity_scrnaseq.smk"
+# include: "rules/3-contamination_metrics_diffexpr_specificity_boxplot.smk"
+# include: "rules/3-contamination_metrics_diffexpr_specificity_logreg_boxplot.smk"
+# include: "rules/3-contamination_metrics_diffexpr_sensitivity_boxplot.smk"
+# include: "rules/3-contamination_metrics_cosine_similarity_scrnaseq.smk"
 
 rule all:
     input:
@@ -110,6 +112,11 @@ rule all:
         # rules.resolvi_training_supervised_all.input,
         # rules.resolvi_inference_all.input,
         # rules.resolvi_inference_supervised_all.input,
+        #
+        rules.resolvi_panel_training_all.input,
+        rules.resolvi_panel_training_supervised_all.input,
+        rules.resolvi_panel_inference_all.input,
+        rules.resolvi_panel_inference_supervised_all.input,
         # #
         # rules.ovrlpy_all.input,
         # rules.ovrlpy_correction_all.input,
@@ -127,5 +134,5 @@ rule all:
         # rules.contamination_metrics_specificity_boxplot_all.input,
         # rules.contamination_metrics_specificity_logreg_boxplot_all.input,
         # rules.contamination_metrics_sensitivity_boxplot_all.input,
-        rules.contamination_metrics_cosine_similarity_scrnaseq_boxplot_all.input,
+        # rules.contamination_metrics_cosine_similarity_scrnaseq_boxplot_all.input,
 

@@ -1,5 +1,5 @@
 out_files_training = []
-for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
+for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
     if segmentation.stem in ['proseg_mode','bats_normalised','bats_expected']:
         continue
     for condition in (conditions := segmentation.iterdir()): 
@@ -38,6 +38,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                 max_features=max_features,
                                 min_cells=min_cells,
                                 mixture_k=mixture_k,
+                                max_epochs=max_epochs,
                             threads: 1
                             resources:
                                 mem='80GB',# if panel.stem == '5k' else '10GB',
@@ -59,13 +60,14 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                                 --max_features {params.max_features} \
                                 --min_cells {params.min_cells} \
                                 --mixture_k {params.mixture_k} \
+                                --max_epochs {params.max_epochs} \
                                 
                                 echo "DONE"
                                 """
 
 
 out_files_inference = []
-for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
+for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
     if segmentation.stem in ['proseg_mode','bats_normalised','bats_expected']:
         continue
     for condition in (conditions := segmentation.iterdir()): 

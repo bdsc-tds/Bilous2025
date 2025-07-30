@@ -1,5 +1,5 @@
 out_files_training = []
-for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
+for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
     if segmentation.stem in ['proseg_mode','bats_normalised','bats_expected']:
         continue
     for condition in (conditions := segmentation.iterdir()): 
@@ -19,13 +19,16 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                 output:
                     out_file_resolvi_model = out_file_resolvi_model
                 params:
+                    xenium_processed_data_dir=xenium_processed_data_dir,
                     out_dir_resolvi_model=out_dir_resolvi_model,
                     min_counts=min_counts,
                     min_features=min_features,
                     max_counts=max_counts,
                     max_features=max_features,
                     min_cells=min_cells,
+                    max_epochs=max_epochs,
                     mixture_k=mixture_k,
+                    use_batch='--use_batch' if use_batch else '',
                 threads: 1
                 resources:
                     mem='80GB',# if panel.stem == '5k' else '10GB',
@@ -40,6 +43,7 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
 
                     python workflow/scripts/xenium/resolvi_panel_training.py \
                     --panel {input.panel} \
+                    --xenium_processed_data_dir {params.xenium_processed_data_dir} \
                     --out_dir_resolvi_model {params.out_dir_resolvi_model} \
                     --min_counts {params.min_counts} \
                     --min_features {params.min_features} \
@@ -47,13 +51,15 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                     --max_features {params.max_features} \
                     --min_cells {params.min_cells} \
                     --mixture_k {params.mixture_k} \
+                    --max_epochs {params.max_epochs} \
+                    {params.use_batch} \
                     
                     echo "DONE"
                     """
 
 
 out_files_inference = []
-for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
+for segmentation in (segmentations := std_seurat_analysis_dir.iterdir()):
     if segmentation.stem in ['proseg_mode','bats_normalised','bats_expected']:
         continue
     for condition in (conditions := segmentation.iterdir()): 
@@ -66,19 +72,19 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
 
             dir_resolvi_model = results_dir / f'resolvi_panel/{name_model}/model/'
             out_dir = results_dir / f'resolvi_panel/{name}/'
-            out_file_resolvi_corrected_counts = results_dir / f'resolvi/{name}/corrected_counts.h5'
-            out_file_resolvi_proportions = results_dir/ f'resolvi/{name}/proportions.parquet'
-            out_files_inference.append(out_dir)
+            out_file = out_dir / 'inference.done'
+            out_files_inference.append(out_file)
 
             rule:
                 name: f'resolvi_panel_inference/{name}'
                 input:
-                    path=path,
+                    panel=panel,
                     file_resolvi_model = dir_resolvi_model / 'model.pt'
                 output:
-                    out_dir=directory(out_dir),
+                    out_file_inference=touch(out_file),
                 params:
                     dir_resolvi_model=dir_resolvi_model,
+                    results_dir=results_dir,
                     min_counts=min_counts,
                     min_features=min_features,
                     max_counts=max_counts,
@@ -90,19 +96,17 @@ for segmentation in (segmentations := xenium_std_seurat_analysis_dir.iterdir()):
                 threads: 1
                 resources:
                     mem='200GB',# if panel.stem == '5k' else '10GB',
-                    runtime='6h',
+                    runtime='12h',
                     slurm_partition = "gpu",
                     slurm_extra = '--gres=gpu:1',
                 conda:
                     "spatial"
                 shell:
                     """
-                    mkdir -p "$(dirname {output.out_dir})"
-
                     python workflow/scripts/xenium/resolvi_panel_inference.py \
-                    --path {input.path} \
+                    --panel {input.panel} \
                     --dir_resolvi_model {params.dir_resolvi_model} \
-                    --out_dir {output.out_dir} \
+                    --results_dir {params.results_dir} \
                     --min_counts {params.min_counts} \
                     --min_features {params.min_features} \
                     --max_counts {params.max_counts} \

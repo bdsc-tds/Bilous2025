@@ -34,9 +34,11 @@ max_features = float("inf")
 min_cells = 5
 
 # resolvi params
+max_epochs = 100
 num_samples = 30
 mixture_k = 50
 batch_size = 1000
+use_batch = True
 
 # UMAP params
 n_comps = 50
@@ -50,6 +52,7 @@ alpha=0.5
 points_only = True
 extension = 'png'
 dpi=300
+annotation_mode='reference_based'
 
 # list params
 signal_integrity_thresholds = [0.5,0.7]
