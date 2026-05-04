@@ -13,7 +13,7 @@ library(readr)
 CONFIG <- list(
   ref_dir = "data/references",
   raw_dir = "data/raw",
-  mapping_file = "data/mappings/simplified_cell_type_mapping.csv"
+  mapping_file = "simplified_cell_type_mapping.csv"
 )
 
 # ---------------------------
